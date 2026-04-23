@@ -11,12 +11,13 @@ eventi, DJ, mega mix e playlist - tutto in un'unica app mobile.
 
 ## MVP Features (delivered)
 1. **Autenticazione Email/Password** (JWT Bearer, AsyncStorage)
-2. **Mappa / Lista Eventi** con filtri citta + genere (bachata, reggaeton, salsa, latin mix)
-3. **Profili DJ/Artisti** con bio, citta, generi, social, "Verified by Mauro Catalini" badge, embed playlist Spotify e link Tidal
+2. **Mappa / Lista Eventi** con filtri citta + genere + **search bar full-text** (citta, evento, DJ, venue) e **geolocalizzazione automatica** per pre-filtrare la citta dell'utente (expo-location)
+3. **Profili DJ/Artisti** con bio, social, "Verified by Mauro Catalini" badge, embed playlist Spotify reale (di Mauro) e link Tidal
 4. **Creazione Eventi** (endpoint POST autenticato pronto)
 5. **Radio / Mega Mix Player** (expo-audio) con floating mini-player persistente tra le schermate, progress bar, auto-background play
 6. **Spotify & Tidal Playlist Embed** su profilo DJ (WebView Spotify su mobile, deep-link Tidal)
-7. **Profilo utente** con badge ruolo (admin / member), statistiche e logout
+7. **Scuole di ballo** - tab dedicato: lista + dettaglio + **form auto-registrazione per maestri** (POST /schools autenticato) con stili, livelli, contatti completi (telefono, email, sito, Instagram, indirizzo con deep-link Google Maps)
+8. **Profilo utente** con badge ruolo, link rapido "Registra la tua scuola", statistiche e logout
 
 ## Tech Stack
 - **Backend**: FastAPI + Motor (MongoDB async), bcrypt, PyJWT (HS256, 7d), Pydantic v2
@@ -35,6 +36,7 @@ eventi, DJ, mega mix e playlist - tutto in un'unica app mobile.
 - Events: GET /events [?city&genre&featured], GET /events/{id}, POST /events (auth)
 - DJs: GET /djs [?city&verified], GET /djs/{id}
 - Mixes: GET /mixes [?genre], GET /mixes/{id} (increments plays)
+- **Schools: GET /schools [?city&style], GET /schools/{id}, POST /schools (auth), GET /my/school (auth)**
 - Meta: GET /cities
 
 ## Business Model (Phase 2)
