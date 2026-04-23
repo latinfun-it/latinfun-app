@@ -20,6 +20,7 @@ import * as Location from "expo-location";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import type { EventItem } from "../../src/types";
+import EventsMap from "../../src/EventsMap";
 
 const GENRES = [
   { key: "all", label: "Tutti" },
@@ -56,6 +57,7 @@ export default function EventsScreen() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [view, setView] = useState<"list" | "map">("list");
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
   const [detectedCity, setDetectedCity] = useState<string | null>(null);
   const autoLocated = useRef(false);
@@ -152,8 +154,28 @@ export default function EventsScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="events-screen">
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Eventi</Text>
-          <Text style={styles.subtitle}>La scena latina in tutta Italia</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Eventi</Text>
+            <Text style={styles.subtitle}>La scena latina in tutta Italia</Text>
+          </View>
+          <View style={styles.toggle}>
+            <TouchableOpacity
+              testID="view-list"
+              onPress={() => setView("list")}
+              style={[styles.toggleBtn, view === "list" && styles.toggleBtnActive]}
+            >
+              <Ionicons name="list" size={16} color={view === "list" ? "#fff" : colors.textSecondary} />
+              <Text style={[styles.toggleText, view === "list" && styles.toggleTextActive]}>Lista</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="view-map"
+              onPress={() => setView("map")}
+              style={[styles.toggleBtn, view === "map" && styles.toggleBtnActive]}
+            >
+              <Ionicons name="map" size={16} color={view === "map" ? "#fff" : colors.textSecondary} />
+              <Text style={[styles.toggleText, view === "map" && styles.toggleTextActive]}>Mappa</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search input */}
@@ -269,6 +291,8 @@ export default function EventsScreen() {
 
       {loading ? (
         <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
+      ) : view === "map" ? (
+        <EventsMap events={filteredEvents} />
       ) : (
         <FlatList
           data={filteredEvents}
@@ -334,7 +358,34 @@ export default function EventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 4 },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 4,
+    gap: 10,
+  },
+  toggle: {
+    flexDirection: "row",
+    backgroundColor: colors.bgTertiary,
+    borderRadius: radii.pill,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  toggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+  },
+  toggleBtnActive: { backgroundColor: colors.brand },
+  toggleText: { color: colors.textSecondary, fontSize: 12, fontWeight: "700" },
+  toggleTextActive: { color: "#fff" },
   title: { color: "#fff", fontSize: 34, fontWeight: "900", letterSpacing: -1 },
   subtitle: { color: colors.textSecondary, marginTop: 2 },
   searchWrap: {

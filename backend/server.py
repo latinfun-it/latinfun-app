@@ -373,6 +373,32 @@ async def create_playlist(payload: PlaylistCreate, current_user: dict = Depends(
     return p
 
 
+@api.put("/playlists/{playlist_id}", response_model=Playlist)
+async def update_playlist(
+    playlist_id: str,
+    payload: PlaylistCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can curate playlists")
+    existing = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    updated = {**existing, **payload.model_dump()}
+    await db.playlists.update_one({"id": playlist_id}, {"$set": payload.model_dump()})
+    return Playlist(**updated)
+
+
+@api.delete("/playlists/{playlist_id}")
+async def delete_playlist(playlist_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can curate playlists")
+    res = await db.playlists.delete_one({"id": playlist_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return {"ok": True}
+
+
 # ----------------------------- Schools -------------------------------
 def _slugify(value: str) -> str:
     base = "".join(c if c.isalnum() else "-" for c in value.lower()).strip("-")

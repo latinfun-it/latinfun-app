@@ -59,6 +59,14 @@ export default function ProfileScreen() {
             <Stat label="Mix salvati" value="0" />
           </View>
 
+          {user?.role === "admin" ? (
+            <MenuItem
+              icon="musical-notes-outline"
+              label="Gestisci playlist (admin)"
+              hint="Aggiungi, modifica, rimuovi le playlist curate"
+              onPress={() => router.push("/admin/playlists")}
+            />
+          ) : null}
           <MenuItem
             icon="school-outline"
             label="Registra la tua scuola"
