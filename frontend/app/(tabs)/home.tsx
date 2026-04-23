@@ -17,8 +17,7 @@ import { useRouter } from "expo-router";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
-import { usePlayer } from "../../src/player";
-import type { EventItem, DJ, Mix } from "../../src/types";
+import type { EventItem, DJ, Playlist } from "../../src/types";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -32,23 +31,22 @@ function formatDate(iso: string) {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { play, currentMix, toggle, isPlaying } = usePlayer();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [djs, setDjs] = useState<DJ[]>([]);
-  const [mixes, setMixes] = useState<Mix[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [e, d, m] = await Promise.all([
+      const [e, d, p] = await Promise.all([
         api.get<EventItem[]>("/events", { params: { featured: true } }),
         api.get<DJ[]>("/djs"),
-        api.get<Mix[]>("/mixes"),
+        api.get<Playlist[]>("/playlists"),
       ]);
       setEvents(e.data);
       setDjs(d.data);
-      setMixes(m.data);
+      setPlaylists(p.data);
     } catch (err) {
       // swallow for demo
     } finally {
@@ -67,7 +65,7 @@ export default function HomeScreen() {
   };
 
   const hero = events[0];
-  const topMix = mixes[0];
+  const topPlaylist = playlists.find((p) => p.featured) || playlists[0];
 
   if (loading) {
     return (
@@ -131,37 +129,28 @@ export default function HomeScreen() {
           <Text style={styles.greetSub}>Ecco cosa si muove nella scena questa settimana</Text>
         </View>
 
-        {/* Radio now playing widget */}
-        {topMix ? (
-          <View style={styles.radioWidget} testID="home-radio-widget">
-            <Image source={{ uri: topMix.cover_url }} style={styles.radioArt} />
+        {/* Featured playlist widget */}
+        {topPlaylist ? (
+          <TouchableOpacity
+            activeOpacity={0.92}
+            onPress={() => router.push(`/playlist/${topPlaylist.id}`)}
+            style={styles.radioWidget}
+            testID="home-playlist-widget"
+          >
+            <Image source={{ uri: topPlaylist.cover_url }} style={styles.radioArt} />
             <LinearGradient
               colors={["rgba(225,29,72,0.0)", "rgba(225,29,72,0.18)"]}
               style={StyleSheet.absoluteFill}
             />
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={styles.radioKicker}>RADIO - MEGA MIX</Text>
-              <Text style={styles.radioTitle} numberOfLines={1}>{topMix.title}</Text>
-              <Text style={styles.radioMeta}>di {topMix.dj_name} - {topMix.plays.toLocaleString("it-IT")} plays</Text>
+              <Text style={styles.radioKicker}>PLAYLIST DEL CURATORE</Text>
+              <Text style={styles.radioTitle} numberOfLines={1}>{topPlaylist.title}</Text>
+              <Text style={styles.radioMeta}>di {topPlaylist.curator} - {topPlaylist.platform}</Text>
             </View>
-            <TouchableOpacity
-              testID="home-radio-play"
-              style={styles.playBtn}
-              onPress={() => {
-                if (currentMix?.id === topMix.id) {
-                  toggle();
-                } else {
-                  play(topMix);
-                }
-              }}
-            >
-              <Ionicons
-                name={currentMix?.id === topMix.id && isPlaying ? "pause" : "play"}
-                size={22}
-                color="#fff"
-              />
-            </TouchableOpacity>
-          </View>
+            <View style={styles.playBtn}>
+              <Ionicons name="play" size={22} color="#fff" />
+            </View>
+          </TouchableOpacity>
         ) : null}
 
         {/* Featured events */}
@@ -229,28 +218,24 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* Latest mixes */}
-        <SectionHeader title="Nuovi mega mix" onSeeAll={() => router.push("/(tabs)/radio")} />
+        {/* Latest playlists */}
+        <SectionHeader title="Playlist scelte per voi" onSeeAll={() => router.push("/(tabs)/music")} />
         <View style={{ paddingHorizontal: spacing.lg, gap: 10 }}>
-          {mixes.slice(0, 3).map((m) => (
+          {playlists.slice(0, 3).map((m) => (
             <TouchableOpacity
               key={m.id}
-              testID={`home-mix-${m.id}`}
+              testID={`home-playlist-${m.id}`}
               style={styles.mixRow}
               activeOpacity={0.9}
-              onPress={() => play(m)}
+              onPress={() => router.push(`/playlist/${m.id}`)}
             >
               <Image source={{ uri: m.cover_url }} style={styles.mixImg} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.mixTitle} numberOfLines={1}>{m.title}</Text>
-                <Text style={styles.mixMeta} numberOfLines={1}>{m.dj_name} - {m.genre}</Text>
+                <Text style={styles.mixMeta} numberOfLines={1}>{m.curator} - {m.genre}</Text>
               </View>
               <View style={styles.mixPlay}>
-                <Ionicons
-                  name={currentMix?.id === m.id && isPlaying ? "pause" : "play"}
-                  size={18}
-                  color="#fff"
-                />
+                <Ionicons name="play" size={18} color="#fff" />
               </View>
             </TouchableOpacity>
           ))}

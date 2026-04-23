@@ -164,6 +164,32 @@ class Mix(BaseModel):
     description: Optional[str] = None
 
 
+class Playlist(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    cover_url: str
+    platform: str = "spotify"  # spotify | tidal | apple_music
+    embed_url: str  # https://open.spotify.com/embed/playlist/...
+    external_url: str  # https://open.spotify.com/playlist/...
+    curator: str = "Mauro Catalini"
+    genre: str  # bachata | reggaeton | salsa | latin
+    position: int = 0
+    featured: bool = False
+
+
+class PlaylistCreate(BaseModel):
+    title: str = Field(min_length=2, max_length=120)
+    description: str = Field(min_length=3, max_length=600)
+    cover_url: str
+    platform: str = "spotify"
+    embed_url: str
+    external_url: str
+    genre: str
+    position: int = 0
+    featured: bool = False
+
+
 class School(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -316,6 +342,35 @@ async def get_mix(mix_id: str):
     await db.mixes.update_one({"id": mix_id}, {"$inc": {"plays": 1}})
     doc["plays"] = doc.get("plays", 0) + 1
     return Mix(**doc)
+
+
+# ----------------------------- Playlists (Musica) -------------------
+@api.get("/playlists", response_model=List[Playlist])
+async def list_playlists(genre: Optional[str] = None, featured: Optional[bool] = None):
+    q: dict = {}
+    if genre and genre != "all":
+        q["genre"] = genre
+    if featured is not None:
+        q["featured"] = featured
+    docs = await db.playlists.find(q, {"_id": 0}).sort("position", 1).to_list(300)
+    return [Playlist(**d) for d in docs]
+
+
+@api.get("/playlists/{playlist_id}", response_model=Playlist)
+async def get_playlist(playlist_id: str):
+    doc = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return Playlist(**doc)
+
+
+@api.post("/playlists", response_model=Playlist)
+async def create_playlist(payload: PlaylistCreate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can curate playlists")
+    p = Playlist(**payload.model_dump(), curator=current_user["name"])
+    await db.playlists.insert_one(p.model_dump())
+    return p
 
 
 # ----------------------------- Schools -------------------------------
@@ -696,6 +751,66 @@ DEMO_SCHOOLS = [
 
 
 
+DEMO_PLAYLISTS = [
+    {
+        "title": "LatinHub Official - Mauro's Picks",
+        "description": "La playlist personale di Mauro Catalini: bachata, urban latin e reggaeton selezionati per la community LatinHub.",
+        "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
+        "platform": "spotify",
+        "embed_url": "https://open.spotify.com/embed/playlist/0ItuuWeQtp8f3XfsBrYnOe",
+        "external_url": "https://open.spotify.com/playlist/0ItuuWeQtp8f3XfsBrYnOe",
+        "genre": "latin",
+        "position": 1,
+        "featured": True,
+    },
+    {
+        "title": "Bachata Sensual 2026",
+        "description": "Le piu belle bachate del momento. Romeo Santos, Prince Royce, Daniel Santacruz e nuove promesse.",
+        "cover_url": "https://images.pexels.com/photos/14699922/pexels-photo-14699922.jpeg",
+        "platform": "spotify",
+        "embed_url": "https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva",
+        "external_url": "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva",
+        "genre": "bachata",
+        "position": 2,
+        "featured": True,
+    },
+    {
+        "title": "Reggaeton Fuego",
+        "description": "Il reggaeton che spacca le piste. Bad Bunny, J Balvin, Karol G, Maluma e tanto altro.",
+        "cover_url": "https://images.unsplash.com/photo-1547210841-2ceb0c5f0679",
+        "platform": "spotify",
+        "embed_url": "https://open.spotify.com/embed/playlist/37i9dQZF1DWY7IeIP1cdjF",
+        "external_url": "https://open.spotify.com/playlist/37i9dQZF1DWY7IeIP1cdjF",
+        "genre": "reggaeton",
+        "position": 3,
+        "featured": True,
+    },
+    {
+        "title": "Salsa Cubana Classica",
+        "description": "Tutto il sabor cubano. Los Van Van, Havana D'Primera, Pupy, Manolito Simonet.",
+        "cover_url": "https://images.pexels.com/photos/31055824/pexels-photo-31055824.jpeg",
+        "platform": "spotify",
+        "embed_url": "https://open.spotify.com/embed/playlist/37i9dQZF1DWYkaDif7Ztbp",
+        "external_url": "https://open.spotify.com/playlist/37i9dQZF1DWYkaDif7Ztbp",
+        "genre": "salsa",
+        "position": 4,
+        "featured": False,
+    },
+    {
+        "title": "Latin Pop Hits",
+        "description": "Le hit latin pop del 2026. Shakira, Rosalia, Rauw Alejandro, Peso Pluma.",
+        "cover_url": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
+        "platform": "spotify",
+        "embed_url": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVcbzTgVpNRm",
+        "external_url": "https://open.spotify.com/playlist/37i9dQZF1DWVcbzTgVpNRm",
+        "genre": "latin",
+        "position": 5,
+        "featured": False,
+    },
+]
+
+
+
 DEMO_MIXES = [
     {
         "title": "Bachata Sensual Mega Mix 2026",
@@ -793,6 +908,17 @@ async def seed_content():
     if await db.mixes.count_documents({}) == 0:
         await db.mixes.insert_many([Mix(**m).model_dump() for m in DEMO_MIXES])
         logger.info("Seeded mixes")
+    if await db.playlists.count_documents({}) == 0:
+        await db.playlists.insert_many([Playlist(**p).model_dump() for p in DEMO_PLAYLISTS])
+        logger.info("Seeded %d playlists", len(DEMO_PLAYLISTS))
+    else:
+        # idempotent refresh of curator playlists (keeps admin-curated URLs in sync with seed)
+        for p in DEMO_PLAYLISTS:
+            await db.playlists.update_one(
+                {"embed_url": p["embed_url"]},
+                {"$set": {k: v for k, v in p.items() if k in ("title", "description", "cover_url", "external_url", "genre", "position", "featured")}},
+                upsert=False,
+            )
     if await db.schools.count_documents({}) == 0:
         for s in DEMO_SCHOOLS:
             slug = _slugify(f"{s['name']}-{s['city']}")

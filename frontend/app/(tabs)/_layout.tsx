@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import MiniPlayer from "../../src/MiniPlayer";
 import { colors } from "../../src/theme";
 import { usePlayer } from "../../src/player";
@@ -61,16 +61,18 @@ export default function TabsLayout() {
           name="schools"
           options={{
             title: "Scuole",
-            tabBarIcon: ({ color }) => <TabIcon name="school" color={color} />,
+            tabBarIcon: ({ color }) => (
+              <MaterialCommunityIcons name="dance-ballroom" size={24} color={color} />
+            ),
             tabBarButtonTestID: "tab-schools",
           }}
         />
         <Tabs.Screen
-          name="radio"
+          name="music"
           options={{
-            title: "Radio",
-            tabBarIcon: ({ color }) => <TabIcon name="radio" color={color} />,
-            tabBarButtonTestID: "tab-radio",
+            title: "Musica",
+            tabBarIcon: ({ color }) => <TabIcon name="musical-notes" color={color} />,
+            tabBarButtonTestID: "tab-music",
           }}
         />
         <Tabs.Screen

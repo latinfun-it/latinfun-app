@@ -64,3 +64,17 @@ export type School = {
   verified_by_mauro: boolean;
   students: number;
 };
+
+export type Playlist = {
+  id: string;
+  title: string;
+  description: string;
+  cover_url: string;
+  platform: string;
+  embed_url: string;
+  external_url: string;
+  curator: string;
+  genre: string;
+  position: number;
+  featured: boolean;
+};
