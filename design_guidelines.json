@@ -1,0 +1,95 @@
+{
+  "theme": "dark",
+  "archetype": "5 (Jewel & Luxury)",
+  "vibe": "Cinematic, moody, premium nightlife. The 'Pulse of Latin Music in Italy'. Italian elegance mixed with Latin passion.",
+  "colors": {
+    "background": {
+      "primary": "#050505",
+      "secondary": "#111113",
+      "tertiary": "#1A1A1D",
+      "overlay": "rgba(5, 5, 5, 0.7)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#A1A1AA",
+      "accent": "#E11D48"
+    },
+    "brand": {
+      "primary": "#E11D48",
+      "secondary": "#F59E0B",
+      "tertiary": "#9333EA"
+    },
+    "border": {
+      "default": "rgba(255, 255, 255, 0.1)",
+      "focus": "#E11D48"
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444"
+    }
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-black tracking-tighter",
+      "h2": "text-2xl md:text-3xl font-bold tracking-tight",
+      "h3": "text-xl font-bold tracking-tight",
+      "body": "text-base font-normal leading-relaxed",
+      "caption": "text-xs font-medium tracking-[0.2em] uppercase text-zinc-400"
+    }
+  },
+  "layout_and_spacing": {
+    "container": "px-6",
+    "cards": "rounded-3xl p-6 bg-[#111113] border border-white/5",
+    "buttons": "rounded-full py-4 px-8 font-bold",
+    "bottom_tabs": "bg-[#050505]/90 border-t border-white/10 backdrop-blur-xl"
+  },
+  "components": {
+    "hero_banner": {
+      "style": "Full bleed image, height 60vh. Overlay: bg-gradient-to-t from-[#050505] via-[#050505]/50 to-transparent. Typography aligned bottom-left.",
+      "usage": "Home screen featured event or top DJ."
+    },
+    "event_card": {
+      "style": "Glassmorphism aesthetic. bg-[#111113] rounded-3xl border border-white/10 overflow-hidden. Large image top (h-48), content bottom. Subtle inner stroke.",
+      "hover_active": "Scale down slightly (0.98) on press."
+    },
+    "filter_pills": {
+      "style": "Horizontal scroll. Unselected: bg-[#1A1A1D] text-zinc-400 rounded-full px-6 py-2.5 border border-white/5. Selected: bg-[#E11D48] text-white font-bold.",
+      "usage": "Events screen to filter by genre (Salsa, Bachata, Reggaeton) and City."
+    },
+    "music_player": {
+      "style": "Full screen modal or sticky bottom bar. Large album art with intense drop-shadow (shadow-[0_0_40px_rgba(225,29,72,0.2)]). Circular play button bg-[#E11D48].",
+      "usage": "For mega mixes and radio."
+    },
+    "dj_profile": {
+      "style": "Overlapping layout. Header image takes top 35%. Avatar (rounded-full, border-4 border-[#050505], size 24) overlaps header. Stats displayed in bento-grid."
+    },
+    "input_fields": {
+      "style": "bg-[#111113] border border-white/10 rounded-2xl p-4 text-white placeholder-zinc-500 focus:border-[#E11D48]"
+    }
+  },
+  "media_urls": {
+    "hero_latin_party": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
+    "dancers_1": "https://images.unsplash.com/photo-1545959570-a94084071b5d",
+    "dj_founder": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
+    "dj_action": "https://images.unsplash.com/photo-1547210841-2ceb0c5f0679",
+    "club_lights": "https://images.pexels.com/photos/14699922/pexels-photo-14699922.jpeg",
+    "italian_city_night": "https://images.pexels.com/photos/31055824/pexels-photo-31055824.jpeg"
+  },
+  "instructions_to_main_agent": [
+    "Build standard React Native/Expo components. If using NativeWind, strictly follow the Tailwind utility classes provided.",
+    "Implement a deep dark theme. Do NOT use pure white backgrounds. Backgrounds must be #050505.",
+    "Ensure 'Outfit' and 'Manrope' fonts are loaded via expo-font. If not available, fallback to system fonts (SF Pro / Roboto) with bold weights for headings and regular for body.",
+    "The Home screen MUST feature a cinematic hero banner using 'dj_founder' or 'hero_latin_party' image overlaid with a dark gradient to ensure text readability.",
+    "Use standard Expo `<Image>` or `expo-image` for rich media rendering. Always ensure images have `contentFit='cover'`.",
+    "Use `react-native-webview` for Spotify/Tidal playlist embeds on the DJ profiles.",
+    "All interactive elements (buttons, filter pills, event cards) MUST include a 'testID' attribute (e.g., testID='login-button') for testing.",
+    "Bottom Tab Navigator should be dark (#050505) with a border-top of rgba(255,255,255,0.1). Active tab icons should be #E11D48.",
+    "Avoid generic card layouts. Opt for 'Bento-style' grids for DJ profiles and high-contrast, border-radius 24px (rounded-3xl) for event cards.",
+    "For the Radio Player, implement a floating sticky widget right above the bottom tab bar when playing, expandable to a full screen player.",
+    "Use generous padding (p-6, px-8) to ensure the UI feels breathable and high-end.",
+    "Apply `SafeAreaView` correctly to prevent content from bleeding into the notch on iOS devices."
+  ]
+}
