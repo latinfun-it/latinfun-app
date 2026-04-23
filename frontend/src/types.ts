@@ -44,3 +44,23 @@ export type Mix = {
   plays: number;
   description?: string;
 };
+
+export type School = {
+  id: string;
+  name: string;
+  slug: string;
+  city: string;
+  address: string;
+  bio: string;
+  image_url: string;
+  cover_url?: string;
+  styles: string[];
+  levels: string[];
+  phone?: string;
+  email?: string;
+  website?: string;
+  instagram?: string;
+  owner_id?: string;
+  verified_by_mauro: boolean;
+  students: number;
+};

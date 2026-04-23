@@ -164,6 +164,41 @@ class Mix(BaseModel):
     description: Optional[str] = None
 
 
+class School(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    slug: str
+    city: str
+    address: str
+    bio: str
+    image_url: str
+    cover_url: Optional[str] = None
+    styles: List[str] = []  # bachata, salsa, reggaeton, kizomba
+    levels: List[str] = []  # principianti, intermedio, avanzato
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
+    owner_id: Optional[str] = None
+    verified_by_mauro: bool = False
+    students: int = 0
+
+
+class SchoolCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    city: str = Field(min_length=2, max_length=60)
+    address: str = Field(min_length=3, max_length=160)
+    bio: str = Field(min_length=10, max_length=1200)
+    image_url: str
+    cover_url: Optional[str] = None
+    styles: List[str] = []
+    levels: List[str] = []
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
+
+
 # ----------------------------- Auth routes ---------------------------
 @api.post("/auth/register", response_model=AuthResponse)
 async def register(payload: UserRegister):
@@ -283,6 +318,53 @@ async def get_mix(mix_id: str):
     return Mix(**doc)
 
 
+# ----------------------------- Schools -------------------------------
+def _slugify(value: str) -> str:
+    base = "".join(c if c.isalnum() else "-" for c in value.lower()).strip("-")
+    while "--" in base:
+        base = base.replace("--", "-")
+    return base or "scuola"
+
+
+@api.get("/schools", response_model=List[School])
+async def list_schools(city: Optional[str] = None, style: Optional[str] = None):
+    q: dict = {}
+    if city:
+        q["city"] = city
+    if style and style != "all":
+        q["styles"] = style
+    docs = await db.schools.find(q, {"_id": 0}).sort("students", -1).to_list(500)
+    return [School(**d) for d in docs]
+
+
+@api.get("/schools/{school_id}", response_model=School)
+async def get_school(school_id: str):
+    doc = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="School not found")
+    return School(**doc)
+
+
+@api.post("/schools", response_model=School)
+async def create_school(payload: SchoolCreate, current_user: dict = Depends(get_current_user)):
+    slug = _slugify(f"{payload.name}-{payload.city}")
+    if await db.schools.find_one({"slug": slug}):
+        slug = f"{slug}-{uuid.uuid4().hex[:6]}"
+    school = School(
+        **payload.model_dump(),
+        slug=slug,
+        owner_id=current_user["id"],
+    )
+    await db.schools.insert_one(school.model_dump())
+    return school
+
+
+@api.get("/my/school", response_model=Optional[School])
+async def my_school(current_user: dict = Depends(get_current_user)):
+    doc = await db.schools.find_one({"owner_id": current_user["id"]}, {"_id": 0})
+    return School(**doc) if doc else None
+
+
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():
@@ -314,7 +396,7 @@ DEMO_DJS = [
         "image_url": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
         "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
         "instagram": "https://instagram.com/maurocatalini",
-        "spotify_playlist_url": "https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva",
+        "spotify_playlist_url": "https://open.spotify.com/embed/playlist/0ItuuWeQtp8f3XfsBrYnOe",
         "tidal_playlist_url": "https://tidal.com/browse/playlist/aa8f68f4-2e47-44ba-b6f8-6ee1b9b8c5c2",
         "verified_by_mauro": True,
         "followers": 48200,
@@ -530,6 +612,89 @@ def _make_events():
         },
     ]
 
+DEMO_SCHOOLS = [
+    {
+        "name": "Academia Salsa Milano",
+        "city": "Milano",
+        "address": "Via Padova 112, Milano",
+        "bio": "La prima academia di salsa cubana a Milano. Corsi principianti, intermedi e avanzati 7 giorni su 7. Maestri certificati dall'Havana.",
+        "image_url": "https://images.pexels.com/photos/1540338/pexels-photo-1540338.jpeg",
+        "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
+        "styles": ["salsa", "bachata", "cha-cha"],
+        "levels": ["principianti", "intermedio", "avanzato"],
+        "phone": "+39 02 1234567",
+        "email": "info@salsa-milano.it",
+        "website": "https://salsa-milano.it",
+        "instagram": "https://instagram.com/salsamilano",
+        "verified_by_mauro": True,
+        "students": 420,
+    },
+    {
+        "name": "Bachata Academy Roma",
+        "city": "Roma",
+        "address": "Via Prenestina 204, Roma",
+        "bio": "Specializzati in bachata sensual e moderna. Workshop con maestri dominicani ogni 2 mesi. Iscrizioni aperte tutto l'anno.",
+        "image_url": "https://images.pexels.com/photos/14699922/pexels-photo-14699922.jpeg",
+        "cover_url": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
+        "styles": ["bachata", "kizomba"],
+        "levels": ["principianti", "intermedio", "avanzato"],
+        "phone": "+39 06 9876543",
+        "email": "info@bachataroma.it",
+        "website": "https://bachataroma.it",
+        "instagram": "https://instagram.com/bachataroma",
+        "verified_by_mauro": True,
+        "students": 310,
+    },
+    {
+        "name": "Reggaeton Fire Napoli",
+        "city": "Napoli",
+        "address": "Via Toledo 85, Napoli",
+        "bio": "La scuola di reggaeton e dembow piu hot del sud Italia. Crew di competizione e lezioni drop-in ogni giorno.",
+        "image_url": "https://images.unsplash.com/photo-1547210841-2ceb0c5f0679",
+        "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
+        "styles": ["reggaeton", "dembow", "urban"],
+        "levels": ["principianti", "intermedio", "avanzato"],
+        "phone": "+39 081 2468135",
+        "email": "hello@reggaetonfire.it",
+        "instagram": "https://instagram.com/reggaetonfire",
+        "verified_by_mauro": False,
+        "students": 185,
+    },
+    {
+        "name": "Cuban Heat Bologna",
+        "city": "Bologna",
+        "address": "Via Zamboni 63, Bologna",
+        "bio": "Salsa cubana e rueda de casino in centro Bologna. Atmosfera calda e community fortissima.",
+        "image_url": "https://images.pexels.com/photos/31055824/pexels-photo-31055824.jpeg",
+        "cover_url": "https://images.pexels.com/photos/14699922/pexels-photo-14699922.jpeg",
+        "styles": ["salsa", "rueda", "cha-cha"],
+        "levels": ["principianti", "intermedio"],
+        "phone": "+39 051 123456",
+        "email": "ciao@cubanheat.it",
+        "website": "https://cubanheat.it",
+        "instagram": "https://instagram.com/cubanheatbo",
+        "verified_by_mauro": True,
+        "students": 155,
+    },
+    {
+        "name": "Latin Dance Torino",
+        "city": "Torino",
+        "address": "Corso Francia 321, Torino",
+        "bio": "Scuola multidisciplinare: salsa, bachata, kizomba, reggaeton. Open day ogni primo sabato del mese.",
+        "image_url": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
+        "cover_url": "https://images.pexels.com/photos/31055824/pexels-photo-31055824.jpeg",
+        "styles": ["salsa", "bachata", "kizomba", "reggaeton"],
+        "levels": ["principianti", "intermedio", "avanzato"],
+        "phone": "+39 011 7654321",
+        "email": "info@latindance-to.it",
+        "instagram": "https://instagram.com/latindanceto",
+        "verified_by_mauro": False,
+        "students": 240,
+    },
+]
+
+
+
 
 DEMO_MIXES = [
     {
@@ -612,12 +777,27 @@ async def seed_content():
     if await db.djs.count_documents({}) == 0:
         await db.djs.insert_many([DJ(**d).model_dump() for d in DEMO_DJS])
         logger.info("Seeded %d DJs", len(DEMO_DJS))
+    else:
+        # Keep verified DJs' playlist URLs in sync with the latest seed (idempotent refresh)
+        for d in DEMO_DJS:
+            await db.djs.update_one(
+                {"slug": d["slug"]},
+                {"$set": {
+                    "spotify_playlist_url": d.get("spotify_playlist_url"),
+                    "tidal_playlist_url": d.get("tidal_playlist_url"),
+                }},
+            )
     if await db.events.count_documents({}) == 0:
         await db.events.insert_many([Event(**e).model_dump() for e in _make_events()])
         logger.info("Seeded events")
     if await db.mixes.count_documents({}) == 0:
         await db.mixes.insert_many([Mix(**m).model_dump() for m in DEMO_MIXES])
         logger.info("Seeded mixes")
+    if await db.schools.count_documents({}) == 0:
+        for s in DEMO_SCHOOLS:
+            slug = _slugify(f"{s['name']}-{s['city']}")
+            await db.schools.insert_one(School(**s, slug=slug).model_dump())
+        logger.info("Seeded %d schools", len(DEMO_SCHOOLS))
 
 
 @app.on_event("startup")
@@ -626,6 +806,8 @@ async def on_startup():
     await db.events.create_index("city")
     await db.events.create_index("date")
     await db.djs.create_index("slug", unique=True)
+    await db.schools.create_index("slug", unique=True)
+    await db.schools.create_index("owner_id")
     await seed_admin()
     await seed_content()
 

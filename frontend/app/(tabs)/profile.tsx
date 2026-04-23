@@ -60,6 +60,12 @@ export default function ProfileScreen() {
           </View>
 
           <MenuItem
+            icon="school-outline"
+            label="Registra la tua scuola"
+            hint="Aumenta visibilita tra gli studenti latini"
+            onPress={() => router.push("/school/register")}
+          />
+          <MenuItem
             icon="notifications-outline"
             label="Notifiche smart"
             hint="Eventi vicino a te"
@@ -104,9 +110,24 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MenuItem({ icon, label, hint }: { icon: any; label: string; hint?: string }) {
+function MenuItem({
+  icon,
+  label,
+  hint,
+  onPress,
+}: {
+  icon: any;
+  label: string;
+  hint?: string;
+  onPress?: () => void;
+}) {
   return (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.8} testID={`menu-${label}`}>
+    <TouchableOpacity
+      style={styles.menuItem}
+      activeOpacity={0.8}
+      testID={`menu-${label}`}
+      onPress={onPress}
+    >
       <Ionicons name={icon} size={20} color={colors.textSecondary} />
       <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={styles.menuLabel}>{label}</Text>

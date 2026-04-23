@@ -58,6 +58,14 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="schools"
+          options={{
+            title: "Scuole",
+            tabBarIcon: ({ color }) => <TabIcon name="school" color={color} />,
+            tabBarButtonTestID: "tab-schools",
+          }}
+        />
+        <Tabs.Screen
           name="radio"
           options={{
             title: "Radio",

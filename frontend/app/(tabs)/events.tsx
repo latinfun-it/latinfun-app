@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,14 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import type { EventItem } from "../../src/types";
@@ -35,14 +39,26 @@ function formatDateLong(iso: string) {
   });
 }
 
+function normalize(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 export default function EventsScreen() {
   const router = useRouter();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [genre, setGenre] = useState("all");
   const [city, setCity] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
+  const [detectedCity, setDetectedCity] = useState<string | null>(null);
+  const autoLocated = useRef(false);
 
   const load = useCallback(async () => {
     const params: any = {};
@@ -61,13 +77,76 @@ export default function EventsScreen() {
     load();
   }, [load]);
 
+  // Auto-detect user's city on first mount (only once)
+  useEffect(() => {
+    if (autoLocated.current) return;
+    if (cities.length === 0) return;
+    autoLocated.current = true;
+    (async () => {
+      try {
+        if (Platform.OS === "web") return; // web geocoding handled differently, skip for MVP
+        setGeoStatus("loading");
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          setGeoStatus("denied");
+          return;
+        }
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const places = await Location.reverseGeocodeAsync({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+        const place = places[0];
+        const rawCity = place?.city || place?.subregion || place?.region;
+        if (!rawCity) {
+          setGeoStatus("ok");
+          return;
+        }
+        const match = cities.find(
+          (c) => normalize(c) === normalize(rawCity)
+        );
+        setDetectedCity(rawCity);
+        setGeoStatus("ok");
+        if (match && !city) {
+          setCity(match);
+        }
+      } catch {
+        setGeoStatus("denied");
+      }
+    })();
+  }, [cities, city]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
 
-  const cityOptions = useMemo(() => [null, ...cities], [cities]);
+  const filteredEvents = useMemo(() => {
+    if (!query.trim()) return events;
+    const q = normalize(query);
+    return events.filter(
+      (e) =>
+        normalize(e.title).includes(q) ||
+        normalize(e.city).includes(q) ||
+        normalize(e.venue).includes(q) ||
+        e.lineup.some((dj) => normalize(dj).includes(q))
+    );
+  }, [events, query]);
+
+  const citySuggestions = useMemo(() => {
+    const q = query.trim();
+    if (!q) return [];
+    const nq = normalize(q);
+    return cities.filter((c) => normalize(c).includes(nq)).slice(0, 6);
+  }, [cities, query]);
+
+  const pickCity = (c: string | null) => {
+    setCity(c);
+    setQuery("");
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="events-screen">
@@ -76,6 +155,95 @@ export default function EventsScreen() {
           <Text style={styles.title}>Eventi</Text>
           <Text style={styles.subtitle}>La scena latina in tutta Italia</Text>
         </View>
+
+        {/* Search input */}
+        <View style={styles.searchWrap}>
+          <Ionicons name="search" size={18} color={colors.textSecondary} />
+          <TextInput
+            testID="events-search"
+            placeholder="Cerca citta, evento, DJ..."
+            placeholderTextColor={colors.textMuted}
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (citySuggestions.length === 1) pickCity(citySuggestions[0]);
+            }}
+          />
+          {query.length > 0 ? (
+            <TouchableOpacity
+              testID="events-search-clear"
+              onPress={() => setQuery("")}
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        {/* Location banner */}
+        {city ? (
+          <View style={styles.locationBanner} testID="location-banner">
+            <Ionicons name="location" size={14} color={colors.brand} />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {detectedCity && normalize(detectedCity) === normalize(city)
+                ? `Vicino a te: ${city}`
+                : `Filtrando: ${city}`}
+            </Text>
+            <TouchableOpacity
+              testID="location-reset"
+              onPress={() => pickCity(null)}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : geoStatus === "loading" ? (
+          <View style={styles.locationBanner}>
+            <ActivityIndicator size="small" color={colors.brand} />
+            <Text style={styles.locationText}>Rilevo la tua posizione...</Text>
+          </View>
+        ) : geoStatus === "denied" ? (
+          <TouchableOpacity
+            testID="enable-location"
+            style={styles.locationBanner}
+            onPress={async () => {
+              if (Platform.OS === "web") {
+                Alert.alert("Attiva la posizione nel tuo browser e ricarica.");
+                return;
+              }
+              const { status } = await Location.requestForegroundPermissionsAsync();
+              if (status === "granted") {
+                autoLocated.current = false;
+                setGeoStatus("idle");
+              }
+            }}
+          >
+            <Ionicons name="locate" size={14} color={colors.gold} />
+            <Text style={styles.locationText}>Attiva posizione per vedere eventi vicini</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Search suggestions (cities) */}
+        {citySuggestions.length > 0 ? (
+          <View style={styles.suggestBox}>
+            <Text style={styles.suggestTitle}>Citta</Text>
+            {citySuggestions.map((c) => (
+              <TouchableOpacity
+                key={c}
+                testID={`suggest-${c}`}
+                style={styles.suggestRow}
+                onPress={() => pickCity(c)}
+              >
+                <Ionicons name="location-outline" size={16} color={colors.brand} />
+                <Text style={styles.suggestText}>{c}</Text>
+                <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
 
         {/* Genre pills */}
         <ScrollView
@@ -97,45 +265,31 @@ export default function EventsScreen() {
             );
           })}
         </ScrollView>
-
-        {/* City pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillsRow}
-        >
-          {cityOptions.map((c, idx) => {
-            const active = city === c;
-            const label = c ?? "Tutte le citta";
-            return (
-              <TouchableOpacity
-                key={`${c}-${idx}`}
-                testID={`city-${c ?? "all"}`}
-                onPress={() => setCity(c)}
-                style={[styles.pillCity, active && styles.pillCityActive]}
-              >
-                <Ionicons name="location" size={12} color={active ? "#fff" : colors.textSecondary} />
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
       </SafeAreaView>
 
       {loading ? (
         <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={events}
+          data={filteredEvents}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 180, paddingTop: spacing.md }}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.lg,
+            paddingBottom: 180,
+            paddingTop: spacing.md,
+          }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
           }
           ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
-            <View style={{ alignItems: "center", marginTop: 60 }}>
-              <Text style={{ color: colors.textSecondary }}>Nessun evento trovato</Text>
+            <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: spacing.lg }}>
+              <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
+              <Text style={styles.emptyText}>
+                Nessun evento trovato{query ? ` per "${query}"` : city ? ` a ${city}` : ""}
+              </Text>
+              <Text style={styles.emptySub}>Prova a cambiare filtro o citta</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -162,7 +316,8 @@ export default function EventsScreen() {
                 </Text>
                 <Text style={styles.cardDate}>{formatDateLong(item.date)}</Text>
                 <Text style={styles.cardVenue} numberOfLines={1}>
-                  <Ionicons name="location" size={11} color={colors.textSecondary} /> {item.venue}
+                  <Ionicons name="location" size={11} color={colors.textSecondary} />{" "}
+                  {item.venue}
                 </Text>
                 {item.lineup.length ? (
                   <Text style={styles.cardLineup} numberOfLines={1}>
@@ -179,10 +334,70 @@ export default function EventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 4 },
   title: { color: "#fff", fontSize: 34, fontWeight: "900", letterSpacing: -1 },
   subtitle: { color: colors.textSecondary, marginTop: 2 },
-  pillsRow: { paddingHorizontal: spacing.lg, paddingVertical: 8, gap: 8 },
+  searchWrap: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.bgSecondary,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#fff",
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  locationBanner: {
+    marginHorizontal: spacing.lg,
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.bgTertiary,
+    borderRadius: radii.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  locationText: { color: "#fff", fontSize: 12, fontWeight: "600", flex: 1 },
+  suggestBox: {
+    marginHorizontal: spacing.lg,
+    marginTop: 8,
+    backgroundColor: colors.bgSecondary,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  suggestTitle: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 2,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  suggestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  suggestText: { flex: 1, color: "#fff", fontWeight: "600" },
+  pillsRow: { paddingHorizontal: spacing.lg, paddingVertical: 10, gap: 8 },
   pill: {
     backgroundColor: colors.bgTertiary,
     paddingHorizontal: 18,
@@ -192,18 +407,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   pillActive: { backgroundColor: colors.brand, borderColor: colors.brand },
-  pillCity: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.bgTertiary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pillCityActive: { backgroundColor: colors.brand, borderColor: colors.brand },
   pillText: { color: colors.textSecondary, fontWeight: "700", fontSize: 13 },
   pillTextActive: { color: "#fff" },
   card: {
@@ -237,4 +440,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   featBadgeText: { color: colors.gold, fontSize: 10, fontWeight: "800" },
+  emptyText: { color: "#fff", marginTop: 14, fontSize: 15, fontWeight: "700", textAlign: "center" },
+  emptySub: { color: colors.textSecondary, marginTop: 4, fontSize: 12 },
 });

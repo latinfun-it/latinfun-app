@@ -46,7 +46,7 @@ export default function Login() {
   return (
     <View style={styles.root} testID="login-screen">
       <Image
-        source={{ uri: "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg" }}
+        source={{ uri: "https://images.pexels.com/photos/1540338/pexels-photo-1540338.jpeg" }}
         style={styles.bg}
       />
       <LinearGradient
