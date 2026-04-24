@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -42,6 +42,14 @@ export default function DjsScreen() {
     await load();
     setRefreshing(false);
   };
+
+  // Top 3 DJ ranking by followers (raw, ignoring boost sort)
+  const topRank = useMemo(() => {
+    const sorted = [...djs].sort((a, b) => (b.followers || 0) - (a.followers || 0));
+    const m = new Map<string, number>();
+    sorted.slice(0, 3).forEach((d, i) => m.set(d.id, i + 1));
+    return m;
+  }, [djs]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="djs-screen">
@@ -96,36 +104,56 @@ export default function DjsScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              testID={`dj-card-${item.id}`}
-              style={styles.card}
-              activeOpacity={0.9}
-              onPress={() => router.push(`/dj/${item.id}`)}
-            >
-              <Image source={{ uri: item.image_url }} style={styles.img} />
-              <LinearGradient
-                colors={["transparent", "rgba(5,5,5,0.9)"]}
-                style={styles.grad}
-              />
-              {item.verified_by_mauro ? (
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark-circle" size={13} color={colors.gold} />
+          renderItem={({ item }) => {
+            const rank = topRank.get(item.id);
+            const rankColor =
+              rank === 1 ? "#FFD700" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : null;
+            return (
+              <TouchableOpacity
+                testID={`dj-card-${item.id}`}
+                style={styles.card}
+                activeOpacity={0.9}
+                onPress={() => router.push(`/dj/${item.id}`)}
+              >
+                <Image source={{ uri: item.image_url }} style={styles.img} />
+                <LinearGradient
+                  colors={["transparent", "rgba(5,5,5,0.9)"]}
+                  style={styles.grad}
+                />
+                {rank ? (
+                  <View
+                    style={[styles.rankBadge, { backgroundColor: rankColor || colors.gold }]}
+                    testID={`dj-rank-${item.id}`}
+                  >
+                    <Ionicons name="trophy" size={11} color="#050505" />
+                    <Text style={styles.rankText}>TOP {rank}</Text>
+                  </View>
+                ) : null}
+                {item.boosted ? (
+                  <View style={styles.boostedCorner}>
+                    <Ionicons name="flame" size={11} color="#050505" />
+                    <Text style={styles.boostedText}>BOOST</Text>
+                  </View>
+                ) : null}
+                {item.verified_by_mauro ? (
+                  <View style={styles.verifiedBadge}>
+                    <Ionicons name="checkmark-circle" size={13} color={colors.gold} />
+                  </View>
+                ) : null}
+                <View style={styles.body}>
+                  <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.city}>{item.city}</Text>
+                  <View style={styles.genres}>
+                    {item.genres.slice(0, 2).map((g) => (
+                      <View key={g} style={styles.genreTag}>
+                        <Text style={styles.genreTagText}>{g}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              ) : null}
-              <View style={styles.body}>
-                <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.city}>{item.city}</Text>
-                <View style={styles.genres}>
-                  {item.genres.slice(0, 2).map((g) => (
-                    <View key={g} style={styles.genreTag}>
-                      <Text style={styles.genreTagText}>{g}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </View>
@@ -172,6 +200,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gold,
   },
+  rankBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  rankText: { color: "#050505", fontSize: 10, fontWeight: "900", letterSpacing: 0.5 },
+  boostedCorner: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: colors.gold,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    zIndex: 2,
+  },
+  boostedText: { color: "#050505", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
   body: { position: "absolute", bottom: 12, left: 12, right: 12 },
   name: { color: "#fff", fontWeight: "800", fontSize: 16 },
   city: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },

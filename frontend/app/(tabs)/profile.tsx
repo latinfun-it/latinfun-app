@@ -193,6 +193,12 @@ export default function ProfileScreen() {
           <Text style={styles.sectionLabel}>PREFERENZE</Text>
 
           <MenuItem
+            icon="heart-outline"
+            label="I miei preferiti"
+            hint="DJ seguiti ed eventi salvati"
+            onPress={() => router.push("/favorites")}
+          />
+          <MenuItem
             icon="notifications-outline"
             label="Notifiche smart"
             hint="Eventi vicino a te"
