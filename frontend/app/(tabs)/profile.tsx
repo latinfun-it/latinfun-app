@@ -90,12 +90,20 @@ export default function ProfileScreen() {
           </View>
 
           {user?.role === "admin" ? (
-            <MenuItem
-              icon="musical-notes-outline"
-              label="Gestisci playlist (admin)"
-              hint="Aggiungi, modifica, rimuovi le playlist curate"
-              onPress={() => router.push("/admin/playlists")}
-            />
+            <>
+              <MenuItem
+                icon="people-outline"
+                label="Utenti registrati (admin)"
+                hint="Elenco, export CSV, notifiche broadcast"
+                onPress={() => router.push("/admin/users")}
+              />
+              <MenuItem
+                icon="musical-notes-outline"
+                label="Gestisci playlist (admin)"
+                hint="Aggiungi, modifica, rimuovi le playlist curate"
+                onPress={() => router.push("/admin/playlists")}
+              />
+            </>
           ) : null}
 
           <Text style={styles.sectionLabel}>LA TUA PRESENZA</Text>

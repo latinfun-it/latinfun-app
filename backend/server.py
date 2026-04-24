@@ -16,6 +16,7 @@ import bcrypt
 import httpx
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi.responses import Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -292,6 +293,127 @@ async def me(current_user: dict = Depends(get_current_user)):
 @api.post("/auth/logout")
 async def logout(current_user: dict = Depends(get_current_user)):
     return {"ok": True}
+
+
+# ----------------------------- Admin (users) ------------------------
+def _require_admin(current_user: dict):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo l'admin puo accedere a questa area")
+
+
+class AdminUserOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    created_at: Optional[datetime] = None
+    has_push_token: bool = False
+    notifications_enabled: bool = False
+    notifications_radius_km: Optional[int] = None
+    city: Optional[str] = None
+    has_location: bool = False
+
+
+class BroadcastIn(BaseModel):
+    title: str = Field(min_length=2, max_length=80)
+    body: str = Field(min_length=2, max_length=240)
+    city: Optional[str] = None
+    only_with_notifications: bool = True
+
+
+@api.get("/admin/users", response_model=List[AdminUserOut])
+async def admin_list_users(
+    q: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    query: dict = {}
+    if q:
+        query = {
+            "$or": [
+                {"email": {"$regex": q, "$options": "i"}},
+                {"name": {"$regex": q, "$options": "i"}},
+            ]
+        }
+    docs = await db.users.find(query, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    out: List[AdminUserOut] = []
+    for d in docs:
+        out.append(AdminUserOut(
+            id=d.get("id", ""),
+            name=d.get("name", ""),
+            email=d.get("email", ""),
+            role=d.get("role", "user"),
+            created_at=d.get("created_at"),
+            has_push_token=bool(d.get("push_token")),
+            notifications_enabled=bool(d.get("notifications_enabled")),
+            notifications_radius_km=d.get("notifications_radius_km"),
+            city=d.get("city"),
+            has_location=d.get("latitude") is not None and d.get("longitude") is not None,
+        ))
+    return out
+
+
+@api.get("/admin/users/export.csv")
+async def admin_export_users_csv(current_user: dict = Depends(get_current_user)):
+    _require_admin(current_user)
+    docs = await db.users.find({}, {"_id": 0}).sort("created_at", -1).to_list(5000)
+
+    def _csv_escape(v) -> str:
+        if v is None:
+            return ""
+        s = str(v)
+        if any(c in s for c in [",", '"', "\n", "\r"]):
+            s = '"' + s.replace('"', '""') + '"'
+        return s
+
+    header = [
+        "id", "name", "email", "role", "created_at", "has_push_token",
+        "notifications_enabled", "radius_km", "city", "has_location",
+    ]
+    lines = [",".join(header)]
+    for d in docs:
+        row = [
+            d.get("id", ""),
+            d.get("name", ""),
+            d.get("email", ""),
+            d.get("role", "user"),
+            d.get("created_at").isoformat() if d.get("created_at") else "",
+            "yes" if d.get("push_token") else "no",
+            "yes" if d.get("notifications_enabled") else "no",
+            d.get("notifications_radius_km") or "",
+            d.get("city") or "",
+            "yes" if (d.get("latitude") is not None and d.get("longitude") is not None) else "no",
+        ]
+        lines.append(",".join(_csv_escape(v) for v in row))
+    body = "\n".join(lines) + "\n"
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    return Response(
+        content=body,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="latinhub_users_{stamp}.csv"',
+        },
+    )
+
+
+@api.post("/admin/broadcast")
+async def admin_broadcast(
+    payload: BroadcastIn,
+    current_user: dict = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    q: dict = {"push_token": {"$ne": None, "$exists": True}}
+    if payload.only_with_notifications:
+        q["notifications_enabled"] = True
+    if payload.city:
+        q["city"] = payload.city
+    cursor = db.users.find(q, {"_id": 0, "push_token": 1})
+    tokens: List[str] = [d["push_token"] async for d in cursor if d.get("push_token")]
+    if tokens:
+        asyncio.create_task(
+            _send_expo_push(tokens, payload.title, payload.body, {"broadcast": True})
+        )
+    return {"ok": True, "recipients": len(tokens)}
 
 
 # ----------------------------- Notifications ------------------------
