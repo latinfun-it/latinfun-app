@@ -200,6 +200,11 @@ function Editor({
       setError("URL Spotify non valido. Usa il formato open.spotify.com/playlist/xxxxx");
       return;
     }
+    const cleanGenre = genre.trim().toLowerCase();
+    if (cleanGenre.length < 2) {
+      setError("Scegli un genere (preset) o digita un genere custom (min 2 caratteri)");
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -209,7 +214,7 @@ function Editor({
         platform: "spotify",
         embed_url: parsed.embed,
         external_url: parsed.external,
-        genre,
+        genre: cleanGenre,
         position: parseInt(position || "0", 10) || 0,
         featured,
       };

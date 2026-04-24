@@ -150,6 +150,7 @@ class Event(BaseModel):
     organizer: str
     featured: bool = False
     boosted: bool = False
+    boosted_until: Optional[datetime] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     owner_id: Optional[str] = None
@@ -321,11 +322,26 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
 
 
 # ----------------------------- Payments / BOOST ----------------------
-BOOST_PRICE = float(os.environ.get("BOOST_PRICE_EUR", "9.99"))
+# Fixed server-side pricing catalog (never trust client-provided amounts).
+BOOST_PACKAGES: dict = {
+    "week":         {"days": 7,   "price": 4.99,  "label": "1 settimana"},
+    "month":        {"days": 30,  "price": 14.99, "label": "1 mese"},
+    "three_months": {"days": 90,  "price": 34.99, "label": "3 mesi"},
+    "six_months":   {"days": 180, "price": 59.99, "label": "6 mesi"},
+    "year":         {"days": 365, "price": 99.99, "label": "1 anno"},
+}
 
 
 class BoostRequest(BaseModel):
     origin_url: str
+    package: str = "week"
+
+
+class BoostPackage(BaseModel):
+    key: str
+    days: int
+    price: float
+    label: str
 
 
 class CheckoutStatusOut(BaseModel):
@@ -336,6 +352,7 @@ class CheckoutStatusOut(BaseModel):
     metadata: dict
     event_id: Optional[str] = None
     boosted: bool = False
+    boosted_until: Optional[datetime] = None
 
 
 def _stripe_client(http_request: Request) -> StripeCheckout:
@@ -344,6 +361,11 @@ def _stripe_client(http_request: Request) -> StripeCheckout:
         api_key=os.environ["STRIPE_API_KEY"],
         webhook_url=f"{host}/api/webhook/stripe",
     )
+
+
+@api.get("/boost/packages", response_model=List[BoostPackage])
+async def list_boost_packages():
+    return [BoostPackage(key=k, **v) for k, v in BOOST_PACKAGES.items()]
 
 
 @api.post("/events/{event_id}/boost")
@@ -356,9 +378,13 @@ async def boost_event(
     ev = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found")
-    # only owner or admin can boost
     if ev.get("owner_id") and ev["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Solo l'organizzatore o l'admin puo promuovere l'evento")
+
+    pkg_key = payload.package
+    if pkg_key not in BOOST_PACKAGES:
+        raise HTTPException(status_code=400, detail=f"Pacchetto non valido: {pkg_key}")
+    pkg = BOOST_PACKAGES[pkg_key]
 
     origin = payload.origin_url.rstrip("/")
     success_url = f"{origin}/boost-success?session_id={{CHECKOUT_SESSION_ID}}"
@@ -367,29 +393,46 @@ async def boost_event(
         "event_id": event_id,
         "user_id": current_user["id"],
         "purpose": "boost_event",
+        "package": pkg_key,
+        "days": str(pkg["days"]),
     }
     stripe = _stripe_client(http_request)
     req = CheckoutSessionRequest(
-        amount=BOOST_PRICE,
+        amount=pkg["price"],
         currency="eur",
         success_url=success_url,
         cancel_url=cancel_url,
         metadata=metadata,
     )
     session = await stripe.create_checkout_session(req)
-    # MANDATORY: record pending transaction before returning
     await db.payment_transactions.insert_one({
         "session_id": session.session_id,
         "user_id": current_user["id"],
         "event_id": event_id,
-        "amount": BOOST_PRICE,
+        "amount": pkg["price"],
         "currency": "eur",
         "status": "initiated",
         "payment_status": "pending",
         "metadata": metadata,
+        "package": pkg_key,
+        "days": pkg["days"],
         "created_at": datetime.now(timezone.utc),
     })
-    return {"checkout_url": session.url, "session_id": session.session_id, "amount": BOOST_PRICE, "currency": "eur"}
+    return {
+        "checkout_url": session.url,
+        "session_id": session.session_id,
+        "amount": pkg["price"],
+        "currency": "eur",
+        "package": pkg_key,
+        "days": pkg["days"],
+        "label": pkg["label"],
+    }
+
+
+def _apply_boost_if_paid(tx: dict) -> Optional[datetime]:
+    """Return new boosted_until datetime if a paid tx should upgrade the event."""
+    days = int(tx.get("days") or tx.get("metadata", {}).get("days") or 7)
+    return datetime.now(timezone.utc) + timedelta(days=days)
 
 
 @api.get("/payments/status/{session_id}", response_model=CheckoutStatusOut)
@@ -402,10 +445,6 @@ async def payment_status(session_id: str, http_request: Request):
     try:
         status = await stripe.get_checkout_status(session_id)
     except Exception as e:
-        # Stripe may not yet have the session available (eventual consistency) or
-        # the emergent proxy may surface a transient error. Fall back to cached state
-        # so the frontend polling loop stays smooth; the webhook will flip `boosted`
-        # to true as soon as the real payment succeeds.
         logger.warning("Stripe get_checkout_status failed for %s: %s", session_id, e)
         return CheckoutStatusOut(
             status=tx.get("status", "initiated"),
@@ -415,26 +454,28 @@ async def payment_status(session_id: str, http_request: Request):
             metadata=tx.get("metadata") or {},
             event_id=tx.get("event_id"),
             boosted=tx.get("payment_status") == "paid",
+            boosted_until=tx.get("boosted_until"),
         )
 
-    # idempotent: apply boost exactly once
     already_paid = tx.get("payment_status") == "paid"
     update_fields = {
         "status": status.status,
         "payment_status": status.payment_status,
         "updated_at": datetime.now(timezone.utc),
     }
+    boosted_until = tx.get("boosted_until")
     if status.payment_status == "paid" and not already_paid:
-        await db.payment_transactions.update_one(
-            {"session_id": session_id}, {"$set": update_fields}
-        )
+        boosted_until = _apply_boost_if_paid(tx)
+        update_fields["boosted_until"] = boosted_until
+        await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
         event_id = tx.get("event_id")
         if event_id:
-            await db.events.update_one({"id": event_id}, {"$set": {"boosted": True}})
+            await db.events.update_one(
+                {"id": event_id},
+                {"$set": {"boosted": True, "boosted_until": boosted_until}},
+            )
     else:
-        await db.payment_transactions.update_one(
-            {"session_id": session_id}, {"$set": update_fields}
-        )
+        await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
 
     return CheckoutStatusOut(
         status=status.status,
@@ -444,6 +485,7 @@ async def payment_status(session_id: str, http_request: Request):
         metadata=status.metadata or {},
         event_id=tx.get("event_id"),
         boosted=status.payment_status == "paid",
+        boosted_until=boosted_until,
     )
 
 
@@ -459,17 +501,22 @@ async def stripe_webhook(http_request: Request):
     if event.payment_status == "paid":
         tx = await db.payment_transactions.find_one({"session_id": event.session_id})
         if tx and tx.get("payment_status") != "paid":
+            boosted_until = _apply_boost_if_paid(tx)
             await db.payment_transactions.update_one(
                 {"session_id": event.session_id},
                 {"$set": {
                     "status": "complete",
                     "payment_status": "paid",
+                    "boosted_until": boosted_until,
                     "updated_at": datetime.now(timezone.utc),
                 }},
             )
             event_id = tx.get("event_id")
             if event_id:
-                await db.events.update_one({"id": event_id}, {"$set": {"boosted": True}})
+                await db.events.update_one(
+                    {"id": event_id},
+                    {"$set": {"boosted": True, "boosted_until": boosted_until}},
+                )
     return {"ok": True}
 
 

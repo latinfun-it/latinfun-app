@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,6 +38,8 @@ export default function EventDetail() {
   const [ev, setEv] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [boostLoading, setBoostLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [packages, setPackages] = useState<{ key: string; days: number; price: number; label: string }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +50,7 @@ export default function EventDetail() {
         setLoading(false);
       }
     })();
+    api.get("/boost/packages").then((r) => setPackages(r.data)).catch(() => {});
   }, [id]);
 
   if (loading) {
@@ -67,15 +71,16 @@ export default function EventDetail() {
   const canBoost =
     !!user && !ev.boosted && (ev.owner_id === user.id || user.role === "admin");
 
-  const onBoost = async () => {
+  const onBoost = async (pkgKey: string) => {
     setBoostLoading(true);
     try {
       const origin =
         Platform.OS === "web"
           ? (typeof window !== "undefined" ? window.location.origin : "")
           : (process.env.EXPO_PUBLIC_BACKEND_URL || "");
-      const r = await api.post(`/events/${ev.id}/boost`, { origin_url: origin });
+      const r = await api.post(`/events/${ev.id}/boost`, { origin_url: origin, package: pkgKey });
       const url = r.data.checkout_url as string;
+      setPickerOpen(false);
       if (Platform.OS === "web" && typeof window !== "undefined") {
         window.location.href = url;
       } else {
@@ -152,6 +157,41 @@ export default function EventDetail() {
             <Text style={styles.desc}>{ev.description}</Text>
           </View>
 
+          {canBoost ? (
+            <View style={styles.boostBanner}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.boostKicker}>BOOST - DA 4,99 EUR</Text>
+                <Text style={styles.boostDesc}>
+                  Promuovi questo evento: appare in cima alla lista con badge BOOST per la
+                  durata scelta (1 settimana, 1 mese, 3/6 mesi o 1 anno).
+                </Text>
+              </View>
+              <TouchableOpacity
+                testID="boost-btn"
+                style={styles.boostInline}
+                activeOpacity={0.9}
+                onPress={() => setPickerOpen(true)}
+                disabled={boostLoading}
+              >
+                {boostLoading ? (
+                  <ActivityIndicator color="#050505" />
+                ) : (
+                  <>
+                    <Ionicons name="flame" size={16} color="#050505" />
+                    <Text style={styles.boostInlineText}>Promuovi</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {ev.boosted ? (
+            <View style={styles.boostedBadge} testID="boosted-badge">
+              <Ionicons name="flame" size={14} color={colors.gold} />
+              <Text style={styles.boostedText}>EVENTO GIA PROMOSSO</Text>
+            </View>
+          ) : null}
+
           {ev.ticket_url ? (
             <TouchableOpacity
               testID="ticket-btn"
@@ -163,34 +203,64 @@ export default function EventDetail() {
               <Text style={styles.ticketText}>Prevendita & biglietti</Text>
             </TouchableOpacity>
           ) : null}
-
-          {canBoost ? (
-            <TouchableOpacity
-              testID="boost-btn"
-              style={styles.boostBtn}
-              activeOpacity={0.9}
-              onPress={onBoost}
-              disabled={boostLoading}
-            >
-              {boostLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="flame" size={18} color="#fff" />
-                  <Text style={styles.ticketText}>Promuovi (BOOST) - 9,99 EUR</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          ) : null}
-
-          {ev.boosted ? (
-            <View style={styles.boostedBadge} testID="boosted-badge">
-              <Ionicons name="flame" size={14} color={colors.gold} />
-              <Text style={styles.boostedText}>EVENTO PROMOSSO</Text>
-            </View>
-          ) : null}
         </View>
       </ScrollView>
+
+      <Modal visible={pickerOpen} animationType="slide" transparent onRequestClose={() => setPickerOpen(false)}>
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setPickerOpen(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Scegli il pacchetto BOOST</Text>
+            <Text style={styles.sheetSub}>
+              Prezzo unico, niente rinnovi automatici. Paghi una volta, il tuo evento resta in evidenza
+              per la durata scelta.
+            </Text>
+            {packages.map((p) => {
+              const perDay = p.price / p.days;
+              const best = p.key === "six_months";
+              return (
+                <TouchableOpacity
+                  key={p.key}
+                  testID={`boost-pkg-${p.key}`}
+                  style={[styles.pkgRow, best && styles.pkgRowBest]}
+                  activeOpacity={0.85}
+                  disabled={boostLoading}
+                  onPress={() => onBoost(p.key)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={styles.pkgLabel}>{p.label}</Text>
+                      {best ? (
+                        <View style={styles.bestBadge}>
+                          <Text style={styles.bestBadgeText}>MIGLIORE OFFERTA</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={styles.pkgMeta}>
+                      {p.days} giorni - {perDay.toFixed(2).replace(".", ",")} EUR/giorno
+                    </Text>
+                  </View>
+                  <Text style={styles.pkgPrice}>
+                    {p.price.toFixed(2).replace(".", ",")} EUR
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            {boostLoading ? <ActivityIndicator color={colors.gold} style={{ marginTop: 12 }} /> : null}
+            <TouchableOpacity
+              testID="boost-close"
+              onPress={() => setPickerOpen(false)}
+              style={styles.sheetCancel}
+            >
+              <Text style={styles.sheetCancelText}>Annulla</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -266,6 +336,29 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   ticketText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  boostBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "rgba(245,158,11,0.10)",
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: radii.md,
+    padding: 14,
+    marginBottom: 4,
+  },
+  boostKicker: { color: colors.gold, fontSize: 11, fontWeight: "800", letterSpacing: 1.5 },
+  boostDesc: { color: "#fff", fontSize: 12, marginTop: 4, lineHeight: 17 },
+  boostInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.gold,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
+  },
+  boostInlineText: { color: "#050505", fontWeight: "900", fontSize: 13 },
   boostBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -275,11 +368,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingVertical: 16,
     marginTop: 8,
-    shadowColor: "#F59E0B",
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 10,
   },
   boostedBadge: {
     flexDirection: "row",
@@ -294,4 +382,59 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(245,158,11,0.08)",
   },
   boostedText: { color: colors.gold, fontWeight: "800", letterSpacing: 1 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: colors.bgSecondary,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: spacing.lg,
+    paddingTop: 10,
+    paddingBottom: 28,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 44,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: "#333",
+    marginBottom: 14,
+  },
+  sheetTitle: { color: "#fff", fontSize: 20, fontWeight: "900", letterSpacing: -0.3 },
+  sheetSub: { color: colors.textSecondary, fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 14 },
+  pkgRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.bgTertiary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: 14,
+    marginBottom: 10,
+  },
+  pkgRowBest: {
+    borderColor: colors.gold,
+    backgroundColor: "rgba(245,158,11,0.08)",
+  },
+  pkgLabel: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  pkgMeta: { color: colors.textSecondary, fontSize: 11, marginTop: 3 },
+  pkgPrice: { color: colors.gold, fontSize: 16, fontWeight: "900", marginLeft: 12 },
+  bestBadge: {
+    backgroundColor: colors.gold,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  bestBadgeText: { color: "#050505", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
+  sheetCancel: {
+    alignItems: "center",
+    paddingVertical: 12,
+    marginTop: 6,
+  },
+  sheetCancelText: { color: colors.textSecondary, fontWeight: "700", fontSize: 14 },
 });
