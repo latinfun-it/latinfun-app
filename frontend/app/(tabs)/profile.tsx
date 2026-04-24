@@ -68,6 +68,12 @@ export default function ProfileScreen() {
             />
           ) : null}
           <MenuItem
+            icon="disc-outline"
+            label="Registra il tuo profilo DJ"
+            hint="Crea la tua pagina artista"
+            onPress={() => router.push("/dj/register")}
+          />
+          <MenuItem
             icon="school-outline"
             label="Registra la tua scuola"
             hint="Aumenta visibilita tra gli studenti latini"

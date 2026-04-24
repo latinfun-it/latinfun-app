@@ -25,18 +25,18 @@ function buildHtml(events: EventItem[]): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  html, body, #map { margin:0; padding:0; height:100%; width:100%; background:#050505; }
-  .leaflet-container { background:#0a0a0c; }
-  .leaflet-popup-content-wrapper { background:#111113; color:#fff; border-radius:12px; border:1px solid rgba(255,255,255,.12); box-shadow:0 8px 24px rgba(225,29,72,.2); }
+  html, body, #map { margin:0; padding:0; height:100%; width:100%; background:#eef4f7; }
+  .leaflet-container { background:#eef4f7; }
+  .leaflet-popup-content-wrapper { background:#111113; color:#fff; border-radius:12px; border:1px solid rgba(255,255,255,.15); box-shadow:0 8px 24px rgba(225,29,72,.3); }
   .leaflet-popup-tip { background:#111113; }
   .leaflet-popup-content { margin:10px 14px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
   .lh-pop-title { font-weight:800; font-size:14px; margin-bottom:4px; }
   .lh-pop-meta { color:#A1A1AA; font-size:12px; margin-bottom:2px; }
   .lh-pop-cta { display:inline-block; background:#E11D48; color:#fff; font-weight:800; padding:6px 12px; border-radius:999px; font-size:12px; text-decoration:none; margin-top:6px; }
-  .lh-marker { background:#E11D48; width:28px; height:28px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:13px; border:2px solid #fff; box-shadow:0 4px 12px rgba(225,29,72,.55); }
-  .leaflet-control-attribution { background:rgba(0,0,0,.55); color:#999; }
+  .lh-marker { background:#E11D48; width:32px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; border:3px solid #fff; box-shadow:0 6px 14px rgba(225,29,72,.55); }
+  .leaflet-control-attribution { background:rgba(255,255,255,.85); color:#444; }
   .leaflet-control-attribution a { color:#E11D48; }
-  .leaflet-control-zoom a { background:#1A1A1D !important; color:#fff !important; border-color:rgba(255,255,255,.12) !important; }
+  .leaflet-control-zoom a { background:#ffffff !important; color:#111 !important; border-color:rgba(0,0,0,.15) !important; }
 </style>
 </head>
 <body>
@@ -45,9 +45,10 @@ function buildHtml(events: EventItem[]): string {
 <script>
   const events = ${dataJson};
   const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([42.5, 12.5], 5.5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OSM &copy; CARTO',
-    maxZoom: 19
+    maxZoom: 19,
+    subdomains: 'abcd'
   }).addTo(map);
   const icon = L.divIcon({ className: '', html: '<div class="lh-marker">♪</div>', iconSize: [28,28], iconAnchor:[14,14] });
   const bounds = [];

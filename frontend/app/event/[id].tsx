@@ -9,6 +9,7 @@ import {
   Linking,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useAuth } from "../../src/auth";
 import type { EventItem } from "../../src/types";
 
 function fmt(iso: string) {
@@ -31,8 +33,10 @@ function fmt(iso: string) {
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [ev, setEv] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [boostLoading, setBoostLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +63,30 @@ export default function EventDetail() {
       </View>
     );
   }
+
+  const canBoost =
+    !!user && !ev.boosted && (ev.owner_id === user.id || user.role === "admin");
+
+  const onBoost = async () => {
+    setBoostLoading(true);
+    try {
+      const origin =
+        Platform.OS === "web"
+          ? (typeof window !== "undefined" ? window.location.origin : "")
+          : (process.env.EXPO_PUBLIC_BACKEND_URL || "");
+      const r = await api.post(`/events/${ev.id}/boost`, { origin_url: origin });
+      const url = r.data.checkout_url as string;
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = url;
+      } else {
+        await Linking.openURL(url);
+      }
+    } catch (e: any) {
+      Alert.alert("Errore", e?.response?.data?.detail || e.message);
+    } finally {
+      setBoostLoading(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="event-detail">
@@ -134,6 +162,32 @@ export default function EventDetail() {
               <Ionicons name="ticket" size={18} color="#fff" />
               <Text style={styles.ticketText}>Prevendita & biglietti</Text>
             </TouchableOpacity>
+          ) : null}
+
+          {canBoost ? (
+            <TouchableOpacity
+              testID="boost-btn"
+              style={styles.boostBtn}
+              activeOpacity={0.9}
+              onPress={onBoost}
+              disabled={boostLoading}
+            >
+              {boostLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="flame" size={18} color="#fff" />
+                  <Text style={styles.ticketText}>Promuovi (BOOST) - 9,99 EUR</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : null}
+
+          {ev.boosted ? (
+            <View style={styles.boostedBadge} testID="boosted-badge">
+              <Ionicons name="flame" size={14} color={colors.gold} />
+              <Text style={styles.boostedText}>EVENTO PROMOSSO</Text>
+            </View>
           ) : null}
         </View>
       </ScrollView>
@@ -212,4 +266,32 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   ticketText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  boostBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#F59E0B",
+    borderRadius: radii.pill,
+    paddingVertical: 16,
+    marginTop: 8,
+    shadowColor: "#F59E0B",
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+  },
+  boostedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: radii.pill,
+    paddingVertical: 12,
+    marginTop: 4,
+    backgroundColor: "rgba(245,158,11,0.08)",
+  },
+  boostedText: { color: colors.gold, fontWeight: "800", letterSpacing: 1 },
 });

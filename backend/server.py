@@ -17,6 +17,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
+from emergentintegrations.payments.stripe.checkout import (
+    StripeCheckout,
+    CheckoutSessionRequest,
+)
 
 # ----------------------------- Mongo ---------------------------------
 mongo_url = os.environ["MONGO_URL"]
@@ -116,6 +120,19 @@ class DJ(BaseModel):
     tidal_playlist_url: Optional[str] = None
     verified_by_mauro: bool = False
     followers: int = 0
+    owner_id: Optional[str] = None
+
+
+class DJCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    bio: str = Field(min_length=10, max_length=1200)
+    city: str = Field(min_length=2, max_length=60)
+    genres: List[str] = []
+    image_url: str
+    cover_url: Optional[str] = None
+    instagram: Optional[str] = None
+    spotify_playlist_url: Optional[str] = None
+    tidal_playlist_url: Optional[str] = None
 
 
 class Event(BaseModel):
@@ -135,6 +152,7 @@ class Event(BaseModel):
     boosted: bool = False
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    owner_id: Optional[str] = None
 
 
 class EventCreate(BaseModel):
@@ -293,9 +311,155 @@ async def get_event(event_id: str):
 
 @api.post("/events", response_model=Event)
 async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
-    ev = Event(**payload.model_dump(), organizer=current_user["name"])
+    ev = Event(
+        **payload.model_dump(),
+        organizer=current_user["name"],
+        owner_id=current_user["id"],
+    )
     await db.events.insert_one(ev.model_dump())
     return ev
+
+
+# ----------------------------- Payments / BOOST ----------------------
+BOOST_PRICE = float(os.environ.get("BOOST_PRICE_EUR", "9.99"))
+
+
+class BoostRequest(BaseModel):
+    origin_url: str
+
+
+class CheckoutStatusOut(BaseModel):
+    status: str
+    payment_status: str
+    amount_total: int
+    currency: str
+    metadata: dict
+    event_id: Optional[str] = None
+    boosted: bool = False
+
+
+def _stripe_client(http_request: Request) -> StripeCheckout:
+    host = str(http_request.base_url).rstrip("/")
+    return StripeCheckout(
+        api_key=os.environ["STRIPE_API_KEY"],
+        webhook_url=f"{host}/api/webhook/stripe",
+    )
+
+
+@api.post("/events/{event_id}/boost")
+async def boost_event(
+    event_id: str,
+    payload: BoostRequest,
+    http_request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    # only owner or admin can boost
+    if ev.get("owner_id") and ev["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo l'organizzatore o l'admin puo promuovere l'evento")
+
+    origin = payload.origin_url.rstrip("/")
+    success_url = f"{origin}/boost-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/event/{event_id}"
+    metadata = {
+        "event_id": event_id,
+        "user_id": current_user["id"],
+        "purpose": "boost_event",
+    }
+    stripe = _stripe_client(http_request)
+    req = CheckoutSessionRequest(
+        amount=BOOST_PRICE,
+        currency="eur",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    session = await stripe.create_checkout_session(req)
+    # MANDATORY: record pending transaction before returning
+    await db.payment_transactions.insert_one({
+        "session_id": session.session_id,
+        "user_id": current_user["id"],
+        "event_id": event_id,
+        "amount": BOOST_PRICE,
+        "currency": "eur",
+        "status": "initiated",
+        "payment_status": "pending",
+        "metadata": metadata,
+        "created_at": datetime.now(timezone.utc),
+    })
+    return {"checkout_url": session.url, "session_id": session.session_id, "amount": BOOST_PRICE, "currency": "eur"}
+
+
+@api.get("/payments/status/{session_id}", response_model=CheckoutStatusOut)
+async def payment_status(session_id: str, http_request: Request):
+    tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    stripe = _stripe_client(http_request)
+    status = await stripe.get_checkout_status(session_id)
+
+    # idempotent: apply boost exactly once
+    already_paid = tx.get("payment_status") == "paid"
+    if status.payment_status == "paid" and not already_paid:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "status": status.status,
+                "payment_status": status.payment_status,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+        )
+        event_id = tx.get("event_id")
+        if event_id:
+            await db.events.update_one({"id": event_id}, {"$set": {"boosted": True}})
+    else:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "status": status.status,
+                "payment_status": status.payment_status,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+        )
+
+    return {
+        "status": status.status,
+        "payment_status": status.payment_status,
+        "amount_total": status.amount_total,
+        "currency": status.currency,
+        "metadata": status.metadata or {},
+        "event_id": tx.get("event_id"),
+        "boosted": status.payment_status == "paid",
+    }
+
+
+@api.post("/webhook/stripe")
+async def stripe_webhook(http_request: Request):
+    stripe = _stripe_client(http_request)
+    body = await http_request.body()
+    signature = http_request.headers.get("Stripe-Signature", "")
+    try:
+        event = await stripe.handle_webhook(body, signature)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid webhook: {e}")
+    if event.payment_status == "paid":
+        tx = await db.payment_transactions.find_one({"session_id": event.session_id})
+        if tx and tx.get("payment_status") != "paid":
+            await db.payment_transactions.update_one(
+                {"session_id": event.session_id},
+                {"$set": {
+                    "status": "complete",
+                    "payment_status": "paid",
+                    "updated_at": datetime.now(timezone.utc),
+                }},
+            )
+            event_id = tx.get("event_id")
+            if event_id:
+                await db.events.update_one({"id": event_id}, {"$set": {"boosted": True}})
+    return {"ok": True}
 
 
 @api.get("/cities", response_model=List[str])
@@ -322,6 +486,23 @@ async def get_dj(dj_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="DJ not found")
     return DJ(**doc)
+
+
+@api.post("/djs", response_model=DJ)
+async def create_dj(payload: DJCreate, current_user: dict = Depends(get_current_user)):
+    base_slug = _slugify(f"{payload.name}-{payload.city}")
+    slug = base_slug
+    if await db.djs.find_one({"slug": slug}):
+        slug = f"{base_slug}-{uuid.uuid4().hex[:6]}"
+    dj = DJ(**payload.model_dump(), slug=slug, owner_id=current_user["id"])
+    await db.djs.insert_one(dj.model_dump())
+    return dj
+
+
+@api.get("/my/dj", response_model=Optional[DJ])
+async def my_dj(current_user: dict = Depends(get_current_user)):
+    doc = await db.djs.find_one({"owner_id": current_user["id"]}, {"_id": 0})
+    return DJ(**doc) if doc else None
 
 
 # ----------------------------- Mixes (Radio) -------------------------
@@ -779,8 +960,8 @@ DEMO_SCHOOLS = [
 
 DEMO_PLAYLISTS = [
     {
-        "title": "LatinHub Official - Mauro's Picks",
-        "description": "La playlist personale di Mauro Catalini: bachata, urban latin e reggaeton selezionati per la community LatinHub.",
+        "title": "LATINHUB",
+        "description": "La playlist ufficiale di LatinHub: bachata, urban latin e reggaeton selezionati per la community.",
         "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
         "platform": "spotify",
         "embed_url": "https://open.spotify.com/embed/playlist/0ItuuWeQtp8f3XfsBrYnOe",

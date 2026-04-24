@@ -1,0 +1,63 @@
+{
+  "summary": "Backend-only incremental test for LatinHub BOOST (Stripe €9.99) + DJ registration + LATINHUB playlist rename. Added /app/backend/tests/test_boost_and_djs.py with 17 tests (16 pass, 1 FAIL due to real Stripe integration bug). Full-suite regression: 55/56 pass across 3 files (auth, schools, boost/djs). The single failing test surfaces a CRITICAL bug: GET /api/payments/status/{session_id} returns 500 because emergentintegrations cannot retrieve the very Stripe checkout session it just created (Stripe responds 'No such checkout.session' for sk_test_emergent-created IDs).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/payments/status/{session_id}",
+        "issue": "Returns 500 Internal Server Error when polling a freshly-created BOOST session. Traceback: emergentintegrations.payments.stripe.checkout.CheckoutError: 'Failed to retrieve session status: No such checkout.session: cs_test_a1myw3ugUnOo08kkru3GF3hTqUtdLTPVde5k9ZQ0Oy4NKseEAqxpAQCPUn'. Two problems: (1) the emergent Stripe proxy creates a session_id that the real Stripe SDK can't later retrieve with sk_test_emergent — may require a different API key or proxy-aware retrieve call; (2) server.py line 402 has no try/except around stripe.get_checkout_status, so the CheckoutError propagates as a raw 500. Acceptance test 'GET /api/payments/status/{session_id} returns CheckoutStatusOut with status, payment_status, event_id matches' is NOT met.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/events/{id}/boost",
+        "issue": "No cap on duplicate boosts — an already boosted event (ev.boosted=true) can still open a new €9.99 checkout. Consider short-circuiting with 409 when already boosted (or when an 'initiated'/'paid' transaction exists for the same event/user within N minutes)."
+      },
+      {
+        "endpoint": "POST /api/webhook/stripe",
+        "issue": "Webhook is exposed but its CheckoutError handling (line 445-447) returns 400 on signature mismatch which is correct; however it's coupled to the same create->retrieve proxy, so if the primary status endpoint is broken the webhook path is the only reconciliation route. Ensure Stripe dashboard is pointed at https://<host>/api/webhook/stripe."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_boost_and_djs.py",
+    "/app/backend/tests/test_schools.py",
+    "/app/backend/tests/test_latinhub_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/test_reports/pytest/pytest_boost_results.xml"
+  ],
+  "action_items": [
+    "Fix Stripe retrieve: verify emergentintegrations 'sk_test_emergent' supports get_checkout_status for sessions it just created. If it does (and only certain session IDs are broken), log the create vs retrieve keys. If the proxy only supports creation, switch payment_status to read stripe session via webhook events only.",
+    "Wrap stripe.get_checkout_status in try/except CheckoutError in server.py payment_status (line 402) and return HTTP 502 with a structured {detail, session_id} body instead of 500.",
+    "Consider returning the cached payment_transactions row when the live stripe retrieve fails, so the frontend can still show 'initiated/pending' during the transient outage.",
+    "OPTIONAL: short-circuit boost_event with HTTP 409 when the event already has boosted=true to prevent users paying twice."
+  ],
+  "critical_code_review_comments": [
+    "server.py line 402: Unhandled CheckoutError bubbles up to 500 — all third-party integration calls must be wrapped.",
+    "server.py _stripe_client() recreates the StripeCheckout on every request; fine for low traffic but inefficient. For the 'webhook_url' it uses http_request.base_url which in preview env will be the internal host — Stripe can't reach it. Only matters if the team ever registers this URL with Stripe, otherwise webhooks will be unreachable.",
+    "BOOST_PRICE is read at import time into a module-level constant — changing BOOST_PRICE_EUR in .env requires a backend restart. Acceptable for MVP.",
+    "payment_status correctly updates tx once (already_paid guard) AND sets events.boosted=true exactly once — idempotency logic is correct (could not verify in practice due to the 500).",
+    "DJ create: slug collision handling (_slugify + '-<6 hex>' fallback) is sound; unique index on djs.slug ensures no race-condition dupes.",
+    "Auth: bcrypt with $2b$ hashes, JWT HS256 7-day expiry, seed_admin idempotent and updates hash if ADMIN_PASSWORD changed — good.",
+    "server.py is now ~1150 lines; splitting routers (auth, events, payments, djs, mixes, playlists, schools) is overdue."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_boost_and_djs.py (new, 17 tests)"
+  ],
+  "success_rate": {
+    "backend": "98.2% (55/56 full suite; 16/17 boost+dj suite — 1 real Stripe bug, not a test bug)",
+    "frontend": "not tested (backend-only request)"
+  },
+  "seed_data_creation": "None manually created. Tests use POST /api/auth/register with unique TEST_<uuid>@example.com emails per run (idempotent). Admin event created by the test remains in DB with title 'TEST_BoostEvent' — main agent can GC if desired but it does not affect subsequent runs.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Base URL: EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env. Admin: admin@latinhub.it / admin123 (JWT Bearer, 7d). BOOST flow: POST /api/events/{id}/boost body {origin_url} returns {checkout_url, session_id, amount:9.99, currency:'eur'}; auth required, only owner or admin; payment_transactions doc inserted immediately with status='initiated', payment_status='pending'. KNOWN BUG: GET /api/payments/status/{session_id} returns 500 on live sessions due to emergentintegrations Stripe proxy create->retrieve mismatch (Stripe: 'No such checkout.session'). 404 case works. DJ flow: POST /api/djs (auth, Pydantic: name>=2, bio>=10 → 422), returns DJ with auto-slug + owner_id; GET /api/my/dj returns user's DJ or null. Playlists: position=1 is now 'LATINHUB' (renamed from prior title), featured=true, genre=latin. DJs: Mauro first (verified_by_mauro=True, 48200 followers). Schools: at least 5 seeded (Milano 420, Roma 310, Torino 240, Napoli 185, Bologna 155). MOCKED: none — STRIPE_API_KEY='sk_test_emergent' is a real emergent-routed Stripe key.",
+  "rca_of_issue": "RCA for GET /api/payments/status/{session_id} → 500:\n  Reproduction:\n    1) POST /api/auth/login admin@latinhub.it/admin123 → token.\n    2) POST /api/events (auth) → event.id.\n    3) POST /api/events/{event.id}/boost (auth, body={origin_url:'https://example.com'}) → 200, session_id=cs_test_<...>.\n    4) GET /api/payments/status/<session_id> → 500.\n  Root cause (from backend.err.log):\n    stripe._error.InvalidRequestError: 'No such checkout.session: cs_test_a1myw3ugUnOo08kkru3GF3hTqUtdLTPVde5k9ZQ0Oy4NKseEAqxpAQCPUn'.\n    The emergentintegrations library's StripeCheckout.create_checkout_session returns a session_id that looks like a real Stripe test session ID, but calling stripe.checkout.Session.retrieve(...) with the same sk_test_emergent against the real Stripe API yields 'No such checkout.session'. Either (a) the session was created on a different Stripe test account that sk_test_emergent no longer points at during retrieve, or (b) the emergent Stripe proxy only implements create and delegates retrieve to real Stripe (which naturally doesn't know about the fake session), or (c) the library needs a proxy-aware retrieve method that wasn't called.\n    Compounding bug: server.py payment_status() does not catch CheckoutError, so the 500 is unfriendly (no JSON body beyond 'Internal Server Error').\n  Mitigation:\n    a) Short-term: wrap get_checkout_status in try/except CheckoutError; on failure, return 202 + the cached payment_transactions row (status='initiated', payment_status='pending'). Frontend continues polling.\n    b) Long-term: contact Emergent platform team about the Stripe proxy's retrieve behavior, or switch the happy-path confirmation to the webhook (/api/webhook/stripe already idempotently flips event.boosted=true and tx.payment_status='paid')."
+}

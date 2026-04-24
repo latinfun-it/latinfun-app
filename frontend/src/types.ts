@@ -31,6 +31,7 @@ export type EventItem = {
   boosted: boolean;
   latitude?: number;
   longitude?: number;
+  owner_id?: string;
 };
 
 export type Mix = {
