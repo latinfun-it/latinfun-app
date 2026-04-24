@@ -15,11 +15,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useAuth } from "../../src/auth";
+import BoostButton from "../../src/BoostButton";
 import type { School } from "../../src/types";
 
 export default function SchoolDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +93,15 @@ export default function SchoolDetail() {
 
         <View style={styles.body}>
           <Text style={styles.bio}>{school.bio}</Text>
+
+          <BoostButton
+            kind="school"
+            entityId={school.id}
+            boosted={school.boosted}
+            canBoost={
+              !!user && !school.boosted && (school.owner_id === user.id || user.role === "admin")
+            }
+          />
 
           <View style={styles.chipRow}>
             {school.styles.map((s) => (

@@ -12,6 +12,8 @@ export type DJ = {
   tidal_playlist_url?: string;
   verified_by_mauro: boolean;
   followers: number;
+  owner_id?: string;
+  boosted?: boolean;
 };
 
 export type EventItem = {
@@ -64,6 +66,7 @@ export type School = {
   owner_id?: string;
   verified_by_mauro: boolean;
   students: number;
+  boosted?: boolean;
 };
 
 export type Playlist = {

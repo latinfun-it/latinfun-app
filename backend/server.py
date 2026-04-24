@@ -121,6 +121,8 @@ class DJ(BaseModel):
     verified_by_mauro: bool = False
     followers: int = 0
     owner_id: Optional[str] = None
+    boosted: bool = False
+    boosted_until: Optional[datetime] = None
 
 
 class DJCreate(BaseModel):
@@ -227,6 +229,8 @@ class School(BaseModel):
     owner_id: Optional[str] = None
     verified_by_mauro: bool = False
     students: int = 0
+    boosted: bool = False
+    boosted_until: Optional[datetime] = None
 
 
 class SchoolCreate(BaseModel):
@@ -380,7 +384,52 @@ async def boost_event(
         raise HTTPException(status_code=404, detail="Event not found")
     if ev.get("owner_id") and ev["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Solo l'organizzatore o l'admin puo promuovere l'evento")
+    return await _create_boost_checkout(
+        kind="event", entity_id=event_id, back_path=f"/event/{event_id}",
+        payload=payload, http_request=http_request, current_user=current_user,
+    )
 
+
+@api.post("/djs/{dj_id}/boost")
+async def boost_dj(
+    dj_id: str,
+    payload: BoostRequest,
+    http_request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    dj = await db.djs.find_one({"id": dj_id}, {"_id": 0})
+    if not dj:
+        raise HTTPException(status_code=404, detail="DJ not found")
+    if dj.get("owner_id") and dj["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo il DJ proprietario o l'admin puo promuovere il profilo")
+    return await _create_boost_checkout(
+        kind="dj", entity_id=dj_id, back_path=f"/dj/{dj_id}",
+        payload=payload, http_request=http_request, current_user=current_user,
+    )
+
+
+@api.post("/schools/{school_id}/boost")
+async def boost_school(
+    school_id: str,
+    payload: BoostRequest,
+    http_request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    sc = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    if not sc:
+        raise HTTPException(status_code=404, detail="School not found")
+    if sc.get("owner_id") and sc["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo il titolare della scuola o l'admin puo promuovere")
+    return await _create_boost_checkout(
+        kind="school", entity_id=school_id, back_path=f"/school/{school_id}",
+        payload=payload, http_request=http_request, current_user=current_user,
+    )
+
+
+async def _create_boost_checkout(
+    *, kind: str, entity_id: str, back_path: str,
+    payload: BoostRequest, http_request: Request, current_user: dict,
+):
     pkg_key = payload.package
     if pkg_key not in BOOST_PACKAGES:
         raise HTTPException(status_code=400, detail=f"Pacchetto non valido: {pkg_key}")
@@ -388,11 +437,14 @@ async def boost_event(
 
     origin = payload.origin_url.rstrip("/")
     success_url = f"{origin}/boost-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/event/{event_id}"
+    cancel_url = f"{origin}{back_path}"
     metadata = {
-        "event_id": event_id,
+        "kind": kind,
+        "entity_id": entity_id,
+        # keep back-compat with old clients that only read event_id
+        "event_id": entity_id if kind == "event" else "",
         "user_id": current_user["id"],
-        "purpose": "boost_event",
+        "purpose": f"boost_{kind}",
         "package": pkg_key,
         "days": str(pkg["days"]),
     }
@@ -408,7 +460,9 @@ async def boost_event(
     await db.payment_transactions.insert_one({
         "session_id": session.session_id,
         "user_id": current_user["id"],
-        "event_id": event_id,
+        "kind": kind,
+        "entity_id": entity_id,
+        "event_id": entity_id if kind == "event" else None,
         "amount": pkg["price"],
         "currency": "eur",
         "status": "initiated",
@@ -468,12 +522,7 @@ async def payment_status(session_id: str, http_request: Request):
         boosted_until = _apply_boost_if_paid(tx)
         update_fields["boosted_until"] = boosted_until
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
-        event_id = tx.get("event_id")
-        if event_id:
-            await db.events.update_one(
-                {"id": event_id},
-                {"$set": {"boosted": True, "boosted_until": boosted_until}},
-            )
+        await _mark_entity_boosted(tx, boosted_until)
     else:
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
 
@@ -486,6 +535,23 @@ async def payment_status(session_id: str, http_request: Request):
         event_id=tx.get("event_id"),
         boosted=status.payment_status == "paid",
         boosted_until=boosted_until,
+    )
+
+
+_ENTITY_COLLECTIONS = {"event": "events", "dj": "djs", "school": "schools"}
+
+
+async def _mark_entity_boosted(tx: dict, boosted_until):
+    kind = tx.get("kind") or ("event" if tx.get("event_id") else None)
+    entity_id = tx.get("entity_id") or tx.get("event_id")
+    if not kind or not entity_id:
+        return
+    coll = _ENTITY_COLLECTIONS.get(kind)
+    if not coll:
+        return
+    await db[coll].update_one(
+        {"id": entity_id},
+        {"$set": {"boosted": True, "boosted_until": boosted_until}},
     )
 
 
@@ -511,12 +577,7 @@ async def stripe_webhook(http_request: Request):
                     "updated_at": datetime.now(timezone.utc),
                 }},
             )
-            event_id = tx.get("event_id")
-            if event_id:
-                await db.events.update_one(
-                    {"id": event_id},
-                    {"$set": {"boosted": True, "boosted_until": boosted_until}},
-                )
+            await _mark_entity_boosted(tx, boosted_until)
     return {"ok": True}
 
 
@@ -534,7 +595,7 @@ async def list_djs(city: Optional[str] = None, verified: Optional[bool] = None):
         q["city"] = city
     if verified is not None:
         q["verified_by_mauro"] = verified
-    docs = await db.djs.find(q, {"_id": 0}).sort("followers", -1).to_list(500)
+    docs = await db.djs.find(q, {"_id": 0}).sort([("boosted", -1), ("followers", -1)]).to_list(500)
     return [DJ(**d) for d in docs]
 
 
@@ -653,7 +714,7 @@ async def list_schools(city: Optional[str] = None, style: Optional[str] = None):
         q["city"] = city
     if style and style != "all":
         q["styles"] = style
-    docs = await db.schools.find(q, {"_id": 0}).sort("students", -1).to_list(500)
+    docs = await db.schools.find(q, {"_id": 0}).sort([("boosted", -1), ("students", -1)]).to_list(500)
     return [School(**d) for d in docs]
 
 

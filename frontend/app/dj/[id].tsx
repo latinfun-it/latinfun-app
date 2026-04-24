@@ -17,11 +17,14 @@ import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useAuth } from "../../src/auth";
+import BoostButton from "../../src/BoostButton";
 import type { DJ, EventItem, Mix } from "../../src/types";
 
 export default function DjDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [dj, setDj] = useState<DJ | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [mixes, setMixes] = useState<Mix[]>([]);
@@ -124,6 +127,17 @@ export default function DjDetail() {
                 <Text style={styles.socialText}>Instagram</Text>
               </TouchableOpacity>
             ) : null}
+          </View>
+
+          <View style={{ marginTop: 14 }}>
+            <BoostButton
+              kind="dj"
+              entityId={dj.id}
+              boosted={dj.boosted}
+              canBoost={
+                !!user && !dj.boosted && ((dj as any).owner_id === user.id || user.role === "admin")
+              }
+            />
           </View>
 
           {dj.spotify_playlist_url ? (
