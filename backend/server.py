@@ -1229,6 +1229,42 @@ async def my_school(current_user: dict = Depends(get_current_user)):
     return School(**doc) if doc else None
 
 
+# ---- Delete endpoints (owner or admin only) ----
+async def _assert_owner_or_admin(entity: dict, current_user: dict, label: str):
+    if not entity:
+        raise HTTPException(status_code=404, detail=f"{label} not found")
+    if entity.get("owner_id") and entity["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail=f"Solo il proprietario o l'admin puo eliminare questo {label.lower()}")
+
+
+@api.delete("/events/{event_id}")
+async def delete_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0})
+    await _assert_owner_or_admin(ev, current_user, "Evento")
+    await db.events.delete_one({"id": event_id})
+    # pulisci collezioni correlate
+    await db.user_likes.delete_many({"event_id": event_id})
+    await db.event_inquiries.delete_many({"event_id": event_id})
+    return {"ok": True}
+
+
+@api.delete("/djs/{dj_id}")
+async def delete_dj(dj_id: str, current_user: dict = Depends(get_current_user)):
+    dj = await db.djs.find_one({"id": dj_id}, {"_id": 0})
+    await _assert_owner_or_admin(dj, current_user, "DJ")
+    await db.djs.delete_one({"id": dj_id})
+    await db.user_follows.delete_many({"dj_id": dj_id})
+    return {"ok": True}
+
+
+@api.delete("/schools/{school_id}")
+async def delete_school(school_id: str, current_user: dict = Depends(get_current_user)):
+    sc = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    await _assert_owner_or_admin(sc, current_user, "Scuola")
+    await db.schools.delete_one({"id": school_id})
+    return {"ok": True}
+
+
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():
