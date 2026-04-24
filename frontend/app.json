@@ -10,14 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "it.latinhub.app",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te"
+        "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te",
+        "NSPhotoLibraryUsageDescription": "Carica la foto di copertina della tua scuola",
+        "NSCameraUsageDescription": "Scatta una foto di copertina per la tua scuola"
       }
     },
     "android": {
+      "package": "it.latinhub.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#050505"
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "POST_NOTIFICATIONS"]
