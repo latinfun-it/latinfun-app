@@ -101,3 +101,47 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Aggiungere un pulsante elimina (visibile solo all'admin) nelle pagine di dettaglio di eventi, DJ e scuole per poter cancellare contenuti di prova o non validi."
+
+backend:
+  - task: "DELETE /api/events/{id}, /api/djs/{id}, /api/schools/{id} endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Endpoints verified via Python requests against localhost:8001. Admin login OK (200), create event OK, DELETE returns {ok:true} and subsequent GET returns 404. Unauthenticated DELETE returns 401. Non-owner/non-admin user receives 403 with Italian error message 'Solo il proprietario o l'admin puo eliminare questo evento'. Related collections (user_likes, event_inquiries, user_follows) also cleaned up on delete."
+
+frontend:
+  - task: "DeleteButton integrated in Event, DJ, School detail pages (admin-only)"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/event/[id].tsx, /app/frontend/app/dj/[id].tsx, /app/frontend/app/school/[id].tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "DeleteButton component imported and rendered in all three detail screens with visible={user?.role === 'admin'}. Verified via Playwright screenshot after Expo rebuild: event-delete-btn testID present in DOM and button visually rendered at the bottom of the event detail page (red outline, trash icon, 'Elimina evento' text). Cross-platform confirm dialog (window.confirm on web, Alert.alert on native). On success navigates back to corresponding tab."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Injected DeleteButton (admin-only) in event/dj/school detail pages. Backend DELETE endpoints already existed and were verified functionally via direct API calls (200 for admin, 401 for unauth, 403 for non-owner). Frontend verified via Playwright screenshot - red 'Elimina evento' button renders correctly for admin role. No further testing needed unless user requests it."

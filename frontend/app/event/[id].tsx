@@ -20,6 +20,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import FavoriteButton from "../../src/FavoriteButton";
+import DeleteButton from "../../src/DeleteButton";
 import type { EventItem } from "../../src/types";
 
 function fmt(iso: string) {
@@ -214,6 +215,13 @@ export default function EventDetail() {
               <Text style={styles.ticketText}>Prevendita & biglietti</Text>
             </TouchableOpacity>
           ) : null}
+
+          <DeleteButton
+            kind="event"
+            entityId={ev.id}
+            entityName={ev.title}
+            visible={user?.role === "admin"}
+          />
         </View>
       </ScrollView>
 

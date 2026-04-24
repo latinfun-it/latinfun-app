@@ -17,6 +17,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
+import DeleteButton from "../../src/DeleteButton";
 import type { School } from "../../src/types";
 
 export default function SchoolDetail() {
@@ -167,6 +168,13 @@ export default function SchoolDetail() {
               />
             ) : null}
           </View>
+
+          <DeleteButton
+            kind="school"
+            entityId={school.id}
+            entityName={school.name}
+            visible={user?.role === "admin"}
+          />
         </View>
       </ScrollView>
     </View>

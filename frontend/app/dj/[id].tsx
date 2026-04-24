@@ -20,6 +20,7 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
 import FavoriteButton from "../../src/FavoriteButton";
+import DeleteButton from "../../src/DeleteButton";
 import type { DJ, EventItem, Mix } from "../../src/types";
 
 export default function DjDetail() {
@@ -209,6 +210,13 @@ export default function DjDetail() {
               </View>
             </View>
           ) : null}
+
+          <DeleteButton
+            kind="dj"
+            entityId={dj.id}
+            entityName={dj.name}
+            visible={user?.role === "admin"}
+          />
         </View>
       </ScrollView>
     </View>
