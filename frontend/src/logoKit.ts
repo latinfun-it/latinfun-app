@@ -1,19 +1,33 @@
 /**
- * Logo kit minimale: sfondo NERO PIENO, wordmark LATIN (bianco) + HUB (rosso),
- * perfettamente centrato in ciascun formato. Nessun elemento decorativo aggiuntivo.
+ * Logo kit completo: sfondo NERO, wordmark LATIN bianco + HUB rosso
+ * (stesso font della home), con tagline + subtitle + pills App Store/Google Play.
+ * Dimensioni ridotte per sicurezza: margini 15% sui lati.
  */
 
 const BG = "#050505";
 const BRAND = "#E11D48";
-// Font stack = identico alla home: sistema black / SF Pro Black / Roboto Black, con peso 900 e letter-spacing stretto
+const GOLD = "#F59E0B";
 const FONT_STACK = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-// Offset baseline (empirico per system black) per posizionare il centro visivo a cy
 const OFFSET_SINGLE = 0.33;
 const OFFSET_STACKED = 0.33;
 
-/** Wordmark "LATIN"+"HUB" su una riga, centrato a (cx, cy).
- *  letter-spacing negativo replica lo stile della home. */
+/** Pills App Store / Google Play (larghezza totale 436px, altezza 60px). */
+function promoPills(x: number, y: number, scale = 1) {
+  const w = 210 * scale;
+  const h = 60 * scale;
+  const gap = 16 * scale;
+  const pill = (cx: number, cy: number, label: string, sub: string) => `
+    <g transform="translate(${cx}, ${cy})">
+      <rect width="${w}" height="${h}" rx="${h / 2}" fill="#ffffff" />
+      <text x="${24 * scale}" y="${h / 2 - 4 * scale}" font-family="${FONT_STACK}" font-size="${12 * scale}" fill="#555555" font-weight="600">${label}</text>
+      <text x="${24 * scale}" y="${h / 2 + 16 * scale}" font-family="${FONT_STACK}" font-size="${18 * scale}" fill="#050505" font-weight="900">${sub}</text>
+    </g>
+  `;
+  return pill(x, y, "SCARICA SU", "App Store") + pill(x + w + gap, y, "DISPONIBILE SU", "Google Play");
+}
+
+/** Wordmark "LATINHUB" su una riga, centrato a (cx, cy). */
 function wordmarkCentered(cx: number, cy: number, totalWidth: number) {
   const fontSize = totalWidth * 0.24;
   const baseY = cy + fontSize * OFFSET_SINGLE;
@@ -22,7 +36,7 @@ function wordmarkCentered(cx: number, cy: number, totalWidth: number) {
   return `<text x="${startX}" y="${baseY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>`;
 }
 
-/** Stacked wordmark: LATIN sopra, HUB sotto, centro visivo dello stack a cy. */
+/** Stacked wordmark per icona app. */
 function wordmarkStacked(cx: number, cy: number, width: number) {
   const fontSize = width * 0.36;
   const lineGap = fontSize * 0.88;
@@ -37,40 +51,59 @@ function wordmarkStacked(cx: number, cy: number, width: number) {
   `;
 }
 
-/** BANNER 1600x900 — sfondo nero, wordmark al centro esatto. */
+function centeredText(cx: number, cy: number, fontSize: number, color: string, weight: number, spacing: number, content: string) {
+  const baseY = cy + fontSize * OFFSET_SINGLE;
+  return `<text x="${cx}" y="${baseY}" text-anchor="middle" font-family="${FONT_STACK}" font-size="${fontSize}" fill="${color}" font-weight="${weight}" letter-spacing="${spacing}">${content}</text>`;
+}
+
+/** BANNER 1600x900 — wordmark 900px al centro (margine 350px lati), tagline+subtitle+pills. */
 export const bannerSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet">
   <rect width="1600" height="900" fill="${BG}" />
-  ${wordmarkCentered(800, 450, 1100)}
+  ${centeredText(800, 250, 30, GOLD, 800, 6, "LATIN MUSIC SCENE · ITALIA")}
+  ${wordmarkCentered(800, 420, 900)}
+  ${centeredText(800, 600, 28, "#cccccc", 500, 0, "Eventi · DJ · Scuole di ballo · Playlist")}
+  <g transform="translate(${(1600 - 436) / 2}, 720)">${promoPills(0, 0, 1)}</g>
 </svg>`;
 
-/** SQUARE 1080x1080 — sfondo nero, wordmark al centro. */
+/** SQUARE 1080x1080 — wordmark 680px (margine 200px lati). */
 export const squareSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" preserveAspectRatio="xMidYMid meet">
   <rect width="1080" height="1080" fill="${BG}" />
-  ${wordmarkCentered(540, 540, 850)}
+  ${centeredText(540, 330, 26, GOLD, 800, 5, "LATIN MUSIC SCENE · ITALIA")}
+  ${wordmarkCentered(540, 510, 680)}
+  ${centeredText(540, 680, 26, "#cccccc", 500, 0, "Eventi · DJ · Scuole · Playlist")}
+  <g transform="translate(${(1080 - 436) / 2}, 880)">${promoPills(0, 0, 1)}</g>
 </svg>`;
 
-/** ROUND 1080x1080 — cerchio nero con bordo rosso, wordmark al centro del cerchio. */
+/** ROUND 1080x1080 — wordmark 580px dentro cerchio con bordo rosso. */
 export const roundSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" preserveAspectRatio="xMidYMid meet">
   <rect width="1080" height="1080" fill="${BG}" />
-  <circle cx="540" cy="540" r="510" fill="${BG}" stroke="${BRAND}" stroke-width="10" />
-  ${wordmarkCentered(540, 540, 720)}
+  <circle cx="540" cy="540" r="500" fill="${BG}" stroke="${BRAND}" stroke-width="10" />
+  ${centeredText(540, 400, 22, GOLD, 800, 5, "LATIN · ITALIA")}
+  ${wordmarkCentered(540, 540, 580)}
+  ${centeredText(540, 660, 20, "#cccccc", 500, 0, "Eventi · DJ · Scuole")}
+  ${centeredText(540, 780, 17, "#ffffff", 700, 3, "SCARICA L'APP")}
+  ${centeredText(540, 820, 15, "#cccccc", 500, 0, "App Store · Google Play")}
 </svg>`;
 
-/** APP ICON 1024x1024 — quadrato nero arrotondato, stacked wordmark centrato. */
+/** APP ICON 1024x1024 — stacked wordmark 640px al centro (margine 192px). */
 export const appIconSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet">
   <rect width="1024" height="1024" rx="224" fill="${BG}" />
-  ${wordmarkStacked(512, 512, 800)}
+  ${wordmarkStacked(512, 512, 640)}
 </svg>`;
 
-/** SPLASH 1284x2778 — sfondo nero, wordmark al centro verticale. */
+/** SPLASH 1284x2778 — wordmark 900px al centro verticale. */
 export const splashSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1284 2778" preserveAspectRatio="xMidYMid meet">
   <rect width="1284" height="2778" fill="${BG}" />
-  ${wordmarkCentered(642, 1389, 1000)}
+  ${centeredText(642, 1180, 32, GOLD, 800, 8, "LATIN MUSIC SCENE · ITALIA")}
+  ${wordmarkCentered(642, 1389, 900)}
+  ${centeredText(642, 1580, 30, "#cccccc", 500, 0, "Eventi · DJ · Scuole · Playlist")}
+  <g transform="translate(${(1284 - 436) / 2}, 1700)">${promoPills(0, 0, 1)}</g>
+  ${centeredText(642, 2500, 22, "#888888", 700, 4, "CARICAMENTO IN CORSO...")}
 </svg>`;
 
 export type LogoVariant = {
