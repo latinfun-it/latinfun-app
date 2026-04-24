@@ -199,6 +199,12 @@ export default function ProfileScreen() {
             onPress={() => router.push("/favorites")}
           />
           <MenuItem
+            icon="download-outline"
+            label="Logo LatinHub (kit promo)"
+            hint="Banner, quadrato, tondo - condividi e promuovi"
+            onPress={() => router.push("/logo-kit")}
+          />
+          <MenuItem
             icon="notifications-outline"
             label="Notifiche smart"
             hint="Eventi vicino a te"
