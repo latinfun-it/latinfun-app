@@ -161,6 +161,8 @@ class Event(BaseModel):
     longitude: Optional[float] = None
     owner_id: Optional[str] = None
     likes: int = 0
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
 
 
 class EventCreate(BaseModel):
@@ -176,6 +178,36 @@ class EventCreate(BaseModel):
     ticket_url: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+
+
+INQUIRY_TYPES = {"info", "reservation", "guestlist"}
+
+
+class EventInquiryCreate(BaseModel):
+    event_id: str
+    type: str = Field(pattern=r"^(info|reservation|guestlist)$")
+    name: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=4, max_length=180)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    people: int = Field(default=1, ge=1, le=50)
+    message: str = Field(min_length=2, max_length=800)
+
+
+class EventInquiryOut(BaseModel):
+    id: str
+    event_id: str
+    event_title: Optional[str] = None
+    type: str
+    name: str
+    email: str
+    phone: Optional[str] = None
+    people: int
+    message: str
+    user_id: Optional[str] = None
+    read: bool = False
+    created_at: Optional[datetime] = None
 
 
 class Mix(BaseModel):
@@ -978,6 +1010,101 @@ async def my_favorites(current_user: dict = Depends(get_current_user)):
     djs = await db.djs.find({"id": {"$in": follows}}, {"_id": 0}).to_list(500)
     events = await db.events.find({"id": {"$in": likes}}, {"_id": 0}).to_list(500)
     return {"djs": djs, "events": events}
+
+
+# ----------------------------- Event Inquiries ---------------------
+@api.post("/events/{event_id}/inquiries", response_model=EventInquiryOut)
+async def create_event_inquiry(
+    event_id: str,
+    payload: EventInquiryCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if payload.type not in INQUIRY_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo richiesta non valido")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "event_id": event_id,
+        "event_title": ev.get("title"),
+        "type": payload.type,
+        "name": payload.name.strip(),
+        "email": payload.email.strip().lower(),
+        "phone": (payload.phone or "").strip() or None,
+        "people": payload.people,
+        "message": payload.message.strip(),
+        "user_id": current_user["id"],
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.event_inquiries.insert_one(doc)
+    # Notify event owner via push if token is available
+    owner_id = ev.get("owner_id")
+    if owner_id and owner_id != current_user["id"]:
+        try:
+            owner = await db.users.find_one({"id": owner_id}, {"_id": 0, "push_token": 1})
+            if owner and owner.get("push_token"):
+                label = {
+                    "info": "richiesta info",
+                    "reservation": "richiesta tavolo",
+                    "guestlist": "richiesta lista",
+                }.get(payload.type, "richiesta")
+                asyncio.create_task(
+                    _send_expo_push(
+                        [owner["push_token"]],
+                        f"Nuova {label}",
+                        f"{payload.name} per '{ev.get('title', '')}'",
+                        {"event_id": event_id, "inquiry_id": doc["id"]},
+                    )
+                )
+        except Exception as e:
+            logger.warning("inquiry push failed: %s", e)
+    return EventInquiryOut(**doc)
+
+
+@api.get("/events/{event_id}/inquiries", response_model=List[EventInquiryOut])
+async def list_event_inquiries(
+    event_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if ev.get("owner_id") != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo l'organizzatore puo vedere le richieste")
+    cursor = db.event_inquiries.find({"event_id": event_id}, {"_id": 0}).sort("created_at", -1)
+    return [EventInquiryOut(**d) async for d in cursor]
+
+
+@api.post("/events/inquiries/{inquiry_id}/read")
+async def mark_inquiry_read(
+    inquiry_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    inq = await db.event_inquiries.find_one({"id": inquiry_id}, {"_id": 0})
+    if not inq:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+    ev = await db.events.find_one({"id": inq["event_id"]}, {"_id": 0, "owner_id": 1})
+    if not ev or (ev.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    await db.event_inquiries.update_one({"id": inquiry_id}, {"$set": {"read": True}})
+    return {"ok": True}
+
+
+@api.get("/my/inquiries-count")
+async def my_inquiries_count(current_user: dict = Depends(get_current_user)):
+    """Total unread inquiries across all events owned by current user."""
+    ids = [e["id"] async for e in db.events.find(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+    )]
+    if not ids:
+        return {"total": 0, "unread": 0}
+    total = await db.event_inquiries.count_documents({"event_id": {"$in": ids}})
+    unread = await db.event_inquiries.count_documents(
+        {"event_id": {"$in": ids}, "read": {"$ne": True}}
+    )
+    return {"total": total, "unread": unread}
 
 
 # ----------------------------- Mixes (Radio) -------------------------
