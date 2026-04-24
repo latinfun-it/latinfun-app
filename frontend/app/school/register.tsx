@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { api, formatApiError } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 
@@ -35,8 +37,57 @@ export default function RegisterSchool() {
   const [styles_, setStyles] = useState<string[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [pickingImage, setPickingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    setPickingImage(true);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Permesso necessario",
+          "Consenti l'accesso alle foto per caricare la copertina."
+        );
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.7,
+        base64: true,
+      });
+      if (res.canceled || !res.assets?.length) return;
+      const a = res.assets[0];
+      if (!a.base64) {
+        Alert.alert("Errore", "Impossibile leggere il file");
+        return;
+      }
+      const size = Math.round((a.base64.length * 3) / 4 / 1024);
+      if (size > 2500) {
+        Alert.alert(
+          "File troppo grande",
+          `La foto e ${(size / 1024).toFixed(1)} MB. Scegli una foto piu leggera (max ~2.5 MB) o ritagliala.`
+        );
+        return;
+      }
+      const mime = a.mimeType || "image/jpeg";
+      setImageBase64(`data:${mime};base64,${a.base64}`);
+      setImageUrl(""); // priorità a file caricato
+    } catch (e: any) {
+      Alert.alert("Errore", e?.message || "Impossibile aprire la galleria");
+    } finally {
+      setPickingImage(false);
+    }
+  };
+
+  const clearImage = () => {
+    setImageBase64(null);
+    setImageUrl("");
+  };
 
   const toggle = (arr: string[], item: string, setter: (v: string[]) => void) => {
     setter(arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]);
@@ -59,7 +110,7 @@ export default function RegisterSchool() {
         city,
         address,
         bio,
-        image_url: imageUrl.trim() || DEFAULT_IMAGE,
+        image_url: imageBase64 || imageUrl.trim() || DEFAULT_IMAGE,
         styles: styles_,
         levels,
       };
@@ -227,17 +278,66 @@ export default function RegisterSchool() {
             autoCapitalize="none"
           />
 
-          <Label text="Immagine di copertina (URL)" />
+          <Label text="Immagine di copertina" />
+          {imageBase64 ? (
+            <View style={styles.picPreview} testID="school-image-preview">
+              <Image
+                source={{ uri: imageBase64 }}
+                style={{ width: "100%", height: "100%", borderRadius: radii.md }}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                onPress={clearImage}
+                style={styles.picRemove}
+                testID="school-image-remove"
+              >
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.picBadge}>
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                <Text style={styles.picBadgeText}>File caricato</Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              testID="school-image-pick"
+              style={styles.picDropzone}
+              onPress={pickImage}
+              activeOpacity={0.8}
+              disabled={pickingImage}
+            >
+              {pickingImage ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : (
+                <>
+                  <Ionicons name="image-outline" size={32} color={colors.brand} />
+                  <Text style={styles.picDropzoneTitle}>Carica una foto (JPG/PNG)</Text>
+                  <Text style={styles.picDropzoneDesc}>
+                    Tocca per scegliere dalla galleria. Ritaglio consigliato 16:9.
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
+          <Text style={styles.orDivider}>— oppure —</Text>
+
           <TextInput
             testID="input-image"
             style={styles.input}
             value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="https://..."
+            onChangeText={(v) => {
+              setImageUrl(v);
+              if (v) setImageBase64(null);
+            }}
+            placeholder="Incolla un link https://... (opzionale)"
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
+            editable={!imageBase64}
           />
-          <Text style={styles.hint}>Lascia vuoto per usare l&apos;immagine di default</Text>
+          <Text style={styles.hint}>
+            Puoi caricare un file o incollare un URL. Se lasci vuoto useremo l&apos;immagine di default.
+          </Text>
 
           {error ? (
             <Text style={styles.error} testID="register-school-error">
@@ -311,6 +411,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   hint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  picDropzone: {
+    borderWidth: 2,
+    borderColor: colors.brand,
+    borderStyle: "dashed",
+    borderRadius: radii.md,
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(236,72,153,0.05)",
+    gap: 6,
+  },
+  picDropzoneTitle: { color: "#fff", fontWeight: "800", fontSize: 14, marginTop: 8 },
+  picDropzoneDesc: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 2,
+  },
+  picPreview: {
+    height: 180,
+    width: "100%",
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: "#111",
+    position: "relative",
+  },
+  picRemove: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picBadge: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(16,185,129,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#10B981",
+  },
+  picBadgeText: { color: "#10B981", fontSize: 11, fontWeight: "800" },
+  orDivider: {
+    color: colors.textMuted,
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     backgroundColor: colors.bgTertiary,
