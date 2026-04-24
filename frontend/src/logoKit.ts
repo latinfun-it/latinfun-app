@@ -115,8 +115,60 @@ export const roundSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <text x="540" y="828" text-anchor="middle" font-family="${FONT_STACK}" font-size="14" fill="#cccccc" font-weight="500">App Store · Google Play</text>
 </svg>`;
 
+/** APP ICON 1024x1024 — stacked LATIN / HUB wordmark on rounded brand square. */
+export const appIconSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="icGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1A0608" />
+      <stop offset="0.55" stop-color="${BG}" />
+      <stop offset="1" stop-color="${BRAND_DARK}" />
+    </linearGradient>
+    <radialGradient id="icGlow" cx="0.3" cy="0.3" r="0.5">
+      <stop offset="0" stop-color="${BRAND}" stop-opacity="0.35" />
+      <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#icGrad)" />
+  <rect width="1024" height="1024" rx="224" fill="url(#icGlow)" />
+  <rect x="14" y="14" width="996" height="996" rx="212" fill="none" stroke="${BRAND}" stroke-opacity="0.35" stroke-width="4" />
+
+  <text x="512" y="480" text-anchor="middle" font-family="${FONT_STACK}" font-weight="900" font-size="240" letter-spacing="-12" fill="#ffffff">LATIN</text>
+  <text x="512" y="720" text-anchor="middle" font-family="${FONT_STACK}" font-weight="900" font-size="240" letter-spacing="-12" fill="${BRAND}">HUB</text>
+
+  <text x="512" y="880" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800" font-size="36" letter-spacing="8" fill="${GOLD}">ITALIA</text>
+</svg>`;
+
+/** SPLASH SCREEN 1284x2778 (iPhone Pro Max portrait) */
+export const splashSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1284 2778" width="1284" height="2778">
+  <defs>
+    <linearGradient id="sp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${BG}" />
+      <stop offset="0.4" stop-color="#0A0204" />
+      <stop offset="1" stop-color="${BRAND_DARK}" />
+    </linearGradient>
+    <radialGradient id="spGlow" cx="0.5" cy="0.42" r="0.5">
+      <stop offset="0" stop-color="${BRAND}" stop-opacity="0.35" />
+      <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1284" height="2778" fill="url(#sp)" />
+  <rect width="1284" height="2778" fill="url(#spGlow)" />
+
+  <text x="642" y="1180" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800" font-size="38" fill="${GOLD}" letter-spacing="8">LATIN MUSIC SCENE · ITALIA</text>
+
+  ${wordmark(642, 1420, 240)}
+
+  <text x="642" y="1520" text-anchor="middle" font-family="${FONT_STACK}" font-weight="500" font-size="38" fill="#cccccc">Eventi · DJ · Scuole · Playlist</text>
+
+  <rect x="542" y="1620" width="200" height="6" rx="3" fill="${GOLD}" />
+
+  <text x="642" y="2500" text-anchor="middle" font-family="${FONT_STACK}" font-weight="700" font-size="28" fill="#888888" letter-spacing="4">CARICAMENTO IN CORSO...</text>
+</svg>`;
+
 export type LogoVariant = {
-  key: "banner" | "square" | "round";
+  key: "banner" | "square" | "round" | "app-icon" | "splash";
   title: string;
   subtitle: string;
   aspect: number; // width / height
@@ -148,5 +200,21 @@ export const LOGO_VARIANTS: LogoVariant[] = [
     aspect: 1,
     svg: roundSvg,
     exportSize: { width: 1080, height: 1080 },
+  },
+  {
+    key: "app-icon",
+    title: "Icona App (store)",
+    subtitle: "App Store & Google Play — 1024×1024 richiesto",
+    aspect: 1,
+    svg: appIconSvg,
+    exportSize: { width: 1024, height: 1024 },
+  },
+  {
+    key: "splash",
+    title: "Splash Screen",
+    subtitle: "Schermata di avvio verticale (iPhone Pro Max)",
+    aspect: 1284 / 2778,
+    svg: splashSvg,
+    exportSize: { width: 1284, height: 2778 },
   },
 ];
