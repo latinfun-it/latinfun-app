@@ -74,7 +74,9 @@ export default function SchoolsScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.kicker}>DOVE IMPARARE</Text>
-            <Text style={styles.title}>Scuole di ballo</Text>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+              Scuole di Ballo
+            </Text>
             <Text style={styles.subtitle}>Trova la tua academia preferita in Italia</Text>
           </View>
           <TouchableOpacity

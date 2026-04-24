@@ -59,7 +59,7 @@ export default function MusicScreen() {
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <Text style={styles.kicker}>LATINHUB MUSICA</Text>
-          <Text style={styles.title}>Playlist scelte per voi</Text>
+          <Text style={styles.title}>Playlist</Text>
           <Text style={styles.sub}>Curate da Mauro Catalini - aggiornate ogni settimana</Text>
         </View>
 
