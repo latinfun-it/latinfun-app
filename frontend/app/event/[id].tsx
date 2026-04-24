@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
+import FavoriteButton from "../../src/FavoriteButton";
 import type { EventItem } from "../../src/types";
 
 function fmt(iso: string) {
@@ -156,6 +157,16 @@ export default function EventDetail() {
             <Text style={styles.sectionTitle}>Info</Text>
             <Text style={styles.desc}>{ev.description}</Text>
           </View>
+
+          {user ? (
+            <View style={{ flexDirection: "row", marginTop: 8 }}>
+              <FavoriteButton
+                kind="event"
+                entityId={ev.id}
+                initialCount={ev.likes || 0}
+              />
+            </View>
+          ) : null}
 
           {canBoost ? (
             <View style={styles.boostBanner}>

@@ -34,6 +34,7 @@ export type EventItem = {
   latitude?: number;
   longitude?: number;
   owner_id?: string;
+  likes?: number;
 };
 
 export type Mix = {

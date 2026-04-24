@@ -19,6 +19,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
+import FavoriteButton from "../../src/FavoriteButton";
 import type { DJ, EventItem, Mix } from "../../src/types";
 
 export default function DjDetail() {
@@ -117,6 +118,13 @@ export default function DjDetail() {
           </View>
 
           <View style={styles.socialRow}>
+            {user ? (
+              <FavoriteButton
+                kind="dj"
+                entityId={dj.id}
+                initialCount={dj.followers || 0}
+              />
+            ) : null}
             {dj.instagram ? (
               <TouchableOpacity
                 testID="dj-instagram"

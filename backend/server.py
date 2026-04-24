@@ -159,6 +159,7 @@ class Event(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     owner_id: Optional[str] = None
+    likes: int = 0
 
 
 class EventCreate(BaseModel):
@@ -767,6 +768,94 @@ async def create_dj(payload: DJCreate, current_user: dict = Depends(get_current_
 async def my_dj(current_user: dict = Depends(get_current_user)):
     doc = await db.djs.find_one({"owner_id": current_user["id"]}, {"_id": 0})
     return DJ(**doc) if doc else None
+
+
+# ----------------------------- Follow / Like ------------------------
+@api.post("/djs/{dj_id}/follow")
+async def follow_dj(dj_id: str, current_user: dict = Depends(get_current_user)):
+    dj = await db.djs.find_one({"id": dj_id}, {"_id": 0, "id": 1})
+    if not dj:
+        raise HTTPException(status_code=404, detail="DJ not found")
+    existing = await db.user_follows.find_one(
+        {"user_id": current_user["id"], "dj_id": dj_id}
+    )
+    if existing:
+        return {"ok": True, "following": True}
+    await db.user_follows.insert_one(
+        {
+            "user_id": current_user["id"],
+            "dj_id": dj_id,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
+    await db.djs.update_one({"id": dj_id}, {"$inc": {"followers": 1}})
+    return {"ok": True, "following": True}
+
+
+@api.delete("/djs/{dj_id}/follow")
+async def unfollow_dj(dj_id: str, current_user: dict = Depends(get_current_user)):
+    res = await db.user_follows.delete_one(
+        {"user_id": current_user["id"], "dj_id": dj_id}
+    )
+    if res.deleted_count:
+        await db.djs.update_one({"id": dj_id}, {"$inc": {"followers": -1}})
+    return {"ok": True, "following": False}
+
+
+@api.get("/my/follows", response_model=List[str])
+async def my_follows(current_user: dict = Depends(get_current_user)):
+    cursor = db.user_follows.find({"user_id": current_user["id"]}, {"_id": 0, "dj_id": 1})
+    return [d["dj_id"] async for d in cursor]
+
+
+@api.post("/events/{event_id}/like")
+async def like_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    ev = await db.events.find_one({"id": event_id}, {"_id": 0, "id": 1})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    existing = await db.user_likes.find_one(
+        {"user_id": current_user["id"], "event_id": event_id}
+    )
+    if existing:
+        return {"ok": True, "liked": True}
+    await db.user_likes.insert_one(
+        {
+            "user_id": current_user["id"],
+            "event_id": event_id,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
+    await db.events.update_one({"id": event_id}, {"$inc": {"likes": 1}})
+    return {"ok": True, "liked": True}
+
+
+@api.delete("/events/{event_id}/like")
+async def unlike_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    res = await db.user_likes.delete_one(
+        {"user_id": current_user["id"], "event_id": event_id}
+    )
+    if res.deleted_count:
+        await db.events.update_one({"id": event_id}, {"$inc": {"likes": -1}})
+    return {"ok": True, "liked": False}
+
+
+@api.get("/my/likes", response_model=List[str])
+async def my_likes(current_user: dict = Depends(get_current_user)):
+    cursor = db.user_likes.find({"user_id": current_user["id"]}, {"_id": 0, "event_id": 1})
+    return [d["event_id"] async for d in cursor]
+
+
+@api.get("/my/favorites")
+async def my_favorites(current_user: dict = Depends(get_current_user)):
+    follows = [d["dj_id"] async for d in db.user_follows.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "dj_id": 1}
+    )]
+    likes = [d["event_id"] async for d in db.user_likes.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "event_id": 1}
+    )]
+    djs = await db.djs.find({"id": {"$in": follows}}, {"_id": 0}).to_list(500)
+    events = await db.events.find({"id": {"$in": likes}}, {"_id": 0}).to_list(500)
+    return {"djs": djs, "events": events}
 
 
 # ----------------------------- Mixes (Radio) -------------------------
