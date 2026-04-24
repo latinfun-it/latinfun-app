@@ -6,11 +6,14 @@ load_dotenv(ROOT_DIR / ".env")
 
 import os
 import uuid
+import math
+import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
 import bcrypt
+import httpx
 import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -290,6 +293,143 @@ async def logout(current_user: dict = Depends(get_current_user)):
     return {"ok": True}
 
 
+# ----------------------------- Notifications ------------------------
+class PushTokenIn(BaseModel):
+    token: str = Field(min_length=4, max_length=300)
+
+
+class LocationIn(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class TestPushIn(BaseModel):
+    title: str = "LatinHub"
+    body: str = "Test notification"
+
+
+class NotifSettingsIn(BaseModel):
+    enabled: bool
+    radius_km: int = Field(default=50, ge=5, le=500)
+
+
+@api.post("/users/push-token")
+async def save_push_token(payload: PushTokenIn, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"push_token": payload.token, "push_updated_at": datetime.now(timezone.utc)}},
+    )
+    return {"ok": True}
+
+
+@api.post("/users/location")
+async def save_location(payload: LocationIn, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"latitude": payload.latitude, "longitude": payload.longitude}},
+    )
+    return {"ok": True}
+
+
+@api.post("/users/notifications")
+async def update_notif_settings(
+    payload: NotifSettingsIn, current_user: dict = Depends(get_current_user)
+):
+    update = {
+        "notifications_enabled": payload.enabled,
+        "notifications_radius_km": payload.radius_km,
+    }
+    if not payload.enabled:
+        update["push_token"] = None
+    await db.users.update_one({"id": current_user["id"]}, {"$set": update})
+    return {"ok": True, **update}
+
+
+@api.get("/users/notifications")
+async def get_notif_settings(current_user: dict = Depends(get_current_user)):
+    doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0}) or {}
+    return {
+        "enabled": bool(doc.get("notifications_enabled")),
+        "radius_km": int(doc.get("notifications_radius_km") or 50),
+        "has_token": bool(doc.get("push_token")),
+        "has_location": doc.get("latitude") is not None and doc.get("longitude") is not None,
+    }
+
+
+async def _send_expo_push(tokens: List[str], title: str, body: str, data: dict = None):
+    """Send an Expo Push notification batch. Fire-and-forget (errors logged)."""
+    tokens = [t for t in tokens if t and t.startswith("ExponentPushToken")]
+    if not tokens:
+        return
+    messages = [
+        {"to": t, "sound": "default", "title": title, "body": body, "data": data or {}}
+        for t in tokens
+    ]
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as c:
+            r = await c.post(
+                "https://exp.host/--/api/v2/push/send",
+                json=messages,
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+            )
+            if r.status_code >= 300:
+                logger.warning("Expo push non-2xx: %s %s", r.status_code, r.text[:200])
+    except Exception as e:
+        logger.warning("Expo push failed: %s", e)
+
+
+def _haversine_km(lat1, lng1, lat2, lng2) -> float:
+    r = 6371.0
+    to_rad = math.radians
+    dlat = to_rad(lat2 - lat1)
+    dlng = to_rad(lng2 - lng1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(to_rad(lat1)) * math.cos(to_rad(lat2)) * math.sin(dlng / 2) ** 2)
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+async def _notify_nearby_users_about_event(ev: dict):
+    """Find users with push_token+location within their radius and send Expo push."""
+    if ev.get("latitude") is None or ev.get("longitude") is None:
+        return
+    cursor = db.users.find(
+        {
+            "push_token": {"$ne": None, "$exists": True},
+            "notifications_enabled": True,
+            "latitude": {"$ne": None},
+            "longitude": {"$ne": None},
+        },
+        {"_id": 0, "push_token": 1, "latitude": 1, "longitude": 1, "notifications_radius_km": 1},
+    )
+    targets: List[str] = []
+    async for u in cursor:
+        try:
+            d = _haversine_km(ev["latitude"], ev["longitude"], u["latitude"], u["longitude"])
+            if d <= float(u.get("notifications_radius_km") or 50):
+                targets.append(u["push_token"])
+        except Exception:
+            continue
+    if targets:
+        title = f"Nuovo evento a {ev.get('city', '')}"
+        body = f"{ev.get('title', '')} - {ev.get('genre', '').upper()}"
+        asyncio.create_task(
+            _send_expo_push(targets, title, body, {"event_id": ev["id"]})
+        )
+
+
+@api.post("/notifications/test")
+async def send_test_push(
+    payload: TestPushIn,
+    current_user: dict = Depends(get_current_user),
+):
+    doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0}) or {}
+    token = doc.get("push_token")
+    if not token:
+        raise HTTPException(status_code=400, detail="Nessun token push registrato")
+    asyncio.create_task(_send_expo_push([token], payload.title, payload.body, {"test": True}))
+    return {"ok": True}
+
+
 # ----------------------------- Events --------------------------------
 @api.get("/events", response_model=List[Event])
 async def list_events(
@@ -322,6 +462,11 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
         owner_id=current_user["id"],
     )
     await db.events.insert_one(ev.model_dump())
+    # fire-and-forget push notifications to nearby users
+    try:
+        asyncio.create_task(_notify_nearby_users_about_event(ev.model_dump()))
+    except Exception as e:
+        logger.warning("notify_nearby failed: %s", e)
     return ev
 
 

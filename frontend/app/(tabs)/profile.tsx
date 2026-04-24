@@ -83,6 +83,7 @@ export default function ProfileScreen() {
             icon="notifications-outline"
             label="Notifiche smart"
             hint="Eventi vicino a te"
+            onPress={() => router.push("/notifications")}
           />
           <MenuItem
             icon="musical-notes-outline"
