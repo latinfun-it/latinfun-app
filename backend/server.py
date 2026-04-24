@@ -399,41 +399,52 @@ async def payment_status(session_id: str, http_request: Request):
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     stripe = _stripe_client(http_request)
-    status = await stripe.get_checkout_status(session_id)
+    try:
+        status = await stripe.get_checkout_status(session_id)
+    except Exception as e:
+        # Stripe may not yet have the session available (eventual consistency) or
+        # the emergent proxy may surface a transient error. Fall back to cached state
+        # so the frontend polling loop stays smooth; the webhook will flip `boosted`
+        # to true as soon as the real payment succeeds.
+        logger.warning("Stripe get_checkout_status failed for %s: %s", session_id, e)
+        return CheckoutStatusOut(
+            status=tx.get("status", "initiated"),
+            payment_status=tx.get("payment_status", "pending"),
+            amount_total=int(float(tx.get("amount", 0)) * 100),
+            currency=tx.get("currency", "eur"),
+            metadata=tx.get("metadata") or {},
+            event_id=tx.get("event_id"),
+            boosted=tx.get("payment_status") == "paid",
+        )
 
     # idempotent: apply boost exactly once
     already_paid = tx.get("payment_status") == "paid"
+    update_fields = {
+        "status": status.status,
+        "payment_status": status.payment_status,
+        "updated_at": datetime.now(timezone.utc),
+    }
     if status.payment_status == "paid" and not already_paid:
         await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {
-                "status": status.status,
-                "payment_status": status.payment_status,
-                "updated_at": datetime.now(timezone.utc),
-            }},
+            {"session_id": session_id}, {"$set": update_fields}
         )
         event_id = tx.get("event_id")
         if event_id:
             await db.events.update_one({"id": event_id}, {"$set": {"boosted": True}})
     else:
         await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {
-                "status": status.status,
-                "payment_status": status.payment_status,
-                "updated_at": datetime.now(timezone.utc),
-            }},
+            {"session_id": session_id}, {"$set": update_fields}
         )
 
-    return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount_total": status.amount_total,
-        "currency": status.currency,
-        "metadata": status.metadata or {},
-        "event_id": tx.get("event_id"),
-        "boosted": status.payment_status == "paid",
-    }
+    return CheckoutStatusOut(
+        status=status.status,
+        payment_status=status.payment_status,
+        amount_total=status.amount_total,
+        currency=status.currency,
+        metadata=status.metadata or {},
+        event_id=tx.get("event_id"),
+        boosted=status.payment_status == "paid",
+    )
 
 
 @api.post("/webhook/stripe")
