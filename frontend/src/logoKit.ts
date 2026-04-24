@@ -28,24 +28,27 @@ function promoBlock(x: number, y: number, scale = 1) {
 }
 
 /** Wordmark "LATINHUB" = single <text> with two <tspan> (different colors).
- *  Single text flow guarantees LATIN+HUB are adjacent with zero gap.
- *  `textLength` + lengthAdjust forces the whole wordmark to fit exactly `totalWidth`. */
+ *  `dominant-baseline="middle"` centra verticalmente il testo intorno a cy,
+ *  `textLength`+`lengthAdjust` forza larghezza totale `totalWidth`. */
 function wordmarkCentered(cx: number, cy: number, totalWidth: number) {
   const fontSize = totalWidth * 0.22;
   const startX = cx - totalWidth / 2;
   return `
-    <text x="${startX}" y="${cy}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>
+    <text x="${startX}" y="${cy}" dominant-baseline="middle" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>
   `;
 }
 
-/** Stacked version for app icon: LATIN above, HUB below, same column width. */
+/** Stacked for app icon: LATIN sopra, HUB sotto, entrambi centrati orizzontalmente.
+ *  cy = centro verticale visivo dello stack. */
 function wordmarkStacked(cx: number, cy: number, width: number) {
   const startX = cx - width / 2;
   const fontSize = width * 0.32;
   const lineGap = fontSize * 0.92;
+  // LATIN visual center = cy - lineGap/2, HUB visual center = cy + lineGap/2
+  const hubWidth = width * 0.72;
   return `
-    <text x="${startX}" y="${cy}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${width}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">LATIN</text>
-    <text x="${startX + width * 0.14}" y="${cy + lineGap}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${width * 0.72}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">HUB</text>
+    <text x="${startX}" y="${cy - lineGap / 2}" dominant-baseline="middle" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${width}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">LATIN</text>
+    <text x="${cx - hubWidth / 2}" y="${cy + lineGap / 2}" dominant-baseline="middle" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${hubWidth}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">HUB</text>
   `;
 }
 
@@ -58,7 +61,7 @@ export const bannerSvg = `<?xml version="1.0" encoding="UTF-8"?>
       <stop offset="0.6" stop-color="#110608" />
       <stop offset="1" stop-color="${BRAND_DARK}" />
     </linearGradient>
-    <radialGradient id="glow" cx="0.25" cy="0.35" r="0.6">
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.7">
       <stop offset="0" stop-color="${BRAND}" stop-opacity="0.35" />
       <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
     </radialGradient>
@@ -66,13 +69,13 @@ export const bannerSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <rect width="1600" height="900" fill="url(#bgGrad)" />
   <rect width="1600" height="900" fill="url(#glow)" />
 
-  <text x="800" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="${GOLD}" font-weight="800" letter-spacing="6">LATIN MUSIC SCENE · ITALIA</text>
+  <text x="800" y="240" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="30" fill="${GOLD}" font-weight="800" letter-spacing="6">LATIN MUSIC SCENE · ITALIA</text>
 
-  ${wordmarkCentered(800, 510, 1100)}
+  ${wordmarkCentered(800, 450, 1050)}
 
-  <text x="800" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole di ballo · Playlist</text>
+  <text x="800" y="620" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="30" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole di ballo · Playlist</text>
 
-  <g transform="translate(${(1600 - 436) / 2}, 700)">${promoBlock(0, 0, 1)}</g>
+  <g transform="translate(${(1600 - 436) / 2}, 710)">${promoBlock(0, 0, 1)}</g>
 
   <rect x="0" y="876" width="1600" height="24" fill="${GOLD}" />
 </svg>`;
@@ -85,7 +88,7 @@ export const squareSvg = `<?xml version="1.0" encoding="UTF-8"?>
       <stop offset="0" stop-color="${BG}" />
       <stop offset="1" stop-color="#15060A" />
     </linearGradient>
-    <radialGradient id="glowSq" cx="0.5" cy="0.35" r="0.55">
+    <radialGradient id="glowSq" cx="0.5" cy="0.5" r="0.55">
       <stop offset="0" stop-color="${BRAND}" stop-opacity="0.28" />
       <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
     </radialGradient>
@@ -93,13 +96,13 @@ export const squareSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <rect width="1080" height="1080" fill="url(#bgSq)" />
   <rect width="1080" height="1080" fill="url(#glowSq)" />
 
-  <text x="540" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="${GOLD}" font-weight="800" letter-spacing="5">LATIN MUSIC SCENE · ITALIA</text>
+  <text x="540" y="340" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" fill="${GOLD}" font-weight="800" letter-spacing="5">LATIN MUSIC SCENE · ITALIA</text>
 
-  ${wordmarkCentered(540, 570, 780)}
+  ${wordmarkCentered(540, 540, 760)}
 
-  <text x="540" y="650" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole · Playlist</text>
+  <text x="540" y="720" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole · Playlist</text>
 
-  <g transform="translate(${(1080 - 436) / 2}, 880)">${promoBlock(0, 0, 1)}</g>
+  <g transform="translate(${(1080 - 436) / 2}, 890)">${promoBlock(0, 0, 1)}</g>
 </svg>`;
 
 /** ROUND 1080x1080 (circular badge) */
@@ -116,17 +119,17 @@ export const roundSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <circle cx="540" cy="540" r="500" fill="url(#bgR)" stroke="${BRAND}" stroke-width="10" />
   <circle cx="540" cy="540" r="430" fill="none" stroke="${GOLD}" stroke-width="2" stroke-dasharray="6 10" />
 
-  <text x="540" y="485" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="${GOLD}" font-weight="800" letter-spacing="5">LATIN · ITALIA</text>
+  <text x="540" y="430" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="24" fill="${GOLD}" font-weight="800" letter-spacing="6">LATIN · ITALIA</text>
 
-  ${wordmarkCentered(540, 600, 620)}
+  ${wordmarkCentered(540, 540, 620)}
 
-  <text x="540" y="680" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole</text>
+  <text x="540" y="660" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="22" fill="#cccccc" font-weight="500">Eventi · DJ · Scuole</text>
 
-  <text x="540" y="790" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="800" letter-spacing="2">SCARICA L'APP</text>
-  <text x="540" y="820" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#cccccc" font-weight="500">App Store · Google Play</text>
+  <text x="540" y="790" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="20" fill="#ffffff" font-weight="800" letter-spacing="3">SCARICA L'APP</text>
+  <text x="540" y="828" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="18" fill="#cccccc" font-weight="500">App Store · Google Play</text>
 </svg>`;
 
-/** APP ICON 1024x1024 — stacked LATIN / HUB wordmark on rounded brand square. */
+/** APP ICON 1024x1024 — stacked LATIN / HUB wordmark centered. */
 export const appIconSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet">
   <defs>
@@ -135,7 +138,7 @@ export const appIconSvg = `<?xml version="1.0" encoding="UTF-8"?>
       <stop offset="0.55" stop-color="${BG}" />
       <stop offset="1" stop-color="${BRAND_DARK}" />
     </linearGradient>
-    <radialGradient id="icGlow" cx="0.3" cy="0.3" r="0.5">
+    <radialGradient id="icGlow" cx="0.5" cy="0.5" r="0.5">
       <stop offset="0" stop-color="${BRAND}" stop-opacity="0.35" />
       <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
     </radialGradient>
@@ -144,9 +147,7 @@ export const appIconSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <rect width="1024" height="1024" rx="224" fill="url(#icGlow)" />
   <rect x="14" y="14" width="996" height="996" rx="212" fill="none" stroke="${BRAND}" stroke-opacity="0.35" stroke-width="4" />
 
-  ${wordmarkStacked(512, 450, 720)}
-
-  <text x="512" y="900" text-anchor="middle" font-family="Arial, sans-serif" font-weight="800" font-size="42" letter-spacing="12" fill="${GOLD}">ITALIA</text>
+  ${wordmarkStacked(512, 512, 760)}
 </svg>`;
 
 /** SPLASH SCREEN 1284x2778 (iPhone Pro Max portrait) */
@@ -158,7 +159,7 @@ export const splashSvg = `<?xml version="1.0" encoding="UTF-8"?>
       <stop offset="0.4" stop-color="#0A0204" />
       <stop offset="1" stop-color="${BRAND_DARK}" />
     </linearGradient>
-    <radialGradient id="spGlow" cx="0.5" cy="0.42" r="0.5">
+    <radialGradient id="spGlow" cx="0.5" cy="0.5" r="0.5">
       <stop offset="0" stop-color="${BRAND}" stop-opacity="0.35" />
       <stop offset="1" stop-color="${BRAND}" stop-opacity="0" />
     </radialGradient>
@@ -166,15 +167,15 @@ export const splashSvg = `<?xml version="1.0" encoding="UTF-8"?>
   <rect width="1284" height="2778" fill="url(#sp)" />
   <rect width="1284" height="2778" fill="url(#spGlow)" />
 
-  <text x="642" y="1220" text-anchor="middle" font-family="Arial, sans-serif" font-weight="800" font-size="36" fill="${GOLD}" letter-spacing="8">LATIN MUSIC SCENE · ITALIA</text>
+  <text x="642" y="1200" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="800" font-size="34" fill="${GOLD}" letter-spacing="8">LATIN MUSIC SCENE · ITALIA</text>
 
-  ${wordmarkCentered(642, 1420, 1000)}
+  ${wordmarkCentered(642, 1389, 1000)}
 
-  <text x="642" y="1510" text-anchor="middle" font-family="Arial, sans-serif" font-weight="500" font-size="34" fill="#cccccc">Eventi · DJ · Scuole · Playlist</text>
+  <text x="642" y="1570" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="500" font-size="32" fill="#cccccc">Eventi · DJ · Scuole · Playlist</text>
 
-  <rect x="542" y="1600" width="200" height="6" rx="3" fill="${GOLD}" />
+  <rect x="542" y="1660" width="200" height="6" rx="3" fill="${GOLD}" />
 
-  <text x="642" y="2500" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="26" fill="#888888" letter-spacing="4">CARICAMENTO IN CORSO...</text>
+  <text x="642" y="2500" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="26" fill="#888888" letter-spacing="4">CARICAMENTO IN CORSO...</text>
 </svg>`;
 
 export type LogoVariant = {
