@@ -1,15 +1,45 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "../../src/auth";
+import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import type { DJ, EventItem, School } from "../../src/types";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [myDj, setMyDj] = useState<DJ | null>(null);
+  const [mySchool, setMySchool] = useState<School | null>(null);
+  const [myEvents, setMyEvents] = useState<EventItem[]>([]);
+
+  const loadMine = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [djR, scR, evR] = await Promise.all([
+        api.get("/my/dj").catch(() => ({ data: null })),
+        api.get("/my/school").catch(() => ({ data: null })),
+        api.get<EventItem[]>("/events").catch(() => ({ data: [] as EventItem[] })),
+      ]);
+      setMyDj(djR.data);
+      setMySchool(scR.data);
+      setMyEvents((evR.data || []).filter((e: EventItem) => e.owner_id === user.id));
+    } catch {
+      /* ignore */
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadMine();
+  }, [loadMine]);
+  useFocusEffect(
+    useCallback(() => {
+      loadMine();
+    }, [loadMine])
+  );
 
   const onLogout = async () => {
     await logout();
@@ -67,18 +97,93 @@ export default function ProfileScreen() {
               onPress={() => router.push("/admin/playlists")}
             />
           ) : null}
+
+          <Text style={styles.sectionLabel}>LA TUA PRESENZA</Text>
+
           <MenuItem
-            icon="disc-outline"
-            label="Registra il tuo profilo DJ"
-            hint="Crea la tua pagina artista"
-            onPress={() => router.push("/dj/register")}
+            icon="megaphone-outline"
+            label="Crea un nuovo evento"
+            hint="Pubblicalo e promuovilo con BOOST"
+            onPress={() => router.push("/event/create")}
           />
-          <MenuItem
-            icon="school-outline"
-            label="Registra la tua scuola"
-            hint="Aumenta visibilita tra gli studenti latini"
-            onPress={() => router.push("/school/register")}
-          />
+
+          {myDj ? (
+            <MenuItem
+              icon="disc-outline"
+              label="Il tuo profilo DJ"
+              hint={myDj.boosted ? "GIA PROMOSSO - badge BOOST attivo" : "Apri per promuoverlo con BOOST"}
+              rightBadge={myDj.boosted ? "BOOST" : "PROMUOVI"}
+              badgeTone={myDj.boosted ? "gold" : "brand"}
+              onPress={() => router.push(`/dj/${myDj.id}`)}
+            />
+          ) : (
+            <MenuItem
+              icon="disc-outline"
+              label="Registra il tuo profilo DJ"
+              hint="Crea la tua pagina artista"
+              onPress={() => router.push("/dj/register")}
+            />
+          )}
+
+          {mySchool ? (
+            <MenuItem
+              icon="school-outline"
+              label="La tua scuola di ballo"
+              hint={
+                mySchool.boosted ? "GIA PROMOSSA - badge BOOST attivo" : "Apri per promuoverla con BOOST"
+              }
+              rightBadge={mySchool.boosted ? "BOOST" : "PROMUOVI"}
+              badgeTone={mySchool.boosted ? "gold" : "brand"}
+              onPress={() => router.push(`/school/${mySchool.id}`)}
+            />
+          ) : (
+            <MenuItem
+              icon="school-outline"
+              label="Registra la tua scuola"
+              hint="Aumenta visibilita tra gli studenti latini"
+              onPress={() => router.push("/school/register")}
+            />
+          )}
+
+          {myEvents.length > 0 ? (
+            <View style={styles.myEventsBox}>
+              <Text style={styles.myEventsTitle}>I TUOI EVENTI ({myEvents.length})</Text>
+              {myEvents.slice(0, 4).map((e) => (
+                <TouchableOpacity
+                  key={e.id}
+                  testID={`my-event-${e.id}`}
+                  style={styles.myEventRow}
+                  onPress={() => router.push(`/event/${e.id}`)}
+                >
+                  <Ionicons
+                    name={e.boosted ? "flame" : "calendar-outline"}
+                    size={16}
+                    color={e.boosted ? colors.gold : colors.textSecondary}
+                  />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.myEventTitle} numberOfLines={1}>
+                      {e.title}
+                    </Text>
+                    <Text style={styles.myEventMeta} numberOfLines={1}>
+                      {new Date(e.date).toLocaleDateString("it-IT")} - {e.city}
+                    </Text>
+                  </View>
+                  {e.boosted ? (
+                    <View style={[styles.pill, { backgroundColor: colors.gold }]}>
+                      <Text style={[styles.pillText, { color: "#050505" }]}>BOOST</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.pill, { backgroundColor: colors.brand }]}>
+                      <Text style={styles.pillText}>PROMUOVI</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+
+          <Text style={styles.sectionLabel}>PREFERENZE</Text>
+
           <MenuItem
             icon="notifications-outline"
             label="Notifiche smart"
@@ -89,10 +194,6 @@ export default function ProfileScreen() {
             icon="musical-notes-outline"
             label="Le mie playlist Spotify / Tidal"
             hint="Presto disponibile"
-          />
-          <MenuItem
-            icon="calendar-outline"
-            label="Cronologia eventi"
           />
           <MenuItem
             icon="help-circle-outline"
@@ -130,11 +231,15 @@ function MenuItem({
   label,
   hint,
   onPress,
+  rightBadge,
+  badgeTone,
 }: {
   icon: any;
   label: string;
   hint?: string;
   onPress?: () => void;
+  rightBadge?: string;
+  badgeTone?: "gold" | "brand";
 }) {
   return (
     <TouchableOpacity
@@ -148,7 +253,25 @@ function MenuItem({
         <Text style={styles.menuLabel}>{label}</Text>
         {hint ? <Text style={styles.menuHint}>{hint}</Text> : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      {rightBadge ? (
+        <View
+          style={[
+            styles.pill,
+            { backgroundColor: badgeTone === "gold" ? colors.gold : colors.brand },
+          ]}
+        >
+          <Text
+            style={[
+              styles.pillText,
+              badgeTone === "gold" ? { color: "#050505" } : null,
+            ]}
+          >
+            {rightBadge}
+          </Text>
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      )}
     </TouchableOpacity>
   );
 }
@@ -211,6 +334,45 @@ const styles = StyleSheet.create({
   },
   menuLabel: { color: "#fff", fontWeight: "700" },
   menuHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  sectionLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginTop: 16,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  pillText: { color: "#fff", fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  myEventsBox: {
+    backgroundColor: colors.bgSecondary,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    marginBottom: 10,
+  },
+  myEventsTitle: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  myEventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  myEventTitle: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  myEventMeta: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
   logout: {
     flexDirection: "row",
     alignItems: "center",
