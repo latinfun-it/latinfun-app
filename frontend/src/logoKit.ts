@@ -5,31 +5,35 @@
 
 const BG = "#050505";
 const BRAND = "#E11D48";
-const FONT_STACK = "Impact, 'Arial Black', Arial, sans-serif";
+// Font stack = identico alla home: sistema black / SF Pro Black / Roboto Black, con peso 900 e letter-spacing stretto
+const FONT_STACK = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-// Offset baseline (empirico per Impact/Arial Black) per posizionare il centro visivo a cy
+// Offset baseline (empirico per system black) per posizionare il centro visivo a cy
 const OFFSET_SINGLE = 0.33;
 const OFFSET_STACKED = 0.33;
 
-/** Wordmark "LATIN"+"HUB" su una riga, centrato a (cx, cy). */
+/** Wordmark "LATIN"+"HUB" su una riga, centrato a (cx, cy).
+ *  letter-spacing negativo replica lo stile della home. */
 function wordmarkCentered(cx: number, cy: number, totalWidth: number) {
-  const fontSize = totalWidth * 0.22;
+  const fontSize = totalWidth * 0.24;
   const baseY = cy + fontSize * OFFSET_SINGLE;
   const startX = cx - totalWidth / 2;
-  return `<text x="${startX}" y="${baseY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>`;
+  const ls = -fontSize * 0.04;
+  return `<text x="${startX}" y="${baseY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>`;
 }
 
 /** Stacked wordmark: LATIN sopra, HUB sotto, centro visivo dello stack a cy. */
 function wordmarkStacked(cx: number, cy: number, width: number) {
-  const fontSize = width * 0.33;
-  const lineGap = fontSize * 0.9;
+  const fontSize = width * 0.36;
+  const lineGap = fontSize * 0.88;
   const latinY = cy - lineGap / 2 + fontSize * OFFSET_STACKED;
   const hubY = cy + lineGap / 2 + fontSize * OFFSET_STACKED;
   const startX = cx - width / 2;
-  const hubWidth = width * 0.72;
+  const hubWidth = width * 0.68;
+  const ls = -fontSize * 0.04;
   return `
-    <text x="${startX}" y="${latinY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${width}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">LATIN</text>
-    <text x="${cx - hubWidth / 2}" y="${hubY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" textLength="${hubWidth}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">HUB</text>
+    <text x="${startX}" y="${latinY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${width}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">LATIN</text>
+    <text x="${cx - hubWidth / 2}" y="${hubY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${hubWidth}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">HUB</text>
   `;
 }
 
