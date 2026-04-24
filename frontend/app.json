@@ -61,14 +61,7 @@
           "cameraPermission": "Scatta la foto di copertina della tua scuola"
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#EC4899",
-          "defaultChannel": "default"
-        }
-      ]
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
