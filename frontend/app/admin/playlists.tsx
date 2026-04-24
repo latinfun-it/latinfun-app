@@ -22,7 +22,7 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import type { Playlist } from "../../src/types";
 
-const GENRES = ["bachata", "reggaeton", "salsa", "latin"];
+const GENRES = ["bachata", "reggaeton", "salsa", "latin", "kizomba", "cumbia", "merengue", "dembow", "afrobeat", "urban"];
 const DEFAULT_COVER = "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg";
 
 function spotifyEmbedFromUrl(input: string): { embed: string; external: string } | null {
@@ -309,6 +309,15 @@ function Editor({
               );
             })}
           </View>
+          <TextInput
+            testID="editor-genre-custom"
+            style={[styles.input, { marginTop: 8 }]}
+            value={GENRES.includes(genre) ? "" : genre}
+            onChangeText={(t) => setGenre(t.trim().toLowerCase())}
+            placeholder="...o scrivi un genere custom (es. timba, salsaton)"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+          />
 
           <Label text="Posizione (ordine)" />
           <TextInput

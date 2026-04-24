@@ -1123,6 +1123,11 @@ async def seed_content():
     if await db.events.count_documents({}) == 0:
         await db.events.insert_many([Event(**e).model_dump() for e in _make_events()])
         logger.info("Seeded events")
+    # Idempotent refresh: LatinHub Opening Night hero image = crowd with hands up
+    await db.events.update_one(
+        {"title": "LatinHub Opening Night"},
+        {"$set": {"image_url": "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg"}},
+    )
     if await db.mixes.count_documents({}) == 0:
         await db.mixes.insert_many([Mix(**m).model_dump() for m in DEMO_MIXES])
         logger.info("Seeded mixes")

@@ -271,9 +271,12 @@ const styles = StyleSheet.create({
   brandMini: {
     color: "#fff",
     fontWeight: "900",
-    fontSize: 20,
-    letterSpacing: -0.8,
+    fontSize: 36,
+    letterSpacing: -1.5,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif-black" }),
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   heroBadge: {
     flexDirection: "row",
