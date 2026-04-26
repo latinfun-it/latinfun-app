@@ -1,7 +1,7 @@
 """Incremental tests for:
   - Stripe BOOST flow (POST /api/events/{id}/boost, GET /api/payments/status/{session_id})
   - DJ self-registration (POST /api/djs, GET /api/my/dj)
-  - Regressions: admin login, playlists 'LATINHUB' rename, DJs seed, schools seed
+  - Regressions: admin login, playlists 'LATINFUN' rename, DJs seed, schools seed
 """
 
 import os
@@ -31,13 +31,13 @@ class TestAuthRegression:
     def test_admin_login_200(self, api_client, base_url):
         r = api_client.post(
             f"{base_url}/api/auth/login",
-            json={"email": "admin@latinhub.it", "password": "admin123"},
+            json={"email": "admin@latinfun.it", "password": "admin123"},
         )
         assert r.status_code == 200, r.text
         body = r.json()
         assert "access_token" in body and body["access_token"]
         assert body["user"]["role"] == "admin"
-        assert body["user"]["email"] == "admin@latinhub.it"
+        assert body["user"]["email"] == "admin@latinfun.it"
 
 
 # ------------------------- Event create (owner_id) -----------------------
@@ -266,14 +266,14 @@ class TestDJRegistration:
 
 # ------------------------- Regression: playlists/DJs/schools -----------
 class TestSeedRegression:
-    def test_playlists_position_1_is_latinhub(self, api_client, base_url):
+    def test_playlists_position_1_is_latinfun(self, api_client, base_url):
         r = api_client.get(f"{base_url}/api/playlists")
         assert r.status_code == 200
         playlists = r.json()
         assert len(playlists) >= 1
         first = playlists[0]
         assert first["position"] == 1
-        assert first["title"] == "LATINHUB", f"got {first['title']!r}"
+        assert first["title"] == "LATINFUN", f"got {first['title']!r}"
         assert first["featured"] is True
 
     def test_djs_mauro_first(self, api_client, base_url):

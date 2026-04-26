@@ -31,7 +31,7 @@ def api_client():
 def admin_token(api_client, base_url):
     r = api_client.post(
         f"{base_url}/api/auth/login",
-        json={"email": "admin@latinhub.it", "password": "admin123"},
+        json={"email": "admin@latinfun.it", "password": "admin123"},
     )
     if r.status_code != 200:
         pytest.skip(f"Admin login failed: {r.status_code} {r.text}")

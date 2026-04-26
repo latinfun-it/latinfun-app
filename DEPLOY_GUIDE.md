@@ -1,12 +1,12 @@
-# LatinHub — Guida al Deploy
+# LatinFun — Guida al Deploy
 
-Questa guida copre i **due percorsi di deploy** disponibili per LatinHub.
+Questa guida copre i **due percorsi di deploy** disponibili per LatinFun.
 
 ---
 
 ## 🌐 A) Deploy Web su Emergent (rapido)
 
-La build web statica di LatinHub viene pubblicata automaticamente dalla piattaforma Emergent.
+La build web statica di LatinFun viene pubblicata automaticamente dalla piattaforma Emergent.
 
 ### Passi
 1. Vai nell'interfaccia Emergent di questa chat.
@@ -82,11 +82,11 @@ eas submit --profile production --platform ios
 ## ⚙️ Configurazione già inserita
 
 ### `app.json` (identità)
-- `name`: **LatinHub**
-- `slug`: `latinhub`
+- `name`: **LatinFun**
+- `slug`: `latinfun`
 - `version`: `1.0.0`
-- `ios.bundleIdentifier`: `it.latinhub.app`
-- `android.package`: `it.latinhub.app`
+- `ios.bundleIdentifier`: `it.latinfun.app`
+- `android.package`: `it.latinfun.app`
 - Permessi iOS: Location, Photo Library, Camera (con descrizioni in italiano)
 - Permessi Android: `ACCESS_*_LOCATION`, `POST_NOTIFICATIONS`
 - Plugin: `expo-router`, `expo-location`, `expo-splash-screen`, `expo-image-picker`, `expo-notifications`
@@ -98,7 +98,7 @@ eas submit --profile production --platform ios
 
 ### Backend URL per le build native
 - **preview** → punta all'URL Emergent (`dj-italia-hub.preview...`)
-- **production** → punta a `https://api.latinhub.it` (aggiorna quando il dominio di prod è pronto)
+- **production** → punta a `https://api.latinfun.it` (aggiorna quando il dominio di prod è pronto)
 
 ---
 

@@ -1,4 +1,4 @@
-# LatinHub — App Store Listings
+# LatinFun — App Store Listings
 
 Tutti i testi pronti da copia-incollare su App Store Connect e Google Play Console.
 
@@ -8,7 +8,7 @@ Tutti i testi pronti da copia-incollare su App Store Connect e Google Play Conso
 
 ### Nome app (max 30 caratteri)
 ```
-LatinHub
+LatinFun
 ```
 
 ### Sottotitolo (max 30 caratteri)
@@ -23,7 +23,7 @@ Scopri eventi latini, DJ e scuole di ballo vicino a te. La comunità ufficiale d
 
 ### Descrizione (max 4000 caratteri) — ITALIANO
 ```
-LatinHub è il battito della musica latina in Italia. Un'unica app per scoprire eventi, DJ, scuole di ballo e playlist della scena latina italiana.
+LatinFun è il battito della musica latina in Italia. Un'unica app per scoprire eventi, DJ, scuole di ballo e playlist della scena latina italiana.
 
 🎉 EVENTI VICINO A TE
 Trova feste di salsa, bachata, reggaeton e kizomba nella tua città. Filtra per genere, data e distanza. Ricevi notifiche push quando c'è un evento a pochi km da te.
@@ -35,7 +35,7 @@ Esplora i profili dei DJ latini italiani: biografie, mix, video, prossimi eventi
 Trova la scuola giusta per imparare salsa, bachata o kizomba. Informazioni su stili insegnati, livelli, orari e contatti diretti.
 
 🎵 PLAYLIST UFFICIALI
-Ascolta le playlist Spotify curate dalla redazione LatinHub: le hit del momento, classici intramontabili, novità dal Sud America.
+Ascolta le playlist Spotify curate dalla redazione LatinFun: le hit del momento, classici intramontabili, novità dal Sud America.
 
 🔥 PROMUOVI TE STESSO — PACCHETTI BOOST
 Sei un organizzatore, DJ o scuola? Porta il tuo profilo in cima alla lista con i pacchetti BOOST a partire da 4,99 €:
@@ -50,17 +50,17 @@ Pagamento sicuro tramite Stripe. Niente rinnovi automatici.
 Metti "Mi piace" agli eventi e segui i DJ. Ritrova tutto nella sezione "I miei preferiti".
 
 📍 COMUNITÀ GEOLOCALIZZATA
-Grazie alla geolocalizzazione, LatinHub ti avvisa solo degli eventi che ti interessano davvero, nel raggio che scegli tu (5–500 km).
+Grazie alla geolocalizzazione, LatinFun ti avvisa solo degli eventi che ti interessano davvero, nel raggio che scegli tu (5–500 km).
 
-Unisciti alla più grande comunità della musica latina in Italia. Scarica LatinHub e vivi la scena.
+Unisciti alla più grande comunità della musica latina in Italia. Scarica LatinFun e vivi la scena.
 
 —
-Per supporto: info@latinhub.it
+Per supporto: info@latinfun.it
 ```
 
 ### Descrizione (max 4000 caratteri) — ENGLISH
 ```
-LatinHub is the heartbeat of Latin music in Italy. One app to discover events, DJs, dance schools, and playlists from the Italian Latin music scene.
+LatinFun is the heartbeat of Latin music in Italy. One app to discover events, DJs, dance schools, and playlists from the Italian Latin music scene.
 
 🎉 EVENTS NEAR YOU
 Find salsa, bachata, reggaeton, and kizomba parties in your city. Filter by genre, date, and distance. Get push notifications when an event happens within a few km of you.
@@ -72,7 +72,7 @@ Explore profiles of Italian Latin DJs: bios, mixes, videos, upcoming events. Fol
 Find the right school to learn salsa, bachata, or kizomba. Info on styles taught, levels, schedules, and direct contacts.
 
 🎵 OFFICIAL PLAYLISTS
-Listen to Spotify playlists curated by the LatinHub editorial team: current hits, timeless classics, news from South America.
+Listen to Spotify playlists curated by the LatinFun editorial team: current hits, timeless classics, news from South America.
 
 🔥 PROMOTE YOURSELF — BOOST PACKAGES
 Are you an organizer, DJ, or school? Push your profile to the top of the list with BOOST packages starting at €4.99:
@@ -87,12 +87,12 @@ Secure payment via Stripe. No auto-renewals.
 Like events and follow DJs. Find everything in the "My Favorites" section.
 
 📍 GEO-LOCATED COMMUNITY
-Thanks to geolocation, LatinHub only notifies you of events you really care about, within the radius you choose (5–500 km).
+Thanks to geolocation, LatinFun only notifies you of events you really care about, within the radius you choose (5–500 km).
 
-Join the largest Latin music community in Italy. Download LatinHub and live the scene.
+Join the largest Latin music community in Italy. Download LatinFun and live the scene.
 
 —
-Support: info@latinhub.it
+Support: info@latinfun.it
 ```
 
 ### Keywords (max 100 caratteri, separati da virgola)
@@ -111,23 +111,23 @@ salsa,bachata,reggaeton,kizomba,eventi,dj,ballo,latino,discoteca,musica
 
 ### URL di supporto
 ```
-https://latinhub.it/supporto
+https://latinfun.it/supporto
 ```
 
 ### URL marketing (opzionale)
 ```
-https://latinhub.it
+https://latinfun.it
 ```
 
 ### URL Privacy Policy (OBBLIGATORIO)
 ```
-https://latinhub.it/privacy
+https://latinfun.it/privacy
 ```
 
 ### Informazioni per la review Apple
 ```
 Account di test per la review:
-Email: review@latinhub.it
+Email: review@latinfun.it
 Password: TestReview2025!
 
 Note: l'app offre pagamenti Stripe per pacchetti BOOST di visibilità (acquisti una-tantum, non abbonamenti). I pagamenti avvengono tramite Stripe Checkout aperto nel browser, come consentito dalla sezione 3.1.3(e) delle linee guida Apple (servizi di promozione non-digitali per il mondo fisico degli eventi live).
@@ -139,7 +139,7 @@ Note: l'app offre pagamenti Stripe per pacchetti BOOST di visibilità (acquisti 
 
 ### Titolo (max 30 caratteri)
 ```
-LatinHub
+LatinFun
 ```
 
 ### Breve descrizione (max 80 caratteri)
@@ -167,17 +167,17 @@ Usa la stessa descrizione di App Store.
 
 ### Privacy policy URL
 ```
-https://latinhub.it/privacy
+https://latinfun.it/privacy
 ```
 
 ### Email di contatto
 ```
-info@latinhub.it
+info@latinfun.it
 ```
 
 ### Sito web
 ```
-https://latinhub.it
+https://latinfun.it
 ```
 
 ---

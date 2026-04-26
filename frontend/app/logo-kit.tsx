@@ -48,7 +48,7 @@ export default function LogoKit() {
   const download = async (v: LogoVariant, fmt: Format) => {
     setBusyKey(`${v.key}:${fmt}`);
     try {
-      const filename = `latinhub_${v.key}.${fmt}`;
+      const filename = `latinfun_${v.key}.${fmt}`;
       if (Platform.OS === "web") {
         if (fmt === "svg") {
           const blob = new Blob([v.svg], { type: "image/svg+xml;charset=utf-8" });
@@ -84,7 +84,7 @@ export default function LogoKit() {
         if (available) {
           await Sharing.shareAsync(path, {
             mimeType: "image/svg+xml",
-            dialogTitle: `${v.title} - LatinHub`,
+            dialogTitle: `${v.title} - LatinFun`,
           });
         } else {
           Alert.alert("Salvato", `File scritto in: ${path}`);
@@ -110,7 +110,7 @@ export default function LogoKit() {
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.kicker}>KIT PROMO</Text>
-            <Text style={styles.title}>Logo LatinHub</Text>
+            <Text style={styles.title}>Logo LatinFun</Text>
           </View>
         </View>
       </SafeAreaView>

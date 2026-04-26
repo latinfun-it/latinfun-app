@@ -1,14 +1,14 @@
-# Privacy Policy — LatinHub
+# Privacy Policy — LatinFun
 
 **Ultimo aggiornamento**: [INSERIRE DATA DI PUBBLICAZIONE]
 
 ## 1. Titolare del trattamento
-LatinHub è gestita da **[Nome ragione sociale / tua P.IVA]**
-Email: info@latinhub.it
+LatinFun è gestita da **[Nome ragione sociale / tua P.IVA]**
+Email: info@latinfun.it
 PEC: [se presente]
 Sede: [Città, Italia]
 
-Per qualsiasi richiesta relativa alla privacy puoi contattarci a **privacy@latinhub.it**.
+Per qualsiasi richiesta relativa alla privacy puoi contattarci a **privacy@latinfun.it**.
 
 ## 2. Dati raccolti
 
@@ -67,7 +67,7 @@ Per la privacy policy di Stripe: https://stripe.com/it/privacy
 
 ## 6. Diritti dell'utente (GDPR)
 In qualsiasi momento puoi:
-- ✅ **Accedere** ai tuoi dati (scrivici a privacy@latinhub.it)
+- ✅ **Accedere** ai tuoi dati (scrivici a privacy@latinfun.it)
 - ✅ **Rettificare** dati inesatti (dalla sezione Profilo in app)
 - ✅ **Cancellare** il tuo account (dalla sezione Impostazioni → Elimina account)
 - ✅ **Opporti** al trattamento
@@ -75,7 +75,7 @@ In qualsiasi momento puoi:
 - ✅ **Limitare** il trattamento
 - ✅ **Revocare** il consenso alle notifiche (dalla sezione Notifiche)
 
-Per esercitare questi diritti scrivici a **privacy@latinhub.it**. Ti risponderemo entro 30 giorni.
+Per esercitare questi diritti scrivici a **privacy@latinfun.it**. Ti risponderemo entro 30 giorni.
 
 Puoi inoltre presentare reclamo al **Garante per la protezione dei dati personali** (www.garanteprivacy.it).
 
@@ -83,7 +83,7 @@ Puoi inoltre presentare reclamo al **Garante per la protezione dei dati personal
 L'app mobile **non usa cookie**. L'unica informazione conservata in locale sul tuo dispositivo è il token JWT di autenticazione, cancellato al logout. La versione web può usare cookie tecnici essenziali al funzionamento (anche questi non tracciano).
 
 ## 8. Minori
-LatinHub non è destinata a minori di 14 anni. Se scopriamo di aver raccolto dati da un minore di 14 anni senza il consenso dei genitori, li elimineremo immediatamente.
+LatinFun non è destinata a minori di 14 anni. Se scopriamo di aver raccolto dati da un minore di 14 anni senza il consenso dei genitori, li elimineremo immediatamente.
 
 ## 9. Sicurezza
 - Password hashate con bcrypt
@@ -100,4 +100,4 @@ Pubblicheremo eventuali modifiche in questa pagina con la nuova data di aggiorna
 
 ---
 
-**Hai domande?** Contattaci a **privacy@latinhub.it**
+**Hai domande?** Contattaci a **privacy@latinfun.it**

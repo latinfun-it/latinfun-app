@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "LatinHub",
-    "slug": "latinhub",
+    "name": "LatinFun",
+    "slug": "latinfun",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "latinhub",
+    "scheme": "latinfun",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "it.latinhub.app",
+      "bundleIdentifier": "it.latinfun.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te",
@@ -19,7 +19,7 @@
       }
     },
     "android": {
-      "package": "it.latinhub.app",
+      "package": "it.latinfun.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",

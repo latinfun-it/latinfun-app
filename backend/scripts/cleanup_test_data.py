@@ -1,5 +1,5 @@
 """
-Script di pulizia dati di prova per LatinHub.
+Script di pulizia dati di prova per LatinFun.
 Uso:
   python3 /app/backend/scripts/cleanup_test_data.py --dry-run
   python3 /app/backend/scripts/cleanup_test_data.py --apply
@@ -29,7 +29,7 @@ load_dotenv(env_path)
 from motor.motor_asyncio import AsyncIOMotorClient
 
 MONGO_URL = os.environ["MONGO_URL"]
-DB_NAME = os.environ.get("DB_NAME", "latinhub")
+DB_NAME = os.environ.get("DB_NAME", "latinfun")
 
 # Pattern per riconoscere contenuti di prova (case insensitive)
 TEST_PATTERNS = re.compile(r"(test|prova|demo|dummy|lorem|asdf|xxx)", re.IGNORECASE)
@@ -103,7 +103,7 @@ async def cleanup(apply: bool):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pulizia dati di prova LatinHub")
+    parser = argparse.ArgumentParser(description="Pulizia dati di prova LatinFun")
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true", help="Mostra cosa verrebbe eliminato, senza applicare")
     g.add_argument("--apply", action="store_true", help="Applica la rimozione")

@@ -1,12 +1,12 @@
-# Termini di Servizio — LatinHub
+# Termini di Servizio — LatinFun
 
 **Ultimo aggiornamento**: [INSERIRE DATA]
 
 ## 1. Oggetto
-Questi Termini regolano l'utilizzo dell'applicazione mobile e web **LatinHub** ("Servizio"), gestita da **[Nome ragione sociale — P.IVA]**. Utilizzando il Servizio accetti integralmente questi Termini.
+Questi Termini regolano l'utilizzo dell'applicazione mobile e web **LatinFun** ("Servizio"), gestita da **[Nome ragione sociale — P.IVA]**. Utilizzando il Servizio accetti integralmente questi Termini.
 
 ## 2. Descrizione del Servizio
-LatinHub è una piattaforma che permette di:
+LatinFun è una piattaforma che permette di:
 - Scoprire eventi, DJ e scuole di ballo della scena latina in Italia
 - Creare e pubblicare il proprio profilo (DJ, scuola, organizzatore di eventi)
 - Acquistare pacchetti di visibilità "BOOST" tramite Stripe
@@ -25,7 +25,7 @@ Sei responsabile dei contenuti che pubblichi. Ti impegni a **non caricare**:
 - Dati falsi o fuorvianti
 - Contenuti spam o pubblicità non richiesta
 
-LatinHub si riserva il diritto di rimuovere contenuti che violano questi termini e di sospendere/cancellare account in violazione.
+LatinFun si riserva il diritto di rimuovere contenuti che violano questi termini e di sospendere/cancellare account in violazione.
 
 ## 5. Pacchetti BOOST e pagamenti
 
@@ -48,10 +48,10 @@ Dato che il servizio BOOST è **immediatamente fruibile al completamento del pag
 
 ### 5.4 Rimborsi
 I pacchetti BOOST **non sono rimborsabili** salvo:
-- Malfunzionamento tecnico imputabile a LatinHub che impedisca la fruizione
+- Malfunzionamento tecnico imputabile a LatinFun che impedisca la fruizione
 - Errore di addebito
 
-Per richieste di rimborso: **support@latinhub.it**
+Per richieste di rimborso: **support@latinfun.it**
 
 ### 5.5 Fatturazione
 Per richiedere fattura indica la tua P.IVA nella sezione Profilo prima dell'acquisto. Fatture emesse entro 15 giorni.
@@ -65,37 +65,37 @@ Non puoi:
 - Utilizzare il Servizio per attività illegali
 
 ## 7. Proprietà intellettuale
-Il marchio, logo, design e codice di LatinHub sono di proprietà esclusiva di **[Nome ragione sociale]**. L'uso non autorizzato è vietato.
+Il marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di **[Nome ragione sociale]**. L'uso non autorizzato è vietato.
 
-I contenuti degli utenti restano di proprietà degli utenti, che concedono a LatinHub una **licenza gratuita, non esclusiva e revocabile** di pubblicazione nell'ambito del Servizio.
+I contenuti degli utenti restano di proprietà degli utenti, che concedono a LatinFun una **licenza gratuita, non esclusiva e revocabile** di pubblicazione nell'ambito del Servizio.
 
 ## 8. Disponibilità del Servizio
-LatinHub si impegna a mantenere il Servizio disponibile ma non garantisce assenza di interruzioni, errori o malfunzionamenti. Manutenzioni programmate saranno comunicate con anticipo.
+LatinFun si impegna a mantenere il Servizio disponibile ma non garantisce assenza di interruzioni, errori o malfunzionamenti. Manutenzioni programmate saranno comunicate con anticipo.
 
 ## 9. Limitazione di responsabilità
-Nei limiti consentiti dalla legge, LatinHub **non è responsabile per**:
+Nei limiti consentiti dalla legge, LatinFun **non è responsabile per**:
 - Qualità, sicurezza o legalità degli eventi organizzati da terzi pubblicizzati sull'app
 - Rapporti tra utenti (es. DJ ↔ organizzatore)
 - Perdita di dati dovuta a cause esterne
 - Contenuti pubblicati dagli utenti
 
 ## 10. Risoluzione del contratto
-LatinHub può sospendere o chiudere l'account in caso di:
+LatinFun può sospendere o chiudere l'account in caso di:
 - Violazione di questi Termini
 - Richiesta dell'utente
 - Inattività superiore a 24 mesi
 
 ## 11. Modifiche ai Termini
-LatinHub può aggiornare questi Termini comunicandolo via email o in-app. L'uso continuato del Servizio dopo le modifiche costituisce accettazione.
+LatinFun può aggiornare questi Termini comunicandolo via email o in-app. L'uso continuato del Servizio dopo le modifiche costituisce accettazione.
 
 ## 12. Legge applicabile e foro competente
 Questi Termini sono regolati dalla **legge italiana**. Per qualsiasi controversia il foro competente è quello di **[Città di sede]**, salvo diversa disposizione di legge a tutela del consumatore.
 
 ## 13. Contatti
-- Supporto: **support@latinhub.it**
-- Privacy: **privacy@latinhub.it**
-- Legale: **legal@latinhub.it**
+- Supporto: **support@latinfun.it**
+- Privacy: **privacy@latinfun.it**
+- Legale: **legal@latinfun.it**
 
 ---
 
-Accettando di usare LatinHub confermi di aver letto e accettato questi Termini e la nostra [Privacy Policy](./PRIVACY_POLICY.md).
+Accettando di usare LatinFun confermi di aver letto e accettato questi Termini e la nostra [Privacy Policy](./PRIVACY_POLICY.md).

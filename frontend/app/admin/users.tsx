@@ -99,7 +99,7 @@ export default function AdminUsers() {
         const a = document.createElement("a");
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
         a.href = href;
-        a.download = `latinhub_users_${stamp}.csv`;
+        a.download = `latinfun_users_${stamp}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();

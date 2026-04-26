@@ -75,7 +75,7 @@ export default function ProfileScreen() {
               ) : (
                 <View style={[styles.roleBadge, { borderColor: colors.brand }]}>
                   <Ionicons name="heart" size={12} color={colors.brand} />
-                  <Text style={[styles.roleText, { color: colors.brand }]}>LATINHUB MEMBER</Text>
+                  <Text style={[styles.roleText, { color: colors.brand }]}>LATINFUN MEMBER</Text>
                 </View>
               )}
             </View>
@@ -200,7 +200,7 @@ export default function ProfileScreen() {
           />
           <MenuItem
             icon="download-outline"
-            label="Logo LatinHub (kit promo)"
+            label="Logo LatinFun (kit promo)"
             hint="Banner, quadrato, tondo - condividi e promuovi"
             onPress={() => router.push("/logo-kit")}
           />
@@ -230,7 +230,7 @@ export default function ProfileScreen() {
             <Text style={styles.logoutText}>Esci</Text>
           </TouchableOpacity>
 
-          <Text style={styles.footer}>LatinHub v1.0 - Made in Italia con ritmo</Text>
+          <Text style={styles.footer}>LatinFun v1.0 - Made in Italia con ritmo</Text>
         </View>
       </ScrollView>
     </View>

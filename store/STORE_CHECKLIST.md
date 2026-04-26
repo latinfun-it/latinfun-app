@@ -1,11 +1,11 @@
-# 📋 Checklist pubblicazione store — LatinHub
+# 📋 Checklist pubblicazione store — LatinFun
 
 Spunta mano a mano che completi ogni voce.
 
 ---
 
 ## 🔧 Setup tecnico (FATTO ✅)
-- [x] `app.json` con identità LatinHub configurata
+- [x] `app.json` con identità LatinFun configurata
 - [x] `eas.json` con profili development/preview/production
 - [x] Plugin Expo (router, location, splash, image-picker, notifications)
 - [x] Permessi iOS con descrizioni italiane
@@ -39,19 +39,19 @@ Spunta mano a mano che completi ogni voce.
 - [x] Categoria + classificazione età
 
 ## 📄 Documenti legali (OBBLIGATORI — template in `/app/store/`)
-- [ ] **Privacy Policy** pubblicata su `https://latinhub.it/privacy`
+- [ ] **Privacy Policy** pubblicata su `https://latinfun.it/privacy`
   - Template pronto in `/app/store/PRIVACY_POLICY.md` → completa i campi `[...]` e pubblicala
-- [ ] **Termini di Servizio** pubblicati su `https://latinhub.it/termini`
+- [ ] **Termini di Servizio** pubblicati su `https://latinfun.it/termini`
   - Template pronto in `/app/store/TERMS_OF_SERVICE.md`
 - [ ] Decidere dove pubblicarli: sito web statico, Notion pubblico, GitHub Pages...
-- [ ] URL sito web (anche placeholder va bene): `https://latinhub.it`
+- [ ] URL sito web (anche placeholder va bene): `https://latinfun.it`
 
 ## 🔐 Account sviluppatore
 ### iOS
 - [ ] **Apple Developer Program** attivato ($99/anno)
   - Registrati su [developer.apple.com](https://developer.apple.com/programs/)
 - [ ] Creata **App ID** su https://developer.apple.com/account → Identifiers
-  - Bundle ID: `it.latinhub.app`
+  - Bundle ID: `it.latinfun.app`
 - [ ] Creata **app su App Store Connect** → https://appstoreconnect.apple.com
   - ottieni `ascAppId` (numero 10 cifre)
 - [ ] Recupera `appleTeamId` da [Membership](https://developer.apple.com/account) (10 caratteri alfanumerici)
@@ -59,7 +59,7 @@ Spunta mano a mano che completi ogni voce.
 ### Android
 - [ ] **Google Play Console** attivato ($25 una-tantum)
   - Registrati su [play.google.com/console](https://play.google.com/console)
-- [ ] Creata app nella Console con package `it.latinhub.app`
+- [ ] Creata app nella Console con package `it.latinfun.app`
 - [ ] Scaricato **service account JSON** per submit automatico:
   1. API access → Create service account
   2. Scarica JSON

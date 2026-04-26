@@ -1,4 +1,4 @@
-"""LatinHub backend API tests."""
+"""LatinFun backend API tests."""
 
 import uuid
 import pytest
@@ -11,7 +11,7 @@ class TestHealth:
         assert r.status_code == 200
         data = r.json()
         assert data.get("status") == "ok"
-        assert data.get("app") == "LatinHub"
+        assert data.get("app") == "LatinFun"
 
 
 # --------------------------- Auth ---------------------------
@@ -19,12 +19,12 @@ class TestAuth:
     def test_login_admin_success(self, api_client, base_url):
         r = api_client.post(
             f"{base_url}/api/auth/login",
-            json={"email": "admin@latinhub.it", "password": "admin123"},
+            json={"email": "admin@latinfun.it", "password": "admin123"},
         )
         assert r.status_code == 200, r.text
         data = r.json()
         assert "access_token" in data and data["access_token"]
-        assert data["user"]["email"] == "admin@latinhub.it"
+        assert data["user"]["email"] == "admin@latinfun.it"
         assert data["user"]["role"] == "admin"
         # must NOT leak password_hash or _id
         assert "password_hash" not in data["user"]
@@ -33,13 +33,13 @@ class TestAuth:
     def test_login_wrong_password_401(self, api_client, base_url):
         r = api_client.post(
             f"{base_url}/api/auth/login",
-            json={"email": "admin@latinhub.it", "password": "WRONG_password"},
+            json={"email": "admin@latinfun.it", "password": "WRONG_password"},
         )
         assert r.status_code == 401
 
     def test_register_new_user(self, api_client, base_url):
         # unique email so test is idempotent; server lowercases email
-        email = f"TEST_user_{uuid.uuid4().hex[:8]}@latinhub.it"
+        email = f"TEST_user_{uuid.uuid4().hex[:8]}@latinfun.it"
         r = api_client.post(
             f"{base_url}/api/auth/register",
             json={"email": email, "password": "test1234", "name": "Test User"},
@@ -63,7 +63,7 @@ class TestAuth:
         )
         assert r.status_code == 200, r.text
         data = r.json()
-        assert data["email"] == "admin@latinhub.it"
+        assert data["email"] == "admin@latinfun.it"
         assert "password_hash" not in data
 
     def test_me_without_token_401(self, api_client, base_url):

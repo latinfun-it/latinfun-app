@@ -1,5 +1,5 @@
 /**
- * Logo kit completo: sfondo NERO, wordmark LATIN bianco + HUB rosso
+ * Logo kit completo: sfondo NERO, wordmark LATIN bianco + FUN rosso
  * (stesso font della home), con tagline + subtitle + pills App Store/Google Play.
  * Dimensioni ridotte per sicurezza: margini 15% sui lati.
  */
@@ -27,13 +27,13 @@ function promoPills(x: number, y: number, scale = 1) {
   return pill(x, y, "SCARICA SU", "App Store") + pill(x + w + gap, y, "DISPONIBILE SU", "Google Play");
 }
 
-/** Wordmark "LATINHUB" su una riga, centrato a (cx, cy). */
+/** Wordmark "LATINFUN" su una riga, centrato a (cx, cy). */
 function wordmarkCentered(cx: number, cy: number, totalWidth: number) {
   const fontSize = totalWidth * 0.24;
   const baseY = cy + fontSize * OFFSET_SINGLE;
   const startX = cx - totalWidth / 2;
   const ls = -fontSize * 0.04;
-  return `<text x="${startX}" y="${baseY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">HUB</tspan></text>`;
+  return `<text x="${startX}" y="${baseY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${totalWidth}" lengthAdjust="spacingAndGlyphs"><tspan fill="#ffffff">LATIN</tspan><tspan fill="${BRAND}">FUN</tspan></text>`;
 }
 
 /** Stacked wordmark per icona app. */

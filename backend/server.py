@@ -32,7 +32,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
 # ----------------------------- App -----------------------------------
-app = FastAPI(title="LatinHub API")
+app = FastAPI(title="LatinFun API")
 api = APIRouter(prefix="/api")
 
 # ----------------------------- Auth ----------------------------------
@@ -423,7 +423,7 @@ async def admin_export_users_csv(current_user: dict = Depends(get_current_user))
         content=body,
         media_type="text/csv; charset=utf-8",
         headers={
-            "Content-Disposition": f'attachment; filename="latinhub_users_{stamp}.csv"',
+            "Content-Disposition": f'attachment; filename="latinfun_users_{stamp}.csv"',
         },
     )
 
@@ -459,7 +459,7 @@ class LocationIn(BaseModel):
 
 
 class TestPushIn(BaseModel):
-    title: str = "LatinHub"
+    title: str = "LatinFun"
     body: str = "Test notification"
 
 
@@ -1268,7 +1268,7 @@ async def delete_school(school_id: str, current_user: dict = Depends(get_current
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():
-    return {"app": "LatinHub", "status": "ok"}
+    return {"app": "LatinFun", "status": "ok"}
 
 
 app.include_router(api)
@@ -1290,7 +1290,7 @@ DEMO_DJS = [
     {
         "name": "Mauro Catalini",
         "slug": "mauro-catalini",
-        "bio": "Founder di LatinHub. Voce e selector della scena latina italiana. Bachata & Urban Latin.",
+        "bio": "Founder di LatinFun. Voce e selector della scena latina italiana. Bachata & Urban Latin.",
         "city": "Milano",
         "genres": ["bachata", "reggaeton", "latin"],
         "image_url": "https://images.pexels.com/photos/14925309/pexels-photo-14925309.jpeg",
@@ -1375,7 +1375,7 @@ def _make_events():
 
     return [
         {
-            "title": "LatinHub Opening Night",
+            "title": "LatinFun Opening Night",
             "description": "La serata ufficiale di lancio. Bachata, reggaeton e salsa fino all'alba con Mauro Catalini & guests.",
             "city": "Milano",
             "venue": "Cafe Cubano",
@@ -1384,8 +1384,8 @@ def _make_events():
             "date": d(3),
             "image_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
             "lineup": ["Mauro Catalini", "La Reina"],
-            "ticket_url": "https://dice.fm/event/opening-latinhub",
-            "organizer": "LatinHub",
+            "ticket_url": "https://dice.fm/event/opening-latinfun",
+            "organizer": "LatinFun",
             "featured": True,
             "boosted": True,
             "latitude": 45.4481,
@@ -1598,8 +1598,8 @@ DEMO_SCHOOLS = [
 
 DEMO_PLAYLISTS = [
     {
-        "title": "LATINHUB",
-        "description": "La playlist ufficiale di LatinHub: bachata, urban latin e reggaeton selezionati per la community.",
+        "title": "LATINFUN",
+        "description": "La playlist ufficiale di LatinFun: bachata, urban latin e reggaeton selezionati per la community.",
         "cover_url": "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg",
         "platform": "spotify",
         "embed_url": "https://open.spotify.com/embed/playlist/0ItuuWeQtp8f3XfsBrYnOe",
@@ -1711,7 +1711,7 @@ DEMO_MIXES = [
 
 
 async def seed_admin():
-    email = os.environ.get("ADMIN_EMAIL", "admin@latinhub.it")
+    email = os.environ.get("ADMIN_EMAIL", "admin@latinfun.it")
     pw = os.environ.get("ADMIN_PASSWORD", "admin123")
     existing = await db.users.find_one({"email": email})
     if not existing:
@@ -1750,9 +1750,9 @@ async def seed_content():
     if await db.events.count_documents({}) == 0:
         await db.events.insert_many([Event(**e).model_dump() for e in _make_events()])
         logger.info("Seeded events")
-    # Idempotent refresh: LatinHub Opening Night hero image = crowd with hands up
+    # Idempotent refresh: LatinFun Opening Night hero image = crowd with hands up
     await db.events.update_one(
-        {"title": "LatinHub Opening Night"},
+        {"title": "LatinFun Opening Night"},
         {"$set": {"image_url": "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg"}},
     )
     if await db.mixes.count_documents({}) == 0:

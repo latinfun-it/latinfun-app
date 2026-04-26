@@ -258,7 +258,7 @@ function Editor({
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="Es. LatinHub Official 2026"
+            placeholder="Es. LatinFun Official 2026"
             placeholderTextColor={colors.textMuted}
           />
 

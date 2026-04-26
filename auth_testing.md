@@ -1,4 +1,4 @@
-# LatinHub Auth Testing Playbook
+# LatinFun Auth Testing Playbook
 
 Mobile app uses Bearer tokens (not cookies) because Expo React Native clients do not persist httpOnly cookies naturally. Tokens are stored in AsyncStorage on the client.
 
@@ -17,7 +17,7 @@ Register:
 ```
 curl -X POST http://localhost:8001/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@latinhub.it","password":"test1234","name":"Test User"}'
+  -d '{"email":"test@latinfun.it","password":"test1234","name":"Test User"}'
 ```
 Expected: 200, `{user: {...}, access_token: "..."}`.
 
@@ -25,7 +25,7 @@ Login (admin seeded):
 ```
 curl -X POST http://localhost:8001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@latinhub.it","password":"admin123"}'
+  -d '{"email":"admin@latinfun.it","password":"admin123"}'
 ```
 Expected: 200, returns access_token.
 
@@ -40,7 +40,7 @@ Wrong password:
 ```
 curl -X POST http://localhost:8001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@latinhub.it","password":"wrong"}'
+  -d '{"email":"admin@latinfun.it","password":"wrong"}'
 ```
 Expected: 401 "Invalid credentials".
 

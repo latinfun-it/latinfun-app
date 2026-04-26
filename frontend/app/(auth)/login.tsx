@@ -60,7 +60,7 @@ export default function Login() {
         >
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.brandBox}>
-              <Text style={styles.logoMark}>LATIN<Text style={{ color: colors.brand }}>HUB</Text></Text>
+              <Text style={styles.logoMark}>LATIN<Text style={{ color: colors.brand }}>FUN</Text></Text>
               <Text style={styles.tagline}>Il battito della musica latina in Italia</Text>
             </View>
 
@@ -125,7 +125,7 @@ export default function Login() {
               </View>
 
               <Text style={styles.demoHint}>
-                Demo admin: admin@latinhub.it / admin123
+                Demo admin: admin@latinfun.it / admin123
               </Text>
             </View>
           </ScrollView>

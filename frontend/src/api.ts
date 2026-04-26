@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-export const TOKEN_KEY = "latinhub.token";
+export const TOKEN_KEY = "latinfun.token";
 
 export const api = axios.create({
   baseURL: `${BASE_URL}/api`,

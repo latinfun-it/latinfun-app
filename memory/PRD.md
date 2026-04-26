@@ -1,7 +1,7 @@
-# LatinHub - Product Requirements Document
+# LatinFun - Product Requirements Document
 
 ## Vision
-LatinHub e IL punto di riferimento per la scena della musica latina in Italia:
+LatinFun e IL punto di riferimento per la scena della musica latina in Italia:
 eventi, DJ, mega mix e playlist - tutto in un'unica app mobile.
 
 ## Target

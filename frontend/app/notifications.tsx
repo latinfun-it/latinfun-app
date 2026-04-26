@@ -172,7 +172,7 @@ export default function NotificationsScreen() {
     setBusy(true);
     try {
       await api.post("/notifications/test", {
-        title: "LatinHub",
+        title: "LatinFun",
         body: "Notifica di test - tutto OK!",
       });
       Alert.alert("Inviata", "Controlla la barra notifiche tra pochi secondi.");

@@ -1,4 +1,4 @@
-"""LatinHub - Schools module backend tests (incremental feature)."""
+"""LatinFun - Schools module backend tests (incremental feature)."""
 
 import uuid
 import pytest
@@ -137,7 +137,7 @@ class TestMySchool:
 
     def test_my_school_for_new_user_returns_null(self, api_client, base_url):
         # Register brand new user - they have no school yet
-        email = f"TEST_noschool_{uuid.uuid4().hex[:8]}@latinhub.it"
+        email = f"TEST_noschool_{uuid.uuid4().hex[:8]}@latinfun.it"
         rr = api_client.post(
             f"{base_url}/api/auth/register",
             json={"email": email, "password": "test1234", "name": "No School User"},
@@ -153,7 +153,7 @@ class TestMySchool:
 
     def test_my_school_returns_created_school(self, api_client, base_url):
         # Register user, create a school, then GET /my/school
-        email = f"TEST_owner_{uuid.uuid4().hex[:8]}@latinhub.it"
+        email = f"TEST_owner_{uuid.uuid4().hex[:8]}@latinfun.it"
         rr = api_client.post(
             f"{base_url}/api/auth/register",
             json={"email": email, "password": "test1234", "name": "Owner User"},
@@ -202,7 +202,7 @@ class TestRegression:
     def test_admin_login_still_works(self, api_client, base_url):
         r = api_client.post(
             f"{base_url}/api/auth/login",
-            json={"email": "admin@latinhub.it", "password": "admin123"},
+            json={"email": "admin@latinfun.it", "password": "admin123"},
         )
         assert r.status_code == 200
         assert r.json()["access_token"]
