@@ -1453,6 +1453,186 @@ async def delete_review(review_id: str, current_user: dict = Depends(get_current
     return {"ok": True}
 
 
+# ----------------------------- Dance Partner --------------------------
+class DancerProfile(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    display_name: str
+    bio: str = ""
+    city: str
+    age: Optional[int] = None
+    photo_url: str
+    styles: List[str] = []  # bachata, salsa, kizomba, reggaeton, merengue
+    level: str = "intermedio"  # principiante | intermedio | avanzato | pro
+    looking_for: List[str] = []  # ["pratica", "social", "competizione"]
+    instagram: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DancerProfileIn(BaseModel):
+    display_name: str = Field(min_length=2, max_length=60)
+    bio: str = Field(default="", max_length=600)
+    city: str = Field(min_length=2, max_length=60)
+    age: Optional[int] = Field(default=None, ge=14, le=99)
+    photo_url: str
+    styles: List[str] = []
+    level: str = "intermedio"
+    looking_for: List[str] = []
+    instagram: Optional[str] = None
+    is_active: bool = True
+
+
+class SwipeIn(BaseModel):
+    direction: str  # "like" | "pass"
+
+
+@api.post("/dancer/profile", response_model=DancerProfile)
+async def upsert_dancer_profile(
+    payload: DancerProfileIn, current_user: dict = Depends(get_current_user)
+):
+    existing = await db.dancer_profiles.find_one({"user_id": current_user["id"]})
+    data = payload.model_dump()
+    if existing:
+        await db.dancer_profiles.update_one(
+            {"id": existing["id"]}, {"$set": data}
+        )
+        out = await db.dancer_profiles.find_one({"id": existing["id"]}, {"_id": 0})
+    else:
+        new = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "created_at": datetime.utcnow(),
+            **data,
+        }
+        await db.dancer_profiles.insert_one(new)
+        out = await db.dancer_profiles.find_one({"id": new["id"]}, {"_id": 0})
+    return out
+
+
+@api.get("/dancer/profile/me")
+async def my_dancer_profile(current_user: dict = Depends(get_current_user)):
+    p = await db.dancer_profiles.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
+    return p
+
+
+@api.get("/dancer/discover", response_model=List[DancerProfile])
+async def discover_dancers(
+    limit: int = 30,
+    current_user: dict = Depends(get_current_user),
+):
+    me = await db.dancer_profiles.find_one({"user_id": current_user["id"]})
+    if not me:
+        raise HTTPException(
+            status_code=400, detail="Crea prima il tuo profilo ballerino"
+        )
+    # Esclude profili gia' swipati
+    swiped = [
+        s["target_user_id"]
+        async for s in db.dancer_swipes.find(
+            {"user_id": current_user["id"]}, {"_id": 0, "target_user_id": 1}
+        )
+    ]
+    swiped.append(current_user["id"])  # se stesso
+
+    query = {
+        "user_id": {"$nin": swiped},
+        "is_active": True,
+    }
+    cursor = db.dancer_profiles.find(query, {"_id": 0})
+    profiles = await cursor.to_list(length=200)
+    # ordina: stessa citta' prima, stili in comune
+    my_styles = set(me.get("styles") or [])
+    my_city = me.get("city", "").lower()
+
+    def score(p):
+        common = len(set(p.get("styles") or []) & my_styles)
+        same_city = 1 if p.get("city", "").lower() == my_city else 0
+        return same_city * 10 + common
+    profiles.sort(key=score, reverse=True)
+    return profiles[:limit]
+
+
+@api.post("/dancer/{target_user_id}/swipe")
+async def swipe_dancer(
+    target_user_id: str,
+    payload: SwipeIn,
+    current_user: dict = Depends(get_current_user),
+):
+    if payload.direction not in {"like", "pass"}:
+        raise HTTPException(status_code=400, detail="direction non valido")
+    if target_user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Non puoi swipare te stesso")
+    target = await db.dancer_profiles.find_one({"user_id": target_user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Profilo non trovato")
+
+    await db.dancer_swipes.update_one(
+        {"user_id": current_user["id"], "target_user_id": target_user_id},
+        {"$set": {
+            "user_id": current_user["id"],
+            "target_user_id": target_user_id,
+            "direction": payload.direction,
+            "created_at": datetime.utcnow(),
+        }},
+        upsert=True,
+    )
+
+    # Verifica reciprocity per "like"
+    if payload.direction == "like":
+        reverse = await db.dancer_swipes.find_one({
+            "user_id": target_user_id,
+            "target_user_id": current_user["id"],
+            "direction": "like",
+        })
+        if reverse:
+            # crea match se non esiste
+            pair_id = "_".join(sorted([current_user["id"], target_user_id]))
+            await db.dancer_matches.update_one(
+                {"pair_id": pair_id},
+                {"$setOnInsert": {
+                    "pair_id": pair_id,
+                    "user_a": current_user["id"],
+                    "user_b": target_user_id,
+                    "created_at": datetime.utcnow(),
+                }},
+                upsert=True,
+            )
+            return {
+                "match": True,
+                "with_user_id": target_user_id,
+                "with_profile": {k: v for k, v in target.items() if k != "_id"},
+            }
+    return {"match": False}
+
+
+@api.get("/dancer/matches")
+async def my_matches(current_user: dict = Depends(get_current_user)):
+    cursor = db.dancer_matches.find(
+        {"$or": [
+            {"user_a": current_user["id"]},
+            {"user_b": current_user["id"]},
+        ]},
+        {"_id": 0},
+    ).sort("created_at", -1)
+    matches = await cursor.to_list(length=200)
+    other_ids = [m["user_b"] if m["user_a"] == current_user["id"] else m["user_a"] for m in matches]
+    profiles = await db.dancer_profiles.find(
+        {"user_id": {"$in": other_ids}}, {"_id": 0}
+    ).to_list(length=500)
+    by_user = {p["user_id"]: p for p in profiles}
+    return [
+        {
+            "match_at": m["created_at"],
+            "profile": by_user.get(m["user_b"] if m["user_a"] == current_user["id"] else m["user_a"]),
+        }
+        for m in matches
+        if by_user.get(m["user_b"] if m["user_a"] == current_user["id"] else m["user_a"])
+    ]
+
+
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():

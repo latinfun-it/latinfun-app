@@ -153,6 +153,28 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Match Partner di Ballo CTA */}
+        <TouchableOpacity
+          testID="home-match-cta"
+          activeOpacity={0.9}
+          onPress={() => router.push("/dancer" as any)}
+          style={styles.matchCta}
+        >
+          <View style={styles.matchCtaInner}>
+            <View style={styles.matchIconBox}>
+              <Ionicons name="heart" size={26} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.matchCtaKicker}>NOVITÀ</Text>
+              <Text style={styles.matchCtaTitle}>Trova Partner di Ballo</Text>
+              <Text style={styles.matchCtaSub}>
+                Scopri ballerini vicino a te e fai match
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={22} color="#fff" />
+          </View>
+        </TouchableOpacity>
+
         {/* Featured events */}
         <SectionHeader title="Eventi in evidenza" onSeeAll={() => router.push("/(tabs)/events")} />
         <ScrollView
@@ -346,6 +368,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
+  matchCta: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: colors.brand,
+  },
+  matchCtaInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    gap: 14,
+  },
+  matchIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  matchCtaKicker: { color: "rgba(255,255,255,0.85)", fontSize: 10, letterSpacing: 1.5, fontWeight: "800" },
+  matchCtaTitle: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 2 },
+  matchCtaSub: { color: "rgba(255,255,255,0.92)", fontSize: 12, marginTop: 2 },
   sectionTitle: { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
   sectionSee: { color: colors.brand, fontWeight: "700", fontSize: 13 },
   evtCard: {
