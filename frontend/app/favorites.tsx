@@ -8,27 +8,48 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { api } from "../src/api";
 import { colors, radii, spacing } from "../src/theme";
-import type { DJ, EventItem } from "../src/types";
+import type { DJ, EventItem, School } from "../src/types";
+
+type Playlist = {
+  id: string;
+  title: string;
+  description?: string;
+  cover_url?: string;
+  genre?: string;
+  external_url: string;
+};
+
+type Tab = "djs" | "events" | "schools" | "playlists";
 
 export default function Favorites() {
   const router = useRouter();
   const [djs, setDjs] = useState<DJ[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [tab, setTab] = useState<"djs" | "events">("djs");
+  const [schools, setSchools] = useState<School[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [tab, setTab] = useState<Tab>("djs");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const r = await api.get<{ djs: DJ[]; events: EventItem[] }>("/my/favorites");
+      const r = await api.get<{
+        djs: DJ[];
+        events: EventItem[];
+        schools: School[];
+        playlists: Playlist[];
+      }>("/my/favorites");
       setDjs(r.data.djs || []);
       setEvents(r.data.events || []);
+      setSchools(r.data.schools || []);
+      setPlaylists(r.data.playlists || []);
     } catch {
       /* silent */
     } finally {
@@ -51,8 +72,13 @@ export default function Favorites() {
     load();
   };
 
-  const empty =
-    (tab === "djs" && djs.length === 0) || (tab === "events" && events.length === 0);
+  const lists: Record<Tab, number> = {
+    djs: djs.length,
+    events: events.length,
+    schools: schools.length,
+    playlists: playlists.length,
+  };
+  const empty = lists[tab] === 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="favorites">
@@ -71,22 +97,40 @@ export default function Favorites() {
           </View>
         </View>
 
-        <View style={styles.tabs}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabs}
+        >
           <TabBtn
             active={tab === "djs"}
-            label={`DJ seguiti${djs.length ? ` · ${djs.length}` : ""}`}
+            label={`DJ${djs.length ? ` · ${djs.length}` : ""}`}
             icon="person"
             onPress={() => setTab("djs")}
             testID="fav-tab-djs"
           />
           <TabBtn
             active={tab === "events"}
-            label={`Eventi salvati${events.length ? ` · ${events.length}` : ""}`}
+            label={`Eventi${events.length ? ` · ${events.length}` : ""}`}
             icon="heart"
             onPress={() => setTab("events")}
             testID="fav-tab-events"
           />
-        </View>
+          <TabBtn
+            active={tab === "schools"}
+            label={`Scuole${schools.length ? ` · ${schools.length}` : ""}`}
+            icon="school"
+            onPress={() => setTab("schools")}
+            testID="fav-tab-schools"
+          />
+          <TabBtn
+            active={tab === "playlists"}
+            label={`Musica${playlists.length ? ` · ${playlists.length}` : ""}`}
+            icon="musical-notes"
+            onPress={() => setTab("playlists")}
+            testID="fav-tab-playlists"
+          />
+        </ScrollView>
       </SafeAreaView>
 
       {loading ? (
@@ -118,9 +162,7 @@ export default function Favorites() {
                 <Image source={{ uri: d.avatar_url }} style={styles.avatar} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {d.name}
-                    </Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{d.name}</Text>
                     {d.verified_by_mauro ? (
                       <Ionicons name="checkmark-circle" size={14} color={colors.gold} />
                     ) : null}
@@ -135,7 +177,7 @@ export default function Favorites() {
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             ))
-          ) : (
+          ) : tab === "events" ? (
             events.map((e) => {
               const d = new Date(e.date);
               return (
@@ -148,15 +190,9 @@ export default function Favorites() {
                 >
                   <Image source={{ uri: e.image_url }} style={styles.eventCover} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {e.title}
-                    </Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{e.title}</Text>
                     <Text style={styles.cardMeta} numberOfLines={1}>
-                      {d.toLocaleDateString("it-IT", {
-                        day: "2-digit",
-                        month: "short",
-                      })}{" "}
-                      · {e.city} · {e.venue}
+                      {d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })} · {e.city} · {e.venue}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
                       <View style={styles.genrePill}>
@@ -174,6 +210,61 @@ export default function Favorites() {
                 </TouchableOpacity>
               );
             })
+          ) : tab === "schools" ? (
+            schools.map((s) => (
+              <TouchableOpacity
+                key={s.id}
+                testID={`fav-school-${s.id}`}
+                style={styles.eventCard}
+                onPress={() => router.push(`/school/${s.id}`)}
+                activeOpacity={0.88}
+              >
+                <Image source={{ uri: s.image_url }} style={styles.eventCover} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{s.name}</Text>
+                    {s.verified_by_mauro ? (
+                      <Ionicons name="checkmark-circle" size={14} color={colors.gold} />
+                    ) : null}
+                  </View>
+                  <Text style={styles.cardMeta} numberOfLines={1}>
+                    {s.city} · {(s.styles || []).slice(0, 3).join(", ")}
+                  </Text>
+                  <Text style={styles.cardStat}>{s.students || 0} studenti</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))
+          ) : (
+            playlists.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                testID={`fav-playlist-${p.id}`}
+                style={styles.eventCard}
+                onPress={() => p.external_url && Linking.openURL(p.external_url)}
+                activeOpacity={0.88}
+              >
+                {p.cover_url ? (
+                  <Image source={{ uri: p.cover_url }} style={styles.eventCover} />
+                ) : (
+                  <View style={[styles.eventCover, styles.coverPlaceholder]}>
+                    <Ionicons name="musical-notes" size={28} color={colors.brand} />
+                  </View>
+                )}
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>{p.title}</Text>
+                  {p.description ? (
+                    <Text style={styles.cardMeta} numberOfLines={2}>{p.description}</Text>
+                  ) : null}
+                  {p.genre ? (
+                    <View style={[styles.genrePill, { alignSelf: "flex-start", marginTop: 6 }]}>
+                      <Text style={styles.genreText}>{p.genre}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))
           )}
         </ScrollView>
       )}
@@ -207,29 +298,45 @@ function TabBtn({
   );
 }
 
-function EmptyState({ tab, router }: { tab: "djs" | "events"; router: any }) {
+function EmptyState({ tab, router }: { tab: Tab; router: any }) {
+  const config: Record<Tab, { icon: any; title: string; desc: string; btn: string; route: string }> = {
+    djs: {
+      icon: "person-add-outline",
+      title: "Nessun DJ seguito",
+      desc: "Tocca il cuoricino su un DJ per trovarlo qui.",
+      btn: "Esplora DJ",
+      route: "/(tabs)/djs",
+    },
+    events: {
+      icon: "heart-outline",
+      title: "Nessun evento salvato",
+      desc: "Tocca il cuoricino su un evento per salvarlo.",
+      btn: "Esplora eventi",
+      route: "/(tabs)/events",
+    },
+    schools: {
+      icon: "school-outline",
+      title: "Nessuna scuola salvata",
+      desc: "Tocca il cuoricino su una scuola di ballo per salvarla.",
+      btn: "Esplora scuole",
+      route: "/(tabs)/schools",
+    },
+    playlists: {
+      icon: "musical-notes-outline",
+      title: "Nessuna playlist salvata",
+      desc: "Tocca il cuoricino su una playlist per averla a portata di mano.",
+      btn: "Esplora musica",
+      route: "/(tabs)/music",
+    },
+  };
+  const c = config[tab];
   return (
     <View style={styles.emptyBox}>
-      <Ionicons
-        name={tab === "djs" ? "person-add-outline" : "heart-outline"}
-        size={42}
-        color={colors.textMuted}
-      />
-      <Text style={styles.emptyTitle}>
-        {tab === "djs" ? "Nessun DJ seguito" : "Nessun evento salvato"}
-      </Text>
-      <Text style={styles.emptyDesc}>
-        {tab === "djs"
-          ? "Tocca 'Segui' sul profilo di un DJ per trovarlo qui."
-          : "Tocca 'Mi piace' su un evento per salvarlo e aprirlo velocemente."}
-      </Text>
-      <TouchableOpacity
-        style={styles.emptyBtn}
-        onPress={() => router.push(tab === "djs" ? "/(tabs)/djs" : "/(tabs)/events")}
-      >
-        <Text style={styles.emptyBtnText}>
-          {tab === "djs" ? "Esplora DJ" : "Esplora eventi"}
-        </Text>
+      <Ionicons name={c.icon} size={42} color={colors.textMuted} />
+      <Text style={styles.emptyTitle}>{c.title}</Text>
+      <Text style={styles.emptyDesc}>{c.desc}</Text>
+      <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push(c.route)}>
+        <Text style={styles.emptyBtnText}>{c.btn}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -260,15 +367,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: spacing.lg,
-    marginBottom: 4,
+    paddingBottom: 8,
   },
   tabBtn: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
     paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: radii.pill,
     backgroundColor: colors.bgSecondary,
     borderWidth: 1,
@@ -301,6 +408,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   eventCover: { width: 70, height: 70, borderRadius: radii.sm, backgroundColor: "#222" },
+  coverPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(236,72,153,0.10)",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   genrePill: {
     backgroundColor: "rgba(236,72,153,0.14)",
     paddingHorizontal: 8,

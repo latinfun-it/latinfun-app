@@ -1035,6 +1035,38 @@ async def my_saved_schools(current_user: dict = Depends(get_current_user)):
     return [d["school_id"] async for d in cursor]
 
 
+@api.post("/playlists/{playlist_id}/save")
+async def save_playlist(playlist_id: str, current_user: dict = Depends(get_current_user)):
+    pl = await db.playlists.find_one({"id": playlist_id})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Playlist non trovata")
+    existing = await db.user_saved_playlists.find_one(
+        {"user_id": current_user["id"], "playlist_id": playlist_id}
+    )
+    if existing:
+        return {"saved": True}
+    await db.user_saved_playlists.insert_one(
+        {"user_id": current_user["id"], "playlist_id": playlist_id, "created_at": datetime.utcnow()}
+    )
+    return {"saved": True}
+
+
+@api.delete("/playlists/{playlist_id}/save")
+async def unsave_playlist(playlist_id: str, current_user: dict = Depends(get_current_user)):
+    await db.user_saved_playlists.delete_one(
+        {"user_id": current_user["id"], "playlist_id": playlist_id}
+    )
+    return {"saved": False}
+
+
+@api.get("/my/saved-playlists", response_model=List[str])
+async def my_saved_playlists(current_user: dict = Depends(get_current_user)):
+    cursor = db.user_saved_playlists.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "playlist_id": 1}
+    )
+    return [d["playlist_id"] async for d in cursor]
+
+
 @api.get("/my/favorites")
 async def my_favorites(current_user: dict = Depends(get_current_user)):
     follows = [d["dj_id"] async for d in db.user_follows.find(
@@ -1046,10 +1078,14 @@ async def my_favorites(current_user: dict = Depends(get_current_user)):
     saved_schools = [d["school_id"] async for d in db.user_saved_schools.find(
         {"user_id": current_user["id"]}, {"_id": 0, "school_id": 1}
     )]
+    saved_playlists = [d["playlist_id"] async for d in db.user_saved_playlists.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "playlist_id": 1}
+    )]
     djs = await db.djs.find({"id": {"$in": follows}}, {"_id": 0}).to_list(500)
     events = await db.events.find({"id": {"$in": likes}}, {"_id": 0}).to_list(500)
     schools = await db.schools.find({"id": {"$in": saved_schools}}, {"_id": 0}).to_list(500)
-    return {"djs": djs, "events": events, "schools": schools}
+    playlists = await db.playlists.find({"id": {"$in": saved_playlists}}, {"_id": 0}).to_list(500)
+    return {"djs": djs, "events": events, "schools": schools, "playlists": playlists}
 
 
 # ----------------------------- Event Inquiries ---------------------
