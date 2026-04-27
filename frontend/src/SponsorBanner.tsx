@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Linking,
-  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "./api";
@@ -27,7 +26,8 @@ type Sponsor = {
  * Banner sponsor pubblicitario per la home.
  * - Carica i banner attivi nel range date e per la posizione richiesta
  * - Track impressions e clicks
- * - Multi-banner: se ce ne sono piu' di uno, scroll orizzontale
+ * - Multi-banner: VERTICAL stack (uno sotto l'altro, scroll col contenuto della pagina)
+ * - Supporta numero ILLIMITATO di sponsor
  */
 export default function SponsorBanner({
   position = "home_top",
@@ -66,87 +66,55 @@ export default function SponsorBanner({
 
   if (sponsors.length === 0) return null;
 
-  if (sponsors.length === 1) {
-    const s = sponsors[0];
-    return (
-      <TouchableOpacity
-        testID={`sponsor-${s.id}`}
-        activeOpacity={0.9}
-        onPress={() => onClick(s)}
-        style={styles.single}
-      >
-        <Image source={{ uri: s.image_url }} style={styles.singleImg} />
-        <View style={styles.overlay}>
-          <View style={styles.adTag}>
-            <Text style={styles.adTagText}>SPONSOR</Text>
-          </View>
-          {s.brand ? <Text style={styles.brand}>{s.brand}</Text> : null}
-          <Text style={styles.title}>{s.title}</Text>
-          {s.subtitle ? <Text style={styles.sub}>{s.subtitle}</Text> : null}
-          {s.link_url ? (
-            <View style={styles.cta}>
-              <Text style={styles.ctaText}>{s.cta_label || "Scopri"}</Text>
-              <Ionicons name="arrow-forward" size={14} color="#fff" />
-            </View>
-          ) : null}
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
+  // VERTICAL STACK: ogni sponsor full-width, uno sotto l'altro
   return (
-    <ScrollView
-      horizontal
-      pagingEnabled
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: 10 }}
-    >
+    <View style={styles.stack}>
       {sponsors.map((s) => (
         <TouchableOpacity
           key={s.id}
           testID={`sponsor-${s.id}`}
           activeOpacity={0.9}
           onPress={() => onClick(s)}
-          style={styles.multi}
+          style={styles.banner}
         >
-          <Image source={{ uri: s.image_url }} style={styles.singleImg} />
+          <Image source={{ uri: s.image_url }} style={styles.bannerImg} />
           <View style={styles.overlay}>
             <View style={styles.adTag}>
               <Text style={styles.adTagText}>SPONSOR</Text>
             </View>
             {s.brand ? <Text style={styles.brand}>{s.brand}</Text> : null}
-            <Text style={styles.title} numberOfLines={1}>{s.title}</Text>
+            <Text style={styles.title} numberOfLines={2}>{s.title}</Text>
             {s.subtitle ? (
-              <Text style={styles.sub} numberOfLines={1}>{s.subtitle}</Text>
+              <Text style={styles.sub} numberOfLines={2}>{s.subtitle}</Text>
+            ) : null}
+            {s.link_url ? (
+              <View style={styles.cta}>
+                <Text style={styles.ctaText}>{s.cta_label || "Scopri"}</Text>
+                <Ionicons name="arrow-forward" size={14} color="#fff" />
+              </View>
             ) : null}
           </View>
         </TouchableOpacity>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  single: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
+  stack: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: 12,
+  },
+  banner: {
     borderRadius: radii.md,
     overflow: "hidden",
-    height: 120,
+    height: 130,
     backgroundColor: colors.bgSecondary,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  multi: {
-    width: 320,
-    height: 120,
-    borderRadius: radii.md,
-    overflow: "hidden",
-    backgroundColor: colors.bgSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  singleImg: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
+  bannerImg: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
   overlay: {
     flex: 1,
     padding: 14,
