@@ -17,6 +17,7 @@ import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import type { Playlist } from "../../src/types";
 
 export default function PlaylistDetail() {
@@ -61,13 +62,18 @@ export default function PlaylistDetail() {
             style={StyleSheet.absoluteFill}
           />
           <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-            <TouchableOpacity
-              testID="playlist-back"
-              onPress={() => router.back()}
-              style={styles.backBtn}
-            >
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.topRow}>
+              <TouchableOpacity
+                testID="playlist-back"
+                onPress={() => router.back()}
+                style={styles.backBtn}
+              >
+                <Ionicons name="chevron-back" size={22} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.heartBtn}>
+                <FavoriteHeart kind="playlist" entityId={p.id} size={22} />
+              </View>
+            </View>
           </SafeAreaView>
           <View style={styles.heroBottom}>
             <Text style={styles.kicker}>PLAYLIST - {p.platform.toUpperCase()}</Text>
@@ -132,6 +138,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heartBtn: {
+    margin: spacing.md,
   },
   heroBottom: { position: "absolute", bottom: spacing.lg, left: spacing.lg, right: spacing.lg },
   kicker: { color: colors.brand, fontSize: 11, letterSpacing: 2, fontWeight: "800" },

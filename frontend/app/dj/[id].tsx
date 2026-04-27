@@ -20,6 +20,7 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
 import FavoriteButton from "../../src/FavoriteButton";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import DeleteButton from "../../src/DeleteButton";
 import ReviewsSection from "../../src/ReviewsSection";
 import type { DJ, EventItem, Mix } from "../../src/types";
@@ -78,13 +79,18 @@ export default function DjDetail() {
             style={StyleSheet.absoluteFill}
           />
           <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-            <TouchableOpacity
-              testID="dj-back"
-              onPress={() => router.back()}
-              style={styles.backBtn}
-            >
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.topRow}>
+              <TouchableOpacity
+                testID="dj-back"
+                onPress={() => router.back()}
+                style={styles.backBtn}
+              >
+                <Ionicons name="chevron-back" size={22} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.heartBtn}>
+                <FavoriteHeart kind="dj" entityId={dj.id} size={22} />
+              </View>
+            </View>
           </SafeAreaView>
         </View>
 
@@ -248,6 +254,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heartBtn: {
+    margin: spacing.md,
   },
   headerBlock: {
     flexDirection: "row",

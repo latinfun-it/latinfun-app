@@ -19,6 +19,7 @@ import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
 import DeleteButton from "../../src/DeleteButton";
 import ReviewsSection from "../../src/ReviewsSection";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import type { School } from "../../src/types";
 
 export default function SchoolDetail() {
@@ -67,13 +68,18 @@ export default function SchoolDetail() {
             style={StyleSheet.absoluteFill}
           />
           <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-            <TouchableOpacity
-              testID="school-back"
-              onPress={() => router.back()}
-              style={styles.backBtn}
-            >
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.topRow}>
+              <TouchableOpacity
+                testID="school-back"
+                onPress={() => router.back()}
+                style={styles.backBtn}
+              >
+                <Ionicons name="chevron-back" size={22} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.heartBtn}>
+                <FavoriteHeart kind="school" entityId={school.id} size={22} />
+              </View>
+            </View>
           </SafeAreaView>
           <View style={styles.heroBottom}>
             <Text style={styles.city}>{school.city.toUpperCase()}</Text>
@@ -226,6 +232,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heartBtn: {
+    margin: spacing.md,
   },
   heroBottom: { position: "absolute", bottom: spacing.lg, left: spacing.lg, right: spacing.lg },
   city: { color: colors.gold, fontSize: 12, fontWeight: "800", letterSpacing: 2 },

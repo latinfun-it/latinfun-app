@@ -20,6 +20,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import FavoriteButton from "../../src/FavoriteButton";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import DeleteButton from "../../src/DeleteButton";
 import ReviewsSection from "../../src/ReviewsSection";
 import type { EventItem } from "../../src/types";
@@ -106,13 +107,18 @@ export default function EventDetail() {
             style={StyleSheet.absoluteFill}
           />
           <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-            <TouchableOpacity
-              testID="back-btn"
-              onPress={() => router.back()}
-              style={styles.backBtn}
-            >
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.topRow}>
+              <TouchableOpacity
+                testID="back-btn"
+                onPress={() => router.back()}
+                style={styles.backBtn}
+              >
+                <Ionicons name="chevron-back" size={22} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.heartBtn}>
+                <FavoriteHeart kind="event" entityId={ev.id} size={22} />
+              </View>
+            </View>
           </SafeAreaView>
           <View style={styles.heroBottom}>
             <View style={styles.row}>
@@ -300,6 +306,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heartBtn: {
+    margin: spacing.md,
   },
   heroBottom: { position: "absolute", bottom: spacing.lg, left: spacing.lg, right: spacing.lg },
   row: { flexDirection: "row", gap: 10 },
