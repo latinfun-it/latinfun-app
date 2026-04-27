@@ -18,6 +18,7 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
 import DeleteButton from "../../src/DeleteButton";
+import ReviewsSection from "../../src/ReviewsSection";
 import type { School } from "../../src/types";
 
 export default function SchoolDetail() {
@@ -175,6 +176,8 @@ export default function SchoolDetail() {
             entityName={school.name}
             visible={user?.role === "admin"}
           />
+
+          <ReviewsSection kind="school" targetId={school.id} />
         </View>
       </ScrollView>
     </View>

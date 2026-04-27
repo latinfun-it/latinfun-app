@@ -127,6 +127,8 @@ class DJ(BaseModel):
     owner_id: Optional[str] = None
     boosted: bool = False
     boosted_until: Optional[datetime] = None
+    avg_rating: float = 0.0
+    reviews_count: int = 0
 
 
 class DJCreate(BaseModel):
@@ -163,6 +165,8 @@ class Event(BaseModel):
     likes: int = 0
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
+    avg_rating: float = 0.0
+    reviews_count: int = 0
 
 
 class EventCreate(BaseModel):
@@ -268,6 +272,9 @@ class School(BaseModel):
     students: int = 0
     boosted: bool = False
     boosted_until: Optional[datetime] = None
+    saves: int = 0
+    avg_rating: float = 0.0
+    reviews_count: int = 0
 
 
 class SchoolCreate(BaseModel):
@@ -1338,6 +1345,111 @@ async def delete_school(school_id: str, current_user: dict = Depends(get_current
     sc = await db.schools.find_one({"id": school_id}, {"_id": 0})
     await _assert_owner_or_admin(sc, current_user, "Scuola")
     await db.schools.delete_one({"id": school_id})
+    return {"ok": True}
+
+
+# ----------------------------- Reviews -------------------------------
+class ReviewIn(BaseModel):
+    target_type: str  # "event" | "dj" | "school"
+    target_id: str
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = Field(default=None, max_length=600)
+
+
+class Review(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    target_type: str
+    target_id: str
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime
+
+
+VALID_TARGETS = {"event": "events", "dj": "djs", "school": "schools"}
+
+
+async def _recompute_rating(target_type: str, target_id: str):
+    """Aggiorna avg_rating e reviews_count del target."""
+    coll = VALID_TARGETS.get(target_type)
+    if not coll:
+        return
+    pipe = [
+        {"$match": {"target_type": target_type, "target_id": target_id}},
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
+    ]
+    agg = await db.reviews.aggregate(pipe).to_list(length=1)
+    if agg:
+        avg = round(float(agg[0]["avg"]), 2)
+        cnt = int(agg[0]["count"])
+    else:
+        avg, cnt = 0.0, 0
+    await db[coll].update_one(
+        {"id": target_id}, {"$set": {"avg_rating": avg, "reviews_count": cnt}}
+    )
+
+
+@api.post("/reviews", response_model=Review)
+async def create_review(payload: ReviewIn, current_user: dict = Depends(get_current_user)):
+    if payload.target_type not in VALID_TARGETS:
+        raise HTTPException(status_code=400, detail="target_type non valido")
+    coll = VALID_TARGETS[payload.target_type]
+    target = await db[coll].find_one({"id": payload.target_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Elemento non trovato")
+    # blocca recensioni multiple dello stesso utente sullo stesso target
+    existing = await db.reviews.find_one({
+        "user_id": current_user["id"],
+        "target_type": payload.target_type,
+        "target_id": payload.target_id,
+    })
+    if existing:
+        await db.reviews.update_one(
+            {"id": existing["id"]},
+            {"$set": {
+                "rating": payload.rating,
+                "comment": payload.comment,
+                "created_at": datetime.utcnow(),
+            }},
+        )
+        rid = existing["id"]
+    else:
+        rid = str(uuid.uuid4())
+        await db.reviews.insert_one({
+            "id": rid,
+            "user_id": current_user["id"],
+            "user_name": current_user.get("name") or "Utente",
+            "target_type": payload.target_type,
+            "target_id": payload.target_id,
+            "rating": payload.rating,
+            "comment": payload.comment,
+            "created_at": datetime.utcnow(),
+        })
+    await _recompute_rating(payload.target_type, payload.target_id)
+    out = await db.reviews.find_one({"id": rid}, {"_id": 0})
+    return out
+
+
+@api.get("/reviews", response_model=List[Review])
+async def list_reviews(target_type: str, target_id: str, limit: int = 100):
+    if target_type not in VALID_TARGETS:
+        raise HTTPException(status_code=400, detail="target_type non valido")
+    cursor = db.reviews.find(
+        {"target_type": target_type, "target_id": target_id}, {"_id": 0}
+    ).sort("created_at", -1).limit(limit)
+    return await cursor.to_list(length=limit)
+
+
+@api.delete("/reviews/{review_id}")
+async def delete_review(review_id: str, current_user: dict = Depends(get_current_user)):
+    review = await db.reviews.find_one({"id": review_id})
+    if not review:
+        raise HTTPException(status_code=404, detail="Recensione non trovata")
+    if review["user_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    await db.reviews.delete_one({"id": review_id})
+    await _recompute_rating(review["target_type"], review["target_id"])
     return {"ok": True}
 
 

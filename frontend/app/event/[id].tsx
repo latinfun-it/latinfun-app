@@ -21,6 +21,7 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import FavoriteButton from "../../src/FavoriteButton";
 import DeleteButton from "../../src/DeleteButton";
+import ReviewsSection from "../../src/ReviewsSection";
 import type { EventItem } from "../../src/types";
 
 function fmt(iso: string) {
@@ -222,6 +223,8 @@ export default function EventDetail() {
             entityName={ev.title}
             visible={user?.role === "admin"}
           />
+
+          <ReviewsSection kind="event" targetId={ev.id} />
         </View>
       </ScrollView>
 

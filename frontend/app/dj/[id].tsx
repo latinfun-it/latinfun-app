@@ -21,6 +21,7 @@ import { useAuth } from "../../src/auth";
 import BoostButton from "../../src/BoostButton";
 import FavoriteButton from "../../src/FavoriteButton";
 import DeleteButton from "../../src/DeleteButton";
+import ReviewsSection from "../../src/ReviewsSection";
 import type { DJ, EventItem, Mix } from "../../src/types";
 
 export default function DjDetail() {
@@ -217,6 +218,8 @@ export default function DjDetail() {
             entityName={dj.name}
             visible={user?.role === "admin"}
           />
+
+          <ReviewsSection kind="dj" targetId={dj.id} />
         </View>
       </ScrollView>
     </View>
