@@ -18,6 +18,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import type { EventItem, DJ, Playlist, School } from "../../src/types";
 import SponsorBanner from "../../src/SponsorBanner";
+import FavoriteHeart from "../../src/FavoriteHeart";
 
 // Banner fisso brand (immagine "testata sito") - dance club Latin notturno
 const BRAND_BANNER =
@@ -159,6 +160,9 @@ export default function HomeScreen() {
                     <Text style={styles.boostBadgeText}>BOOST</Text>
                   </View>
                 ) : null}
+                <View style={styles.heartCorner}>
+                  <FavoriteHeart kind="event" entityId={e.id} size={18} />
+                </View>
                 <View style={styles.evtBody}>
                   <Text style={styles.evtDate}>{formatDate(e.date)} · {e.city}</Text>
                   <Text style={styles.evtTitle} numberOfLines={2}>{e.title}</Text>
@@ -198,6 +202,9 @@ export default function HomeScreen() {
                     <Text style={styles.boostBadgeText}>BOOST</Text>
                   </View>
                 ) : null}
+                <View style={styles.heartCorner}>
+                  <FavoriteHeart kind="school" entityId={s.id} size={18} />
+                </View>
                 <View style={styles.schoolBody}>
                   <Text style={styles.schoolName} numberOfLines={1}>{s.name}</Text>
                   <Text style={styles.schoolCity} numberOfLines={1}>
@@ -238,6 +245,9 @@ export default function HomeScreen() {
                     <Text style={styles.verifiedText}>Verified</Text>
                   </View>
                 ) : null}
+                <View style={styles.heartCornerLeft}>
+                  <FavoriteHeart kind="dj" entityId={d.id} size={18} />
+                </View>
                 <View style={styles.djBody}>
                   <Text style={styles.djName} numberOfLines={1}>{d.name}</Text>
                   <Text style={styles.djCity}>{d.city} · {d.followers.toLocaleString("it-IT")} fans</Text>
@@ -267,6 +277,9 @@ export default function HomeScreen() {
                   <Text style={styles.mixMeta} numberOfLines={1}>
                     {m.genre.toUpperCase()} · aggiornata ogni settimana
                   </Text>
+                </View>
+                <View style={{ marginRight: 4 }}>
+                  <FavoriteHeart kind="playlist" entityId={m.id} size={18} />
                 </View>
                 <View style={styles.mixPlay}>
                   <Ionicons name="play" size={18} color="#fff" />
@@ -420,6 +433,20 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   boostBadgeText: { color: "#fff", fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+
+  // HEART OVERLAY (top-right card corner)
+  heartCorner: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 5,
+  },
+  heartCornerLeft: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    zIndex: 5,
+  },
 
   // SCHOOL CARD
   schoolCard: {
