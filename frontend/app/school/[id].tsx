@@ -81,7 +81,7 @@ export default function SchoolDetail() {
             {school.verified_by_mauro ? (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={13} color={colors.gold} />
-                <Text style={styles.verifiedText}>VERIFIED BY MAURO</Text>
+                <Text style={styles.verifiedText}>LATINFUN VERIFIED</Text>
               </View>
             ) : null}
           </View>

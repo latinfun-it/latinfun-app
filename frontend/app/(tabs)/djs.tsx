@@ -85,7 +85,7 @@ export default function DjsScreen() {
               color={onlyVerified ? "#fff" : colors.gold}
             />
             <Text style={[styles.pillText, onlyVerified && styles.pillTextActive]}>
-              Verified by Mauro
+              LatinFun Verified
             </Text>
           </TouchableOpacity>
         </ScrollView>
