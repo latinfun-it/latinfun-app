@@ -18,6 +18,7 @@ import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import type { EventItem, DJ, Playlist } from "../../src/types";
+import SponsorBanner from "../../src/SponsorBanner";
 
 function formatDate(iso: string) {
   const d = new Date(iso);

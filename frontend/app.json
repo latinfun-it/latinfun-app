@@ -62,7 +62,8 @@
           "cameraPermission": "Scatta la foto di copertina della tua scuola"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
