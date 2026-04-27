@@ -999,6 +999,42 @@ async def my_likes(current_user: dict = Depends(get_current_user)):
     return [d["event_id"] async for d in cursor]
 
 
+@api.post("/schools/{school_id}/save")
+async def save_school(school_id: str, current_user: dict = Depends(get_current_user)):
+    school = await db.schools.find_one({"id": school_id})
+    if not school:
+        raise HTTPException(status_code=404, detail="Scuola non trovata")
+    existing = await db.user_saved_schools.find_one(
+        {"user_id": current_user["id"], "school_id": school_id}
+    )
+    if existing:
+        return {"saved": True}
+    await db.user_saved_schools.insert_one(
+        {"user_id": current_user["id"], "school_id": school_id, "created_at": datetime.utcnow()}
+    )
+    new_count = (school.get("saves") or 0) + 1
+    await db.schools.update_one({"id": school_id}, {"$set": {"saves": new_count}})
+    return {"saved": True, "saves": new_count}
+
+
+@api.delete("/schools/{school_id}/save")
+async def unsave_school(school_id: str, current_user: dict = Depends(get_current_user)):
+    res = await db.user_saved_schools.delete_one(
+        {"user_id": current_user["id"], "school_id": school_id}
+    )
+    if res.deleted_count:
+        await db.schools.update_one({"id": school_id}, {"$inc": {"saves": -1}})
+    return {"saved": False}
+
+
+@api.get("/my/saved-schools", response_model=List[str])
+async def my_saved_schools(current_user: dict = Depends(get_current_user)):
+    cursor = db.user_saved_schools.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "school_id": 1}
+    )
+    return [d["school_id"] async for d in cursor]
+
+
 @api.get("/my/favorites")
 async def my_favorites(current_user: dict = Depends(get_current_user)):
     follows = [d["dj_id"] async for d in db.user_follows.find(
@@ -1007,9 +1043,13 @@ async def my_favorites(current_user: dict = Depends(get_current_user)):
     likes = [d["event_id"] async for d in db.user_likes.find(
         {"user_id": current_user["id"]}, {"_id": 0, "event_id": 1}
     )]
+    saved_schools = [d["school_id"] async for d in db.user_saved_schools.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "school_id": 1}
+    )]
     djs = await db.djs.find({"id": {"$in": follows}}, {"_id": 0}).to_list(500)
     events = await db.events.find({"id": {"$in": likes}}, {"_id": 0}).to_list(500)
-    return {"djs": djs, "events": events}
+    schools = await db.schools.find({"id": {"$in": saved_schools}}, {"_id": 0}).to_list(500)
+    return {"djs": djs, "events": events, "schools": schools}
 
 
 # ----------------------------- Event Inquiries ---------------------

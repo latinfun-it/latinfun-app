@@ -11,6 +11,8 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BrandHeader from "../../src/BrandHeader";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +55,7 @@ export default function DjsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="djs-screen">
+      <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <Text style={styles.title}>DJ & Artisti</Text>
@@ -140,6 +143,9 @@ export default function DjsScreen() {
                     <Ionicons name="checkmark-circle" size={13} color={colors.gold} />
                   </View>
                 ) : null}
+                <View style={styles.heartCorner} pointerEvents="box-none">
+                  <FavoriteHeart kind="dj" entityId={item.id} />
+                </View>
                 <View style={styles.body}>
                   <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.city}>{item.city}</Text>
@@ -239,4 +245,10 @@ const styles = StyleSheet.create({
     borderColor: colors.brand,
   },
   genreTagText: { color: "#fff", fontSize: 10, fontWeight: "700", textTransform: "capitalize" },
+  heartCorner: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 5,
+  },
 });

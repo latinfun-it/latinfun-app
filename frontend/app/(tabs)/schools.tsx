@@ -12,6 +12,8 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BrandHeader from "../../src/BrandHeader";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -70,6 +72,7 @@ export default function SchoolsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="schools-screen">
+      <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
@@ -172,6 +175,9 @@ export default function SchoolsScreen() {
                 colors={["transparent", "rgba(5,5,5,0.88)"]}
                 style={styles.grad}
               />
+              <View style={styles.heartCorner} pointerEvents="box-none">
+                <FavoriteHeart kind="school" entityId={item.id} />
+              </View>
               {item.verified_by_mauro ? (
                 <View style={styles.verifiedBadge}>
                   <Ionicons name="checkmark-circle" size={13} color={colors.gold} />
@@ -272,4 +278,10 @@ const styles = StyleSheet.create({
   verifiedText: { color: colors.gold, fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   emptyText: { color: "#fff", marginTop: 14, fontSize: 15, fontWeight: "700", textAlign: "center" },
   emptySub: { color: colors.textSecondary, marginTop: 4, fontSize: 12, textAlign: "center" },
+  heartCorner: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 5,
+  },
 });

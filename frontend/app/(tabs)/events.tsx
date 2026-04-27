@@ -14,6 +14,8 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BrandHeader from "../../src/BrandHeader";
+import FavoriteHeart from "../../src/FavoriteHeart";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -152,6 +154,7 @@ export default function EventsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="events-screen">
+      <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
@@ -324,6 +327,9 @@ export default function EventsScreen() {
               onPress={() => router.push(`/event/${item.id}`)}
             >
               <Image source={{ uri: item.image_url }} style={styles.cardImg} />
+              <View style={styles.heartCorner} pointerEvents="box-none">
+                <FavoriteHeart kind="event" entityId={item.id} />
+              </View>
               {item.featured ? (
                 <View style={styles.featBadge}>
                   <Ionicons name="star" size={11} color={colors.gold} />
@@ -493,4 +499,10 @@ const styles = StyleSheet.create({
   featBadgeText: { color: colors.gold, fontSize: 10, fontWeight: "800" },
   emptyText: { color: "#fff", marginTop: 14, fontSize: 15, fontWeight: "700", textAlign: "center" },
   emptySub: { color: colors.textSecondary, marginTop: 4, fontSize: 12 },
+  heartCorner: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 5,
+  },
 });

@@ -12,6 +12,7 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BrandHeader from "../../src/BrandHeader";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -56,6 +57,7 @@ export default function MusicScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="music-screen">
+      <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <Text style={styles.kicker}>LATINFUN MUSICA</Text>
