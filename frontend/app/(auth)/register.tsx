@@ -61,7 +61,7 @@ export default function Register() {
         >
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.brandBox}>
-              <Text style={styles.logoMark}>LATIN<Text style={{ color: colors.brand }}>HUB</Text></Text>
+              <Text style={styles.logoMark}>LATIN<Text style={{ color: colors.brand }}>FUN</Text></Text>
               <Text style={styles.tagline}>Unisciti alla scena</Text>
             </View>
 

@@ -100,7 +100,7 @@ export default function HomeScreen() {
               <SafeAreaView edges={["top"]}>
                 <View style={styles.heroTopRow}>
                   <Text style={styles.brandMini}>
-                    LATIN<Text style={{ color: colors.brand }}>HUB</Text>
+                    LATIN<Text style={{ color: colors.brand }}>FUN</Text>
                   </Text>
                   <View style={styles.heroBadge}>
                     <Ionicons name="flash" size={12} color={colors.gold} />

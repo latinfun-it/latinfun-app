@@ -41,13 +41,13 @@ function wordmarkStacked(cx: number, cy: number, width: number) {
   const fontSize = width * 0.36;
   const lineGap = fontSize * 0.88;
   const latinY = cy - lineGap / 2 + fontSize * OFFSET_STACKED;
-  const hubY = cy + lineGap / 2 + fontSize * OFFSET_STACKED;
+  const funY = cy + lineGap / 2 + fontSize * OFFSET_STACKED;
   const startX = cx - width / 2;
-  const hubWidth = width * 0.68;
+  const funWidth = width * 0.68;
   const ls = -fontSize * 0.04;
   return `
     <text x="${startX}" y="${latinY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${width}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">LATIN</text>
-    <text x="${cx - hubWidth / 2}" y="${hubY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${hubWidth}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">HUB</text>
+    <text x="${cx - funWidth / 2}" y="${funY}" font-family="${FONT_STACK}" font-weight="900" font-size="${fontSize}" letter-spacing="${ls}" textLength="${funWidth}" lengthAdjust="spacingAndGlyphs" fill="${BRAND}">FUN</text>
   `;
 }
 
