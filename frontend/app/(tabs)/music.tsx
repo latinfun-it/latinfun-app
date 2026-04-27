@@ -25,8 +25,14 @@ import type { Playlist } from "../../src/types";
 const GENRES = [
   { key: "all", label: "Tutte" },
   { key: "bachata", label: "Bachata" },
+  { key: "bachata sensual", label: "Bachata Sensual" },
   { key: "reggaeton", label: "Reggaeton" },
   { key: "salsa", label: "Salsa" },
+  { key: "salsa cubana", label: "Salsa Cubana" },
+  { key: "merengue", label: "Merengue" },
+  { key: "dembow", label: "Dembow" },
+  { key: "urban mix", label: "Urban Mix" },
+  { key: "reparto", label: "Reparto" },
   { key: "latin", label: "Latin" },
 ];
 
@@ -64,7 +70,7 @@ export default function MusicScreen() {
         <View style={styles.header}>
           <Text style={styles.kicker}>LATINFUN MUSICA</Text>
           <Text style={styles.title}>Playlist</Text>
-          <Text style={styles.sub}>Curate da Mauro Catalini - aggiornate ogni settimana</Text>
+          <Text style={styles.sub}>Playlist aggiornate ogni settimana</Text>
         </View>
 
         <ScrollView
@@ -114,10 +120,10 @@ export default function MusicScreen() {
                 />
                 <View style={styles.heroBadge}>
                   <Ionicons name="star" size={11} color={colors.gold} />
-                  <Text style={styles.heroBadgeText}>PICK DEL CURATORE</Text>
+                  <Text style={styles.heroBadgeText}>PICK DELLA SETTIMANA</Text>
                 </View>
                 <View style={styles.heroBottom}>
-                  <Text style={styles.heroCurator}>DI {hero.curator.toUpperCase()}</Text>
+                  <Text style={styles.heroCurator}>AGGIORNATA OGNI SETTIMANA</Text>
                   <Text style={styles.heroTitle} numberOfLines={2}>{hero.title}</Text>
                   <Text style={styles.heroDesc} numberOfLines={2}>{hero.description}</Text>
                   <View style={styles.heroCta}>
@@ -145,7 +151,7 @@ export default function MusicScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>
-                  {item.genre.toUpperCase()} - {item.platform}
+                  {item.genre.toUpperCase()} · AGGIORNATA OGNI SETTIMANA
                 </Text>
                 <Text style={styles.rowDesc} numberOfLines={2}>{item.description}</Text>
               </View>
