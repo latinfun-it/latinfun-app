@@ -22,7 +22,21 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
 import type { Playlist } from "../../src/types";
 
-const GENRES = ["bachata", "reggaeton", "salsa", "latin", "kizomba", "cumbia", "merengue", "dembow", "afrobeat", "urban"];
+const GENRES = [
+  "bachata",
+  "bachata sensual",
+  "reggaeton",
+  "salsa",
+  "salsa cubana",
+  "merengue",
+  "dembow",
+  "urban mix",
+  "reparto",
+  "latin",
+  "kizomba",
+  "cumbia",
+  "afrobeat",
+];
 const DEFAULT_COVER = "https://images.pexels.com/photos/14074744/pexels-photo-14074744.jpeg";
 
 function spotifyEmbedFromUrl(input: string): { embed: string; external: string } | null {

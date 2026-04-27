@@ -70,7 +70,7 @@ export default function ProfileScreen() {
               {user?.role === "admin" ? (
                 <View style={styles.roleBadge}>
                   <Ionicons name="shield-checkmark" size={12} color={colors.gold} />
-                  <Text style={styles.roleText}>ADMIN - MAURO CATALINI</Text>
+                  <Text style={styles.roleText}>ADMIN LATINFUN</Text>
                 </View>
               ) : (
                 <View style={[styles.roleBadge, { borderColor: colors.brand }]}>
