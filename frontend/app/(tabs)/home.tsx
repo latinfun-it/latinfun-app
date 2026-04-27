@@ -153,6 +153,8 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : null}
 
+        <SponsorBanner position="home_top" />
+
         {/* Match Partner di Ballo CTA */}
         <TouchableOpacity
           testID="home-match-cta"

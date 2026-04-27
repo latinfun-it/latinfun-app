@@ -103,6 +103,12 @@ export default function ProfileScreen() {
                 hint="Aggiungi, modifica, rimuovi le playlist curate"
                 onPress={() => router.push("/admin/playlists")}
               />
+              <MenuItem
+                icon="megaphone-outline"
+                label="Sponsor banner (admin)"
+                hint="Gestisci banner pubblicitari sulla home"
+                onPress={() => router.push("/admin/sponsors" as any)}
+              />
             </>
           ) : null}
 

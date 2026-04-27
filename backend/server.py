@@ -1633,6 +1633,110 @@ async def my_matches(current_user: dict = Depends(get_current_user)):
     ]
 
 
+# ----------------------------- Sponsors ------------------------------
+class Sponsor(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    subtitle: Optional[str] = None
+    brand: Optional[str] = None
+    image_url: str
+    link_url: Optional[str] = None
+    cta_label: Optional[str] = "Scopri"
+    position: str = "home_top"  # home_top | home_middle | home_bottom
+    priority: int = 0
+    active: bool = True
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    clicks: int = 0
+    impressions: int = 0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SponsorIn(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+    subtitle: Optional[str] = Field(default=None, max_length=160)
+    brand: Optional[str] = Field(default=None, max_length=80)
+    image_url: str
+    link_url: Optional[str] = None
+    cta_label: Optional[str] = Field(default="Scopri", max_length=30)
+    position: str = "home_top"
+    priority: int = 0
+    active: bool = True
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+
+
+@api.get("/sponsors", response_model=List[Sponsor])
+async def list_sponsors_public(position: Optional[str] = None):
+    now = datetime.utcnow()
+    q: dict = {"active": True}
+    q["$and"] = [
+        {"$or": [{"starts_at": None}, {"starts_at": {"$lte": now}}]},
+        {"$or": [{"ends_at": None}, {"ends_at": {"$gte": now}}]},
+    ]
+    if position:
+        q["position"] = position
+    cursor = db.sponsors.find(q, {"_id": 0}).sort([("priority", -1), ("created_at", -1)])
+    return await cursor.to_list(length=100)
+
+
+@api.get("/admin/sponsors", response_model=List[Sponsor])
+async def list_sponsors_admin(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    cursor = db.sponsors.find({}, {"_id": 0}).sort("created_at", -1)
+    return await cursor.to_list(length=500)
+
+
+@api.post("/admin/sponsors", response_model=Sponsor)
+async def create_sponsor(payload: SponsorIn, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    new = {
+        "id": str(uuid.uuid4()),
+        "clicks": 0,
+        "impressions": 0,
+        "created_at": datetime.utcnow(),
+        **payload.model_dump(),
+    }
+    await db.sponsors.insert_one(new)
+    return await db.sponsors.find_one({"id": new["id"]}, {"_id": 0})
+
+
+@api.put("/admin/sponsors/{sponsor_id}", response_model=Sponsor)
+async def update_sponsor(
+    sponsor_id: str, payload: SponsorIn, current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    res = await db.sponsors.update_one({"id": sponsor_id}, {"$set": payload.model_dump()})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Sponsor non trovato")
+    return await db.sponsors.find_one({"id": sponsor_id}, {"_id": 0})
+
+
+@api.delete("/admin/sponsors/{sponsor_id}")
+async def delete_sponsor(sponsor_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    res = await db.sponsors.delete_one({"id": sponsor_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sponsor non trovato")
+    return {"ok": True}
+
+
+@api.post("/sponsors/{sponsor_id}/click")
+async def click_sponsor(sponsor_id: str):
+    await db.sponsors.update_one({"id": sponsor_id}, {"$inc": {"clicks": 1}})
+    return {"ok": True}
+
+
+@api.post("/sponsors/{sponsor_id}/view")
+async def view_sponsor(sponsor_id: str):
+    await db.sponsors.update_one({"id": sponsor_id}, {"$inc": {"impressions": 1}})
+    return {"ok": True}
+
+
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():
