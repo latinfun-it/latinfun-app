@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "../../src/BrandHeader";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import AdminDeleteCorner from "../../src/AdminDeleteCorner";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -329,6 +330,12 @@ export default function EventsScreen() {
               <Image source={{ uri: item.image_url }} style={styles.cardImg} />
               <View style={styles.heartCorner} pointerEvents="box-none">
                 <FavoriteHeart kind="event" entityId={item.id} />
+                <AdminDeleteCorner
+                  kind="event"
+                  entityId={item.id}
+                  entityName={item.title}
+                  onDeleted={load}
+                />
               </View>
               {item.featured ? (
                 <View style={styles.featBadge}>

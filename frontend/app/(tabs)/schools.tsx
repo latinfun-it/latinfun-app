@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "../../src/BrandHeader";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import AdminDeleteCorner from "../../src/AdminDeleteCorner";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -177,6 +178,12 @@ export default function SchoolsScreen() {
               />
               <View style={styles.heartCorner} pointerEvents="box-none">
                 <FavoriteHeart kind="school" entityId={item.id} />
+                <AdminDeleteCorner
+                  kind="school"
+                  entityId={item.id}
+                  entityName={item.name}
+                  onDeleted={load}
+                />
               </View>
               {item.verified_by_mauro ? (
                 <View style={styles.verifiedBadge}>

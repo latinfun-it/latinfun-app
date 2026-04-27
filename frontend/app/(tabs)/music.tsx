@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "../../src/BrandHeader";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import AdminDeleteCorner from "../../src/AdminDeleteCorner";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -147,6 +148,17 @@ export default function MusicScreen() {
                   {item.genre.toUpperCase()} - {item.platform}
                 </Text>
                 <Text style={styles.rowDesc} numberOfLines={2}>{item.description}</Text>
+              </View>
+              <View style={{ marginRight: 6 }}>
+                <FavoriteHeart kind="playlist" entityId={item.id} size={18} />
+              </View>
+              <View style={{ marginRight: 6 }}>
+                <AdminDeleteCorner
+                  kind="playlist"
+                  entityId={item.id}
+                  entityName={item.title}
+                  onDeleted={load}
+                />
               </View>
               <View style={styles.rowBtn}>
                 <Ionicons name="play" size={18} color="#fff" />

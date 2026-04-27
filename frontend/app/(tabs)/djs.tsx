@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "../../src/BrandHeader";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import AdminDeleteCorner from "../../src/AdminDeleteCorner";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -145,6 +146,12 @@ export default function DjsScreen() {
                 ) : null}
                 <View style={styles.heartCorner} pointerEvents="box-none">
                   <FavoriteHeart kind="dj" entityId={item.id} />
+                  <AdminDeleteCorner
+                    kind="dj"
+                    entityId={item.id}
+                    entityName={item.name}
+                    onDeleted={load}
+                  />
                 </View>
                 <View style={styles.body}>
                   <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
