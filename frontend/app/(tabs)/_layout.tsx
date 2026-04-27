@@ -50,14 +50,6 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="djs"
-          options={{
-            title: "DJ",
-            tabBarIcon: ({ color }) => <TabIcon name="disc" color={color} />,
-            tabBarButtonTestID: "tab-djs",
-          }}
-        />
-        <Tabs.Screen
           name="schools"
           options={{
             title: "Scuole",
@@ -65,6 +57,14 @@ export default function TabsLayout() {
               <MaterialCommunityIcons name="dance-ballroom" size={24} color={color} />
             ),
             tabBarButtonTestID: "tab-schools",
+          }}
+        />
+        <Tabs.Screen
+          name="djs"
+          options={{
+            title: "DJ",
+            tabBarIcon: ({ color }) => <TabIcon name="disc" color={color} />,
+            tabBarButtonTestID: "tab-djs",
           }}
         />
         <Tabs.Screen
