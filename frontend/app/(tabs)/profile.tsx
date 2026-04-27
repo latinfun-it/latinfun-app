@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "../../src/auth";
 import { api } from "../../src/api";
@@ -135,7 +135,8 @@ export default function ProfileScreen() {
 
           {mySchool ? (
             <MenuItem
-              icon="school-outline"
+              icon="dance-ballroom"
+              iconSet="mci"
               label="La tua scuola di ballo"
               hint={
                 mySchool.boosted ? "GIA PROMOSSA - badge BOOST attivo" : "Apri per promuoverla con BOOST"
@@ -146,7 +147,8 @@ export default function ProfileScreen() {
             />
           ) : (
             <MenuItem
-              icon="school-outline"
+              icon="dance-ballroom"
+              iconSet="mci"
               label="Registra la tua scuola"
               hint="Aumenta visibilita tra gli studenti latini"
               onPress={() => router.push("/school/register")}
@@ -248,6 +250,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function MenuItem({
   icon,
+  iconSet = "ionicons",
   label,
   hint,
   onPress,
@@ -255,6 +258,7 @@ function MenuItem({
   badgeTone,
 }: {
   icon: any;
+  iconSet?: "ionicons" | "mci";
   label: string;
   hint?: string;
   onPress?: () => void;
@@ -268,7 +272,11 @@ function MenuItem({
       testID={`menu-${label}`}
       onPress={onPress}
     >
-      <Ionicons name={icon} size={20} color={colors.textSecondary} />
+      {iconSet === "mci" ? (
+        <MaterialCommunityIcons name={icon} size={22} color={colors.textSecondary} />
+      ) : (
+        <Ionicons name={icon} size={20} color={colors.textSecondary} />
+      )}
       <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={styles.menuLabel}>{label}</Text>
         {hint ? <Text style={styles.menuHint}>{hint}</Text> : null}
