@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LatinFun — Privacy & Termini</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.65; color: #1a1a1a; }
+.logo { font-size: 36px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 8px; }
+.logo .red { color: #E11D48; }
+.tabs { display: flex; gap: 8px; margin: 30px 0; border-bottom: 2px solid #eee; padding-bottom: 0; }
+.tabs a { padding: 12px 20px; text-decoration: none; color: #666; font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.tabs a:hover, .tabs a.active { color: #E11D48; border-color: #E11D48; }
+h1 { font-size: 30px; border-bottom: 3px solid #E11D48; padding-bottom: 12px; color: #050505; margin-top: 60px; scroll-margin-top: 20px; }
+h1:first-of-type { margin-top: 30px; }
+h2 { font-size: 22px; margin-top: 32px; color: #050505; }
+h3 { font-size: 17px; margin-top: 20px; color: #444; }
+p, li { font-size: 15px; }
+strong { color: #050505; }
+ul { padding-left: 22px; }
+li { margin: 5px 0; }
+.section { margin-bottom: 60px; }
+.divider { height: 1px; background: #ddd; margin: 80px 0 0; }
+.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="logo">LATIN<span class="red">FUN</span></div>
+<p style="color:#888">Documenti legali — Aprile 2026</p>
+
+<div class="tabs">
+<a href="#privacy" class="active">Privacy Policy</a>
+<a href="#terms">Termini di Servizio</a>
+</div>
+
+<div class="section" id="privacy">
+<h1>Privacy Policy — LatinFun</h1>
+<p><strong>Ultimo aggiornamento</strong>: [INSERIRE DATA DI PUBBLICAZIONE]</p>
+<h2>1. Titolare del trattamento</h2>
+<p>LatinFun è gestita da <strong>[Nome ragione sociale / tua P.IVA]</strong></p>
+<p>Email: info@latinfun.it</p>
+<p>PEC: [se presente]</p>
+<p>Sede: [Città, Italia]</p>
+<p>Per qualsiasi richiesta relativa alla privacy puoi contattarci a <strong>privacy@latinfun.it</strong>.</p>
+<h2>2. Dati raccolti</h2>
+<h3>2.1 Dati forniti dall&#x27;utente al momento della registrazione</h3>
+<ul>
+<li>Nome e cognome</li>
+<li>Indirizzo email</li>
+<li>Password (hashata con bcrypt, mai in chiaro)</li>
+</ul>
+<h3>2.2 Dati raccolti automaticamente</h3>
+<ul>
+<li><strong>Indirizzo IP</strong> (per sicurezza e anti-abuso)</li>
+<li><strong>Token di autenticazione</strong> (JWT, conservato in locale sul dispositivo)</li>
+<li><strong>Posizione geografica approssimata</strong> (solo se concedi il permesso, usata per mostrarti eventi vicini e inviare notifiche push geolocalizzate)</li>
+<li><strong>Token push</strong> Expo (se attivi le notifiche)</li>
+<li><strong>Log di accesso</strong> (data, ora, user agent) per statistiche aggregate</li>
+</ul>
+<h3>2.3 Contenuti creati dall&#x27;utente</h3>
+<ul>
+<li>Profili DJ / scuole di ballo (bio, foto, link social, playlist)</li>
+<li>Eventi creati (titolo, descrizione, data, luogo, immagini)</li>
+<li>Like su eventi, follow su DJ</li>
+<li>Messaggi di contatto inviati agli organizzatori di eventi</li>
+</ul>
+<h3>2.4 Dati di pagamento</h3>
+<p><strong>Non raccogliamo mai dati di pagamento sui nostri server.</strong> I pagamenti per i pacchetti BOOST sono gestiti interamente da <strong>Stripe Inc.</strong>, un processore di pagamento certificato PCI-DSS Level 1. Ci viene comunicato solo:</p>
+<ul>
+<li>Stato del pagamento (riuscito / fallito)</li>
+<li>Identificativo sessione Stripe</li>
+<li>Importo e pacchetto acquistato</li>
+</ul>
+<p>Per la privacy policy di Stripe: https://stripe.com/it/privacy</p>
+<h2>3. Finalità del trattamento</h2>
+<p>| Finalità | Base giuridica | Dati utilizzati |</p>
+<p>|---|---|---|</p>
+<p>| Erogazione del servizio | Esecuzione contratto (art. 6.1.b GDPR) | Email, password, nome, contenuti creati |</p>
+<p>| Notifiche push geolocalizzate | Consenso (art. 6.1.a GDPR) | Posizione, push token |</p>
+<p>| Sicurezza e prevenzione frodi | Legittimo interesse (art. 6.1.f GDPR) | IP, log accesso |</p>
+<p>| Elaborazione pagamenti BOOST | Esecuzione contratto | Dati Stripe session |</p>
+<p>| Comunicazioni di servizio | Esecuzione contratto | Email |</p>
+<p>| Analisi aggregate | Legittimo interesse | Dati anonimizzati |</p>
+<h2>4. Conservazione dei dati</h2>
+<ul>
+<li><strong>Account attivi</strong>: fin quando l&#x27;account esiste</li>
+<li><strong>Dati dopo cancellazione account</strong>: eliminati entro 30 giorni (eccetto obblighi fiscali/contabili dove richiesto dalla legge, max 10 anni per le ricevute Stripe)</li>
+<li><strong>Log di accesso</strong>: 12 mesi</li>
+<li><strong>Token push scaduti</strong>: eliminati automaticamente</li>
+</ul>
+<h2>5. Condivisione dei dati</h2>
+<p><strong>Non vendiamo mai i tuoi dati.</strong> Li condividiamo solo con:</p>
+<p>| Servizio | Scopo | Dati condivisi | Paese |</p>
+<p>|---|---|---|---|</p>
+<p>| Stripe Inc. | Pagamenti BOOST | Email, importo | USA (clausole GDPR) |</p>
+<p>| Expo Push Service | Invio notifiche | Push token, messaggio | USA (clausole GDPR) |</p>
+<p>| MongoDB Atlas / Hosting | Database e hosting | Tutti i dati utente | UE |</p>
+<p>| Servizi email (se attivati) | Invio email transazionali | Email, nome | UE |</p>
+<h2>6. Diritti dell&#x27;utente (GDPR)</h2>
+<p>In qualsiasi momento puoi:</p>
+<ul>
+<li>✅ <strong>Accedere</strong> ai tuoi dati (scrivici a privacy@latinfun.it)</li>
+<li>✅ <strong>Rettificare</strong> dati inesatti (dalla sezione Profilo in app)</li>
+<li>✅ <strong>Cancellare</strong> il tuo account (dalla sezione Impostazioni → Elimina account)</li>
+<li>✅ <strong>Opporti</strong> al trattamento</li>
+<li>✅ <strong>Portabilità</strong> dei dati (export JSON su richiesta)</li>
+<li>✅ <strong>Limitare</strong> il trattamento</li>
+<li>✅ <strong>Revocare</strong> il consenso alle notifiche (dalla sezione Notifiche)</li>
+</ul>
+<p>Per esercitare questi diritti scrivici a <strong>privacy@latinfun.it</strong>. Ti risponderemo entro 30 giorni.</p>
+<p>Puoi inoltre presentare reclamo al <strong>Garante per la protezione dei dati personali</strong> (www.garanteprivacy.it).</p>
+<h2>7. Cookie e tecnologie simili</h2>
+<p>L&#x27;app mobile <strong>non usa cookie</strong>. L&#x27;unica informazione conservata in locale sul tuo dispositivo è il token JWT di autenticazione, cancellato al logout. La versione web può usare cookie tecnici essenziali al funzionamento (anche questi non tracciano).</p>
+<h2>8. Minori</h2>
+<p>LatinFun non è destinata a minori di 14 anni. Se scopriamo di aver raccolto dati da un minore di 14 anni senza il consenso dei genitori, li elimineremo immediatamente.</p>
+<h2>9. Sicurezza</h2>
+<ul>
+<li>Password hashate con bcrypt</li>
+<li>Comunicazioni tramite HTTPS/TLS 1.3</li>
+<li>Token di autenticazione a scadenza</li>
+<li>Accesso ai dati limitato al personale autorizzato</li>
+<li>Backup cifrati del database</li>
+</ul>
+<h2>10. Trasferimenti extra-UE</h2>
+<p>Alcuni fornitori (Stripe, Expo) hanno sede negli USA. Utilizziamo le <strong>Clausole Contrattuali Standard (SCC)</strong> della Commissione Europea per garantire adeguata protezione ai sensi dell&#x27;art. 46 GDPR.</p>
+<h2>11. Modifiche alla privacy policy</h2>
+<p>Pubblicheremo eventuali modifiche in questa pagina con la nuova data di aggiornamento. Per modifiche sostanziali ti avviseremo anche tramite email o notifica in-app.</p>
+<p>---</p>
+<p><strong>Hai domande?</strong> Contattaci a <strong>privacy@latinfun.it</strong></p>
+</div>
+
+<div class="divider"></div>
+
+<div class="section" id="terms">
+<h1>Termini di Servizio — LatinFun</h1>
+<p><strong>Ultimo aggiornamento</strong>: [INSERIRE DATA]</p>
+<h2>1. Oggetto</h2>
+<p>Questi Termini regolano l&#x27;utilizzo dell&#x27;applicazione mobile e web <strong>LatinFun</strong> (&quot;Servizio&quot;), gestita da <strong>[Nome ragione sociale — P.IVA]</strong>. Utilizzando il Servizio accetti integralmente questi Termini.</p>
+<h2>2. Descrizione del Servizio</h2>
+<p>LatinFun è una piattaforma che permette di:</p>
+<ul>
+<li>Scoprire eventi, DJ e scuole di ballo della scena latina in Italia</li>
+<li>Creare e pubblicare il proprio profilo (DJ, scuola, organizzatore di eventi)</li>
+<li>Acquistare pacchetti di visibilità &quot;BOOST&quot; tramite Stripe</li>
+<li>Ricevere notifiche push geolocalizzate</li>
+</ul>
+<h2>3. Registrazione e account</h2>
+<ul>
+<li>Devi avere almeno <strong>14 anni</strong></li>
+<li>Devi fornire dati veritieri e aggiornati</li>
+<li>Sei responsabile della sicurezza della tua password</li>
+<li>Puoi cancellare l&#x27;account in qualsiasi momento</li>
+</ul>
+<h2>4. Contenuti dell&#x27;utente</h2>
+<p>Sei responsabile dei contenuti che pubblichi. Ti impegni a <strong>non caricare</strong>:</p>
+<ul>
+<li>Contenuti illeciti, diffamatori, violenti, sessuali o di odio</li>
+<li>Materiale coperto da copyright senza autorizzazione</li>
+<li>Dati falsi o fuorvianti</li>
+<li>Contenuti spam o pubblicità non richiesta</li>
+</ul>
+<p>LatinFun si riserva il diritto di rimuovere contenuti che violano questi termini e di sospendere/cancellare account in violazione.</p>
+<h2>5. Pacchetti BOOST e pagamenti</h2>
+<h3>5.1 Pagamenti</h3>
+<p>I pacchetti BOOST sono <strong>acquisti una tantum</strong> (no abbonamenti, no rinnovi automatici). I pagamenti sono gestiti da <strong>Stripe Inc.</strong></p>
+<h3>5.2 Prezzi e durate</h3>
+<p>| Pacchetto | Durata | Prezzo |</p>
+<p>|---|---|---|</p>
+<p>| Settimana | 7 giorni | 4,99 € |</p>
+<p>| Mese | 30 giorni | 14,99 € |</p>
+<p>| 3 Mesi | 90 giorni | 29,99 € |</p>
+<p>| 6 Mesi | 180 giorni | 49,99 € |</p>
+<p>| 1 Anno | 365 giorni | 79,99 € |</p>
+<p>I prezzi includono IVA dove applicabile.</p>
+<h3>5.3 Diritto di recesso (art. 52 Codice del Consumo)</h3>
+<p>Dato che il servizio BOOST è <strong>immediatamente fruibile al completamento del pagamento</strong> (messa in evidenza immediata), al momento dell&#x27;acquisto <strong>rinunci esplicitamente al diritto di recesso di 14 giorni</strong> ai sensi dell&#x27;art. 59 lett. a) del Codice del Consumo. Questa rinuncia è accettata cliccando &quot;Procedi al pagamento&quot;.</p>
+<h3>5.4 Rimborsi</h3>
+<p>I pacchetti BOOST <strong>non sono rimborsabili</strong> salvo:</p>
+<ul>
+<li>Malfunzionamento tecnico imputabile a LatinFun che impedisca la fruizione</li>
+<li>Errore di addebito</li>
+</ul>
+<p>Per richieste di rimborso: <strong>support@latinfun.it</strong></p>
+<h3>5.5 Fatturazione</h3>
+<p>Per richiedere fattura indica la tua P.IVA nella sezione Profilo prima dell&#x27;acquisto. Fatture emesse entro 15 giorni.</p>
+<h2>6. Utilizzo corretto</h2>
+<p>Non puoi:</p>
+<ul>
+<li>Usare bot o sistemi automatici per creare account/contenuti</li>
+<li>Effettuare reverse engineering dell&#x27;app</li>
+<li>Tentare di bypassare sistemi di sicurezza</li>
+<li>Rivendere o redistribuire il Servizio</li>
+<li>Utilizzare il Servizio per attività illegali</li>
+</ul>
+<h2>7. Proprietà intellettuale</h2>
+<p>Il marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di <strong>[Nome ragione sociale]</strong>. L&#x27;uso non autorizzato è vietato.</p>
+<p>I contenuti degli utenti restano di proprietà degli utenti, che concedono a LatinFun una <strong>licenza gratuita, non esclusiva e revocabile</strong> di pubblicazione nell&#x27;ambito del Servizio.</p>
+<h2>8. Disponibilità del Servizio</h2>
+<p>LatinFun si impegna a mantenere il Servizio disponibile ma non garantisce assenza di interruzioni, errori o malfunzionamenti. Manutenzioni programmate saranno comunicate con anticipo.</p>
+<h2>9. Limitazione di responsabilità</h2>
+<p>Nei limiti consentiti dalla legge, LatinFun <strong>non è responsabile per</strong>:</p>
+<ul>
+<li>Qualità, sicurezza o legalità degli eventi organizzati da terzi pubblicizzati sull&#x27;app</li>
+<li>Rapporti tra utenti (es. DJ ↔ organizzatore)</li>
+<li>Perdita di dati dovuta a cause esterne</li>
+<li>Contenuti pubblicati dagli utenti</li>
+</ul>
+<h2>10. Risoluzione del contratto</h2>
+<p>LatinFun può sospendere o chiudere l&#x27;account in caso di:</p>
+<ul>
+<li>Violazione di questi Termini</li>
+<li>Richiesta dell&#x27;utente</li>
+<li>Inattività superiore a 24 mesi</li>
+</ul>
+<h2>11. Modifiche ai Termini</h2>
+<p>LatinFun può aggiornare questi Termini comunicandolo via email o in-app. L&#x27;uso continuato del Servizio dopo le modifiche costituisce accettazione.</p>
+<h2>12. Legge applicabile e foro competente</h2>
+<p>Questi Termini sono regolati dalla <strong>legge italiana</strong>. Per qualsiasi controversia il foro competente è quello di <strong>[Città di sede]</strong>, salvo diversa disposizione di legge a tutela del consumatore.</p>
+<h2>13. Contatti</h2>
+<ul>
+<li>Supporto: <strong>support@latinfun.it</strong></li>
+<li>Privacy: <strong>privacy@latinfun.it</strong></li>
+<li>Legale: <strong>legal@latinfun.it</strong></li>
+</ul>
+<p>---</p>
+<p>Accettando di usare LatinFun confermi di aver letto e accettato questi Termini e la nostra [Privacy Policy](./PRIVACY_POLICY.md).</p>
+</div>
+
+<div class="footer">© 2026 LatinFun. Tutti i diritti riservati.</div>
+</body>
+</html>
