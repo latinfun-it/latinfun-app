@@ -51,7 +51,7 @@ I pacchetti BOOST **non sono rimborsabili** salvo:
 - Malfunzionamento tecnico imputabile a LatinFun che impedisca la fruizione
 - Errore di addebito
 
-Per richieste di rimborso: **latinfun@gmail.com**
+Per richieste di rimborso: **latinfunofficial@gmail.com**
 
 ### 5.5 Fatturazione
 Per richiedere fattura indica la tua P.IVA nella sezione Profilo prima dell'acquisto. Fatture emesse entro 15 giorni.
@@ -92,7 +92,7 @@ LatinFun può aggiornare questi Termini comunicandolo via email o in-app. L'uso 
 Questi Termini sono regolati dalla **legge italiana**. Per qualsiasi controversia il foro competente è quello di **Rimini**, salvo diversa disposizione di legge a tutela del consumatore.
 
 ## 13. Contatti
-- Supporto: **latinfun@gmail.com**
+- Supporto: **latinfunofficial@gmail.com**
 - PEC: **maurocatalini@pec.it**
 - Titolare: Latinos Unidos Edizioni Musicali di Mauro Germano Catalini — P.IVA 03738320401
 

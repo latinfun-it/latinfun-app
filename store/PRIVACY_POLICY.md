@@ -6,10 +6,10 @@
 LatinFun è gestita da **Latinos Unidos Edizioni Musicali di Mauro Germano Catalini**
 - P.IVA: **03738320401**
 - Sede legale: **San Giovanni in Marignano (RN), Italia**
-- Email: **latinfun@gmail.com**
+- Email: **latinfunofficial@gmail.com**
 - PEC: **maurocatalini@pec.it**
 
-Per qualsiasi richiesta relativa alla privacy puoi contattarci a **latinfun@gmail.com**.
+Per qualsiasi richiesta relativa alla privacy puoi contattarci a **latinfunofficial@gmail.com**.
 
 ## 2. Dati raccolti
 
@@ -68,7 +68,7 @@ Per la privacy policy di Stripe: https://stripe.com/it/privacy
 
 ## 6. Diritti dell'utente (GDPR)
 In qualsiasi momento puoi:
-- ✅ **Accedere** ai tuoi dati (scrivici a latinfun@gmail.com)
+- ✅ **Accedere** ai tuoi dati (scrivici a latinfunofficial@gmail.com)
 - ✅ **Rettificare** dati inesatti (dalla sezione Profilo in app)
 - ✅ **Cancellare** il tuo account (dalla sezione Impostazioni → Elimina account)
 - ✅ **Opporti** al trattamento
@@ -76,7 +76,7 @@ In qualsiasi momento puoi:
 - ✅ **Limitare** il trattamento
 - ✅ **Revocare** il consenso alle notifiche (dalla sezione Notifiche)
 
-Per esercitare questi diritti scrivici a **latinfun@gmail.com**. Ti risponderemo entro 30 giorni.
+Per esercitare questi diritti scrivici a **latinfunofficial@gmail.com**. Ti risponderemo entro 30 giorni.
 
 Puoi inoltre presentare reclamo al **Garante per la protezione dei dati personali** (www.garanteprivacy.it).
 
@@ -101,4 +101,4 @@ Pubblicheremo eventuali modifiche in questa pagina con la nuova data di aggiorna
 
 ---
 
-**Hai domande?** Contattaci a **latinfun@gmail.com**
+**Hai domande?** Contattaci a **latinfunofficial@gmail.com**
