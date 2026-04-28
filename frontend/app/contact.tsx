@@ -35,6 +35,7 @@ export default function ContactScreen() {
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
+    if (busy || !user) return;
     if (!subject.trim() || subject.trim().length < 3) {
       Alert.alert("Oggetto richiesto", "Inserisci un oggetto descrittivo (min 3 caratteri).");
       return;
@@ -50,17 +51,24 @@ export default function ContactScreen() {
         subject: subject.trim(),
         message: message.trim(),
       });
-      Alert.alert(
-        "Messaggio inviato! ✉️",
-        "Grazie. Il team LatinFun riceverà il tuo messaggio e ti risponderà via email.",
-        [{ text: "OK", onPress: () => router.back() }]
-      );
+      // Reset campi
+      setSubject("");
+      setMessage("");
+      setCategory("altro");
+      // Naviga subito indietro per evitare doppi invii (alert su web non blocca)
+      router.back();
+      // Conferma soft (toast) su web compare a parte; su mobile l'Alert si vede comunque
+      setTimeout(() => {
+        Alert.alert(
+          "Messaggio inviato! ✉️",
+          "Grazie. Il team LatinFun ti risponderà via email."
+        );
+      }, 200);
     } catch (err: any) {
       Alert.alert(
         "Errore invio",
         err?.response?.data?.detail || "Impossibile inviare. Riprova più tardi."
       );
-    } finally {
       setBusy(false);
     }
   };

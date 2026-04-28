@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -103,24 +104,38 @@ export default function AdminMessagesScreen() {
   };
 
   const deleteMessage = (m: ContactMessage) => {
+    const doDelete = async () => {
+      try {
+        await api.delete(`/admin/contact/${m.id}`);
+        setItems((prev) => prev.filter((x) => x.id !== m.id));
+        setOpened(null);
+      } catch {
+        if (Platform.OS === "web") {
+          // eslint-disable-next-line no-alert
+          window.alert("Errore: impossibile eliminare");
+        } else {
+          Alert.alert("Errore", "Impossibile eliminare");
+        }
+      }
+    };
+
+    const confirmText = `Elimina messaggio?\n\nDa ${m.sender_name} - "${m.subject}"\n\nOperazione non reversibile.`;
+
+    if (Platform.OS === "web") {
+      // window.confirm è bloccante e funziona su React Native Web
+      // eslint-disable-next-line no-alert
+      if (window.confirm(confirmText)) {
+        doDelete();
+      }
+      return;
+    }
+
     Alert.alert(
       "Elimina messaggio?",
       `Da ${m.sender_name} - "${m.subject}". Operazione non reversibile.`,
       [
         { text: "Annulla", style: "cancel" },
-        {
-          text: "Elimina",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await api.delete(`/admin/contact/${m.id}`);
-              setItems((prev) => prev.filter((x) => x.id !== m.id));
-              setOpened(null);
-            } catch {
-              Alert.alert("Errore", "Impossibile eliminare");
-            }
-          },
-        },
+        { text: "Elimina", style: "destructive", onPress: doDelete },
       ]
     );
   };
