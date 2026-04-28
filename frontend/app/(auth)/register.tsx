@@ -24,6 +24,7 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +36,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await register(email.trim(), password, name.trim());
+      await register(email.trim(), password, name.trim(), referralCode.trim() || undefined);
       router.replace("/(tabs)/home");
     } catch (e: any) {
       setError(e.message);
@@ -105,6 +106,20 @@ export default function Register() {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <Ionicons name="gift-outline" size={18} color={colors.textSecondary} />
+                <TextInput
+                  testID="register-referral"
+                  placeholder="Codice referral (opzionale)"
+                  placeholderTextColor={colors.textMuted}
+                  style={styles.input}
+                  autoCapitalize="characters"
+                  maxLength={12}
+                  value={referralCode}
+                  onChangeText={(t) => setReferralCode(t.toUpperCase())}
                 />
               </View>
 

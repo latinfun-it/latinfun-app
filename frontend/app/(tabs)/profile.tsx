@@ -127,6 +127,12 @@ export default function ProfileScreen() {
                 rightBadge={unreadMsgs > 0 ? String(unreadMsgs) : undefined}
                 badgeTone="brand"
               />
+              <MenuItem
+                icon="cash-outline"
+                label="Pagamenti Affiliati (admin)"
+                hint="Commissioni 10% da pagare ai referrer"
+                onPress={() => router.push("/admin/referrals" as any)}
+              />
             </>
           ) : null}
 
@@ -254,6 +260,12 @@ export default function ProfileScreen() {
             label="Supporto & contatti"
             hint="Scrivi al team LatinFun"
             onPress={() => router.push("/contact")}
+          />
+          <MenuItem
+            icon="gift-outline"
+            label="Programma Affiliati"
+            hint="Guadagna il 10% invitando amici"
+            onPress={() => router.push("/affiliate" as any)}
           />
 
           <TouchableOpacity

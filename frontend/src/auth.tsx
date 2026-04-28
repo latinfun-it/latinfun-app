@@ -7,6 +7,8 @@ export type User = {
   email: string;
   name: string;
   role: string;
+  referral_code?: string | null;
+  referred_by?: string | null;
   created_at: string;
 };
 
@@ -14,7 +16,7 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, referralCode?: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -55,9 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    referralCode?: string
+  ) => {
     try {
-      const { data } = await api.post("/auth/register", { email, password, name });
+      const body: any = { email, password, name };
+      if (referralCode && referralCode.trim()) {
+        body.referral_code = referralCode.trim().toUpperCase();
+      }
+      const { data } = await api.post("/auth/register", body);
       await AsyncStorage.setItem(TOKEN_KEY, data.access_token);
       setUser(data.user);
     } catch (e: any) {

@@ -90,6 +90,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=128)
     name: str = Field(min_length=1, max_length=80)
+    referral_code: Optional[str] = None  # codice referral inserito al signup
 
 
 class UserLogin(BaseModel):
@@ -102,6 +103,8 @@ class UserOut(BaseModel):
     email: EmailStr
     name: str
     role: str = "user"
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
     created_at: datetime
 
 
@@ -299,12 +302,30 @@ async def register(payload: UserRegister):
     if await db.users.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Email already registered")
     user_id = str(uuid.uuid4())
+
+    # Genera codice referral unico
+    import secrets
+    while True:
+        ref_code = secrets.token_urlsafe(6).replace("_", "").replace("-", "").upper()[:8]
+        if not await db.users.find_one({"referral_code": ref_code}):
+            break
+
+    # Risolvi referrer (se passato)
+    referred_by_id = None
+    if payload.referral_code:
+        clean = payload.referral_code.strip().upper()
+        ref_user = await db.users.find_one({"referral_code": clean}, {"_id": 0, "id": 1})
+        if ref_user:
+            referred_by_id = ref_user["id"]
+
     doc = {
         "id": user_id,
         "email": email,
         "name": payload.name,
         "password_hash": hash_password(payload.password),
         "role": "user",
+        "referral_code": ref_code,
+        "referred_by": referred_by_id,
         "created_at": datetime.now(timezone.utc),
     }
     await db.users.insert_one(doc)
@@ -858,17 +879,96 @@ async def _mark_entity_boosted(tx: dict, boosted_until):
                 {"id": lead_id},
                 {"$set": {"unlocked": True, "unlocked_at": datetime.now(timezone.utc)}},
             )
+    else:
+        entity_id = tx.get("entity_id") or tx.get("event_id")
+        if not kind or not entity_id:
+            pass
+        else:
+            coll = _ENTITY_COLLECTIONS.get(kind)
+            if coll:
+                await db[coll].update_one(
+                    {"id": entity_id},
+                    {"$set": {"boosted": True, "boosted_until": boosted_until}},
+                )
+    # Affiliate: 10% del PRIMO pagamento del referee
+    try:
+        await _credit_referral_commission(tx)
+    except Exception as e:
+        logger.warning("Affiliate commission fail: %s", e)
+
+
+AFFILIATE_PERCENT = 0.10  # 10% del primo pagamento
+
+
+async def _credit_referral_commission(tx: dict):
+    """
+    Se il pagatore ha un referrer e questo è il PRIMO pagamento andato a buon fine,
+    accredita il 10% al referrer.
+    """
+    user_id = tx.get("user_id")
+    if not user_id:
         return
-    entity_id = tx.get("entity_id") or tx.get("event_id")
-    if not kind or not entity_id:
-        return
-    coll = _ENTITY_COLLECTIONS.get(kind)
-    if not coll:
-        return
-    await db[coll].update_one(
-        {"id": entity_id},
-        {"$set": {"boosted": True, "boosted_until": boosted_until}},
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "id": 1, "referred_by": 1, "name": 1, "email": 1}
     )
+    if not user or not user.get("referred_by"):
+        return
+    # Conta quante tx 'paid' aveva questo utente PRIMA di questa
+    other_paid = await db.payment_transactions.count_documents({
+        "user_id": user_id,
+        "payment_status": "paid",
+        "session_id": {"$ne": tx.get("session_id")},
+    })
+    if other_paid > 0:
+        # Non è il primo pagamento, niente commissione
+        return
+    amount = float(tx.get("amount") or 0)
+    if amount <= 0:
+        return
+    # Evita doppia commissione se già esistente
+    existing = await db.referral_commissions.find_one(
+        {"source_session_id": tx.get("session_id")}
+    )
+    if existing:
+        return
+    commission = round(amount * AFFILIATE_PERCENT, 2)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "referrer_id": user["referred_by"],
+        "referee_id": user["id"],
+        "referee_name": user.get("name"),
+        "referee_email": user.get("email"),
+        "source_session_id": tx.get("session_id"),
+        "source_kind": tx.get("kind"),
+        "source_amount": amount,
+        "commission_amount": commission,
+        "status": "pending",  # pending | paid_out
+        "created_at": datetime.now(timezone.utc),
+        "paid_at": None,
+    }
+    await db.referral_commissions.insert_one(doc)
+    logger.info(
+        "Affiliate commission %.2f EUR for referrer %s (referee %s, source %s)",
+        commission, user["referred_by"], user["id"], tx.get("kind"),
+    )
+
+    # Push notifica al referrer
+    try:
+        ref_user = await db.users.find_one(
+            {"id": user["referred_by"]},
+            {"_id": 0, "push_token": 1, "notifications_enabled": 1},
+        )
+        if ref_user and ref_user.get("push_token") and ref_user.get("notifications_enabled", True):
+            asyncio.create_task(
+                _send_expo_push(
+                    [ref_user["push_token"]],
+                    "🎉 Hai guadagnato!",
+                    f"+{commission:.2f}€ dal primo pagamento di {user.get('name') or 'un tuo invitato'}",
+                    {"type": "affiliate_commission"},
+                )
+            )
+    except Exception as e:
+        logger.warning("Push affiliate fail: %s", e)
 
 
 @api.post("/webhook/stripe")
@@ -2009,6 +2109,94 @@ async def mark_lead_contacted(
     if r.matched_count == 0:
         raise HTTPException(status_code=404, detail="Lead non trovato")
     return {"ok": True}
+
+
+# ----------------------------- Affiliate Program --------------------
+@api.get("/my/referrals")
+async def my_referrals(current_user: dict = Depends(get_current_user)):
+    """Statistiche e lista referral dell'utente corrente."""
+    me = await db.users.find_one(
+        {"id": current_user["id"]},
+        {"_id": 0, "referral_code": 1, "name": 1},
+    )
+    code = me.get("referral_code") if me else None
+
+    # Lista invitati
+    invited = await db.users.find(
+        {"referred_by": current_user["id"]},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "created_at": 1},
+    ).to_list(500)
+
+    # Commissioni
+    commissions = await db.referral_commissions.find(
+        {"referrer_id": current_user["id"]}
+    ).sort("created_at", -1).to_list(500)
+    for c in commissions:
+        c.pop("_id", None)
+    total_pending = sum(c["commission_amount"] for c in commissions if c["status"] == "pending")
+    total_paid = sum(c["commission_amount"] for c in commissions if c["status"] == "paid_out")
+
+    # Quanti invitati hanno effettivamente pagato
+    paid_referees = {c["referee_id"] for c in commissions}
+
+    return {
+        "referral_code": code,
+        "stats": {
+            "invited": len(invited),
+            "paying": len(paid_referees),
+            "earned_pending": round(total_pending, 2),
+            "earned_paid": round(total_paid, 2),
+        },
+        "invited": invited,
+        "commissions": commissions,
+    }
+
+
+@api.get("/admin/referrals/payouts")
+async def admin_referral_payouts(current_user: dict = Depends(get_current_user)):
+    """Admin: lista referrer con saldo pending da pagare."""
+    _require_admin(current_user)
+    pipeline = [
+        {"$match": {"status": "pending"}},
+        {"$group": {
+            "_id": "$referrer_id",
+            "total": {"$sum": "$commission_amount"},
+            "count": {"$sum": 1},
+        }},
+        {"$sort": {"total": -1}},
+    ]
+    rows = await db.referral_commissions.aggregate(pipeline).to_list(500)
+    out = []
+    for r in rows:
+        u = await db.users.find_one(
+            {"id": r["_id"]},
+            {"_id": 0, "id": 1, "name": 1, "email": 1, "referral_code": 1},
+        )
+        if not u:
+            continue
+        out.append({
+            "user": u,
+            "pending_total": round(r["total"], 2),
+            "pending_count": r["count"],
+        })
+    return out
+
+
+@api.post("/admin/referrals/{referrer_user_id}/mark-paid")
+async def admin_mark_paid(
+    referrer_user_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Admin marca tutte le commissioni pending del referrer come pagate."""
+    _require_admin(current_user)
+    r = await db.referral_commissions.update_many(
+        {"referrer_id": referrer_user_id, "status": "pending"},
+        {"$set": {
+            "status": "paid_out",
+            "paid_at": datetime.now(timezone.utc),
+        }},
+    )
+    return {"updated": r.modified_count}
 
 
 # ----------------------------- Sponsors ------------------------------
