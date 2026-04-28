@@ -47,10 +47,12 @@ export default function SchoolsScreen() {
   const load = useCallback(async () => {
     const params: any = {};
     if (style !== "all") params.style = style;
+    const effectiveCountry = country === "INT" ? null : (lang === "es" ? "ES" : "IT");
+    if (effectiveCountry) params.country = effectiveCountry;
     const r = await api.get<School[]>("/schools", { params });
     setSchools(r.data);
     setLoading(false);
-  }, [style]);
+  }, [style, country, lang]);
 
   useEffect(() => {
     load();

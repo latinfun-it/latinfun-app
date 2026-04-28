@@ -33,10 +33,11 @@ export default function DjsScreen() {
   const load = useCallback(async () => {
     const params: any = {};
     if (onlyVerified) params.verified = true;
+    params.country = lang === "es" ? "ES" : "IT";
     const r = await api.get<DJ[]>("/djs", { params });
     setDjs(r.data);
     setLoading(false);
-  }, [onlyVerified]);
+  }, [onlyVerified, lang]);
 
   useEffect(() => {
     load();

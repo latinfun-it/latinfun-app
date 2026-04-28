@@ -46,10 +46,11 @@ export default function HomeScreen() {
 
   const load = useCallback(async () => {
     try {
+      const country = lang === "es" ? "ES" : "IT";
       const [e, d, s, p] = await Promise.all([
-        api.get<EventItem[]>("/events", { params: { featured: true } }),
-        api.get<DJ[]>("/djs"),
-        api.get<School[]>("/schools"),
+        api.get<EventItem[]>("/events", { params: { featured: true, country } }),
+        api.get<DJ[]>("/djs", { params: { country } }),
+        api.get<School[]>("/schools", { params: { country } }),
         api.get<Playlist[]>("/playlists"),
       ]);
       setEvents(e.data);
@@ -61,7 +62,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     load();

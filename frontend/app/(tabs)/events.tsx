@@ -71,6 +71,10 @@ export default function EventsScreen() {
     const params: any = {};
     if (genre && genre !== "all") params.genre = genre;
     if (city) params.city = city;
+    // Filter by country based on language: lang=es → ES events only, lang=it → IT events only.
+    // The `country` setting from user (Profile → Country) overrides if explicitly INT.
+    const effectiveCountry = country === "INT" ? null : (lang === "es" ? "ES" : "IT");
+    if (effectiveCountry) params.country = effectiveCountry;
     const [ev, ci] = await Promise.all([
       api.get<EventItem[]>("/events", { params }),
       api.get<string[]>("/cities"),
@@ -78,7 +82,7 @@ export default function EventsScreen() {
     setEvents(ev.data);
     setCities(ci.data);
     setLoading(false);
-  }, [genre, city]);
+  }, [genre, city, country, lang]);
 
   useEffect(() => {
     load();
