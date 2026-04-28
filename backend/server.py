@@ -1737,6 +1737,114 @@ async def view_sponsor(sponsor_id: str):
     return {"ok": True}
 
 
+# ----------------------------- Contact Messages ----------------------
+CONTACT_CATEGORIES = [
+    "bug",
+    "suggerimento",
+    "collaborazione",
+    "sponsorship",
+    "altro",
+]
+
+
+class ContactMessage(BaseModel):
+    id: str
+    sender_id: Optional[str] = None
+    sender_name: str
+    sender_email: EmailStr
+    category: str
+    subject: str
+    message: str
+    read: bool = False
+    created_at: datetime
+
+
+class ContactMessageCreate(BaseModel):
+    category: str
+    subject: str
+    message: str
+    # email opzionale: se non passata, useremo current_user.email
+    sender_email: Optional[EmailStr] = None
+
+
+@api.post("/contact", response_model=ContactMessage)
+async def submit_contact_message(
+    payload: ContactMessageCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Devi essere loggato")
+    cat = (payload.category or "altro").lower().strip()
+    if cat not in CONTACT_CATEGORIES:
+        cat = "altro"
+    subject = (payload.subject or "").strip()[:120]
+    message = (payload.message or "").strip()[:4000]
+    if not subject or not message:
+        raise HTTPException(status_code=400, detail="Oggetto e messaggio richiesti")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "sender_id": current_user.get("id"),
+        "sender_name": current_user.get("name") or current_user.get("email"),
+        "sender_email": payload.sender_email or current_user.get("email"),
+        "category": cat,
+        "subject": subject,
+        "message": message,
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.contact_messages.insert_one(doc)
+    doc.pop("_id", None)
+    return ContactMessage(**doc)
+
+
+@api.get("/admin/contact", response_model=List[ContactMessage])
+async def admin_list_contact_messages(
+    only_unread: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    q = {}
+    if only_unread:
+        q["read"] = False
+    msgs = await db.contact_messages.find(q).sort("created_at", -1).to_list(500)
+    out = []
+    for m in msgs:
+        m.pop("_id", None)
+        out.append(ContactMessage(**m))
+    return out
+
+
+@api.get("/admin/contact/unread-count")
+async def admin_contact_unread_count(current_user: dict = Depends(get_current_user)):
+    _require_admin(current_user)
+    n = await db.contact_messages.count_documents({"read": False})
+    return {"unread": n}
+
+
+@api.patch("/admin/contact/{msg_id}/read")
+async def admin_mark_contact_read(
+    msg_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    r = await db.contact_messages.update_one({"id": msg_id}, {"$set": {"read": True}})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Messaggio non trovato")
+    return {"ok": True}
+
+
+@api.delete("/admin/contact/{msg_id}")
+async def admin_delete_contact(
+    msg_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    r = await db.contact_messages.delete_one({"id": msg_id})
+    if r.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Messaggio non trovato")
+    return {"ok": True}
+
+
 # ----------------------------- Root / Health -------------------------
 @api.get("/")
 async def root():

@@ -15,6 +15,7 @@ export default function ProfileScreen() {
   const [myDj, setMyDj] = useState<DJ | null>(null);
   const [mySchool, setMySchool] = useState<School | null>(null);
   const [myEvents, setMyEvents] = useState<EventItem[]>([]);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
 
   const loadMine = useCallback(async () => {
     if (!user) return;
@@ -27,6 +28,15 @@ export default function ProfileScreen() {
       setMyDj(djR.data);
       setMySchool(scR.data);
       setMyEvents((evR.data || []).filter((e: EventItem) => e.owner_id === user.id));
+      // unread contact messages count (only for admin)
+      if (user.role === "admin") {
+        try {
+          const u = await api.get<{ unread: number }>("/admin/contact/unread-count");
+          setUnreadMsgs(u.data.unread || 0);
+        } catch {
+          /* silent */
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -108,6 +118,14 @@ export default function ProfileScreen() {
                 label="Sponsor banner (admin)"
                 hint="Gestisci banner pubblicitari sulla home"
                 onPress={() => router.push("/admin/sponsors" as any)}
+              />
+              <MenuItem
+                icon="mail-outline"
+                label="Messaggi ricevuti (admin)"
+                hint="Casella contatti dagli utenti"
+                onPress={() => router.push("/admin/messages" as any)}
+                rightBadge={unreadMsgs > 0 ? String(unreadMsgs) : undefined}
+                badgeTone="brand"
               />
             </>
           ) : null}
@@ -226,6 +244,8 @@ export default function ProfileScreen() {
           <MenuItem
             icon="help-circle-outline"
             label="Supporto & contatti"
+            hint="Scrivi al team LatinFun"
+            onPress={() => router.push("/contact")}
           />
 
           <TouchableOpacity
