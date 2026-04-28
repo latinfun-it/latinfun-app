@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useI18n } from "../../src/i18n";
 import type { Playlist } from "../../src/types";
 
 const GENRES = [
@@ -38,6 +39,7 @@ const GENRES = [
 
 export default function MusicScreen() {
   const router = useRouter();
+  const { t, lang } = useI18n();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [genre, setGenre] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -68,9 +70,9 @@ export default function MusicScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>LATINFUN MUSICA</Text>
-          <Text style={styles.title}>Playlist</Text>
-          <Text style={styles.sub}>Playlist aggiornate ogni settimana</Text>
+          <Text style={styles.kicker}>{lang === "es" ? "LATINFUN MÚSICA" : "LATINFUN MUSICA"}</Text>
+          <Text style={styles.title}>{t("music.title")}</Text>
+          <Text style={styles.sub}>{t("music.subtitle")}</Text>
         </View>
 
         <ScrollView
@@ -120,7 +122,7 @@ export default function MusicScreen() {
                 />
                 <View style={styles.heroBadge}>
                   <Ionicons name="star" size={11} color={colors.gold} />
-                  <Text style={styles.heroBadgeText}>PICK DELLA SETTIMANA</Text>
+                  <Text style={styles.heroBadgeText}>{t("music.pickOfWeek")}</Text>
                 </View>
                 <View style={styles.heroBottom}>
                   <Text style={styles.heroCurator}>AGGIORNATA OGNI SETTIMANA</Text>

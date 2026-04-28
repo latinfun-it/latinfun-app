@@ -20,6 +20,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useI18n } from "../../src/i18n";
 import type { School } from "../../src/types";
 
 const STYLES = [
@@ -36,6 +37,7 @@ function normalize(s: string) {
 
 export default function SchoolsScreen() {
   const router = useRouter();
+  const { t, lang, country } = useI18n();
   const [schools, setSchools] = useState<School[]>([]);
   const [style, setStyle] = useState("all");
   const [query, setQuery] = useState("");
@@ -77,11 +79,13 @@ export default function SchoolsScreen() {
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>DOVE IMPARARE</Text>
+            <Text style={styles.kicker}>{lang === "es" ? "DÓNDE APRENDER" : "DOVE IMPARARE"}</Text>
             <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-              Scuole di Ballo
+              {t("schools.title")}
             </Text>
-            <Text style={styles.subtitle}>Trova la tua academia preferita in Italia</Text>
+            <Text style={styles.subtitle}>
+              {country === "ES" ? (lang === "es" ? "Encuentra tu academia favorita en España" : "Trova la tua academia preferita in Spagna") : (lang === "es" ? "Encuentra tu academia favorita en Italia" : "Trova la tua academia preferita in Italia")}
+            </Text>
           </View>
           <TouchableOpacity
             testID="register-school-btn"
@@ -90,7 +94,7 @@ export default function SchoolsScreen() {
             activeOpacity={0.85}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.ctaText}>Aggiungi</Text>
+            <Text style={styles.ctaText}>{t("schools.add")}</Text>
           </TouchableOpacity>
         </View>
 

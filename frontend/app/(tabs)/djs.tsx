@@ -19,10 +19,12 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useI18n } from "../../src/i18n";
 import type { DJ } from "../../src/types";
 
 export default function DjsScreen() {
   const router = useRouter();
+  const { t, lang } = useI18n();
   const [djs, setDjs] = useState<DJ[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyVerified, setOnlyVerified] = useState(false);
@@ -59,8 +61,8 @@ export default function DjsScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.title}>DJ & Artisti</Text>
-          <Text style={styles.subtitle}>I selector che muovono la scena</Text>
+          <Text style={styles.title}>{t("djs.title")}</Text>
+          <Text style={styles.subtitle}>{t("djs.subtitle")}</Text>
         </View>
         <ScrollView
           horizontal
@@ -72,7 +74,7 @@ export default function DjsScreen() {
             onPress={() => setOnlyVerified(false)}
             style={[styles.pill, !onlyVerified && styles.pillActive]}
           >
-            <Text style={[styles.pillText, !onlyVerified && styles.pillTextActive]}>Tutti</Text>
+            <Text style={[styles.pillText, !onlyVerified && styles.pillTextActive]}>{t("common.all")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             testID="filter-verified-djs"

@@ -5,6 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import MiniPlayer from "../../src/MiniPlayer";
 import { colors } from "../../src/theme";
 import { usePlayer } from "../../src/player";
+import { useI18n } from "../../src/i18n";
 
 function TabIcon({ name, color }: { name: any; color: string }) {
   return <Ionicons name={name} size={22} color={color} />;
@@ -12,6 +13,7 @@ function TabIcon({ name, color }: { name: any; color: string }) {
 
 export default function TabsLayout() {
   const { currentMix } = usePlayer();
+  const { t } = useI18n();
   const extraPadding = currentMix ? 74 : 0;
 
   return (
@@ -36,7 +38,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: "Home",
+            title: t("tabs.home"),
             tabBarIcon: ({ color }) => <TabIcon name="home" color={color} />,
             tabBarButtonTestID: "tab-home",
           }}
@@ -44,7 +46,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="events"
           options={{
-            title: "Eventi",
+            title: t("tabs.events"),
             tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} />,
             tabBarButtonTestID: "tab-events",
           }}
@@ -52,7 +54,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="schools"
           options={{
-            title: "Scuole",
+            title: t("tabs.schools"),
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="dance-ballroom" size={24} color={color} />
             ),
@@ -62,7 +64,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="djs"
           options={{
-            title: "DJ",
+            title: t("tabs.djs"),
             tabBarIcon: ({ color }) => <TabIcon name="disc" color={color} />,
             tabBarButtonTestID: "tab-djs",
           }}
@@ -70,7 +72,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="music"
           options={{
-            title: "Musica",
+            title: t("tabs.music"),
             tabBarIcon: ({ color }) => <TabIcon name="musical-notes" color={color} />,
             tabBarButtonTestID: "tab-music",
           }}
@@ -78,7 +80,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: "Profilo",
+            title: t("tabs.profile"),
             tabBarIcon: ({ color }) => <TabIcon name="person" color={color} />,
             tabBarButtonTestID: "tab-profile",
           }}

@@ -16,11 +16,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/auth";
+import { useI18n } from "../../src/i18n";
 import { colors, radii, spacing } from "../../src/theme";
 
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function Login() {
   const onSubmit = async () => {
     setError(null);
     if (!email || !password) {
-      setError("Inserisci email e password");
+      setError(t("auth.fillAllFields"));
       return;
     }
     setLoading(true);
@@ -61,18 +63,22 @@ export default function Login() {
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.brandBox}>
               <Text style={styles.logoMark}>LATIN<Text style={{ color: colors.brand }}>FUN</Text></Text>
-              <Text style={styles.tagline}>Il battito della musica latina in Italia</Text>
+              <Text style={styles.tagline}>
+                {lang === "es"
+                  ? "El latido de la música latina"
+                  : "Il battito della musica latina"}
+              </Text>
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.title}>Bentornato</Text>
-              <Text style={styles.subtitle}>Accedi per vivere la scena</Text>
+              <Text style={styles.title}>{t("auth.welcomeBack")}</Text>
+              <Text style={styles.subtitle}>{t("auth.loginSubtitle")}</Text>
 
               <View style={styles.inputWrap}>
                 <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
                 <TextInput
                   testID="login-email"
-                  placeholder="Email"
+                  placeholder={t("auth.email")}
                   placeholderTextColor={colors.textMuted}
                   style={styles.input}
                   autoCapitalize="none"
@@ -81,7 +87,7 @@ export default function Login() {
                   textContentType="emailAddress"
                   keyboardType="email-address"
                   value={email}
-                  onChangeText={(t) => setEmail(t.trim().toLowerCase())}
+                  onChangeText={(txt) => setEmail(txt.trim().toLowerCase())}
                 />
               </View>
 
@@ -89,7 +95,7 @@ export default function Login() {
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
                 <TextInput
                   testID="login-password"
-                  placeholder="Password"
+                  placeholder={t("auth.password")}
                   placeholderTextColor={colors.textMuted}
                   style={styles.input}
                   secureTextEntry
@@ -118,15 +124,15 @@ export default function Login() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.primaryBtnText}>Accedi</Text>
+                  <Text style={styles.primaryBtnText}>{t("auth.login")}</Text>
                 )}
               </TouchableOpacity>
 
               <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Non hai un account?</Text>
+                <Text style={styles.footerText}>{t("auth.noAccount")}</Text>
                 <Link href="/(auth)/register" asChild>
                   <TouchableOpacity testID="go-to-register">
-                    <Text style={styles.linkText}> Registrati</Text>
+                    <Text style={styles.linkText}> {t("auth.register")}</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -149,9 +155,7 @@ export default function Login() {
                 }}
                 style={styles.demoBtn}
               >
-                <Text style={styles.demoBtnText}>
-                  Tocca qui per Login Demo Admin
-                </Text>
+                <Text style={styles.demoBtnText}>{t("auth.demoLoginButton")}</Text>
               </TouchableOpacity>
 
               <Text style={styles.demoHint}>

@@ -19,14 +19,15 @@ import { colors, radii, spacing } from "../../src/theme";
 import type { EventItem, DJ, Playlist, School } from "../../src/types";
 import SponsorBanner from "../../src/SponsorBanner";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import { useI18n } from "../../src/i18n";
 
 // Banner fisso brand (immagine "testata sito") - dance club Latin notturno
 const BRAND_BANNER =
   "https://images.pexels.com/photos/5192504/pexels-photo-5192504.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString("it-IT", {
+  return d.toLocaleDateString(locale === "es" ? "es-ES" : "it-IT", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -35,6 +36,7 @@ function formatDate(iso: string) {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t, lang } = useI18n();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [djs, setDjs] = useState<DJ[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
@@ -101,11 +103,11 @@ export default function HomeScreen() {
                 LATIN<Text style={{ color: colors.brand }}>FUN</Text>
               </Text>
               <Text style={styles.bannerTagline}>
-                Il punto di riferimento della scena Latin
+                {t("home.tagline")}
               </Text>
               <View style={styles.bannerStrip}>
                 <View style={styles.stripDot} />
-                <Text style={styles.stripText}>EVENTI · DJ · SCUOLE · MUSICA</Text>
+                <Text style={styles.stripText}>{t("home.chips")}</Text>
                 <View style={styles.stripDot} />
               </View>
             </View>
@@ -127,10 +129,10 @@ export default function HomeScreen() {
               <Ionicons name="heart" size={26} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.matchCtaKicker}>NOVITÀ</Text>
-              <Text style={styles.matchCtaTitle}>Trova Partner di Ballo</Text>
+              <Text style={styles.matchCtaKicker}>{t("home.novelty")}</Text>
+              <Text style={styles.matchCtaTitle}>{t("home.findPartner")}</Text>
               <Text style={styles.matchCtaSub}>
-                Scopri ballerini vicino a te e fai match
+                {t("home.findPartnerHint")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color="#fff" />
@@ -138,7 +140,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         {/* 3 - EVENTI IN EVIDENZA */}
-        <SectionHeader title="Eventi in evidenza" onSeeAll={() => router.push("/(tabs)/events")} />
+        <SectionHeader title={t("home.featuredEvents")} onSeeAll={() => router.push("/(tabs)/events")} seeAllLabel={t("common.seeAll")} />
         {events.length > 0 ? (
           <ScrollView
             horizontal
@@ -164,7 +166,7 @@ export default function HomeScreen() {
                   <FavoriteHeart kind="event" entityId={e.id} size={18} />
                 </View>
                 <View style={styles.evtBody}>
-                  <Text style={styles.evtDate}>{formatDate(e.date)} · {e.city}</Text>
+                  <Text style={styles.evtDate}>{formatDate(e.date, lang)} · {e.city}</Text>
                   <Text style={styles.evtTitle} numberOfLines={2}>{e.title}</Text>
                   <Text style={styles.evtGenre}>{e.genre.toUpperCase()}</Text>
                 </View>
@@ -172,11 +174,11 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         ) : (
-          <EmptyState text="Nessun evento in evidenza" />
+          <EmptyState text={lang === "es" ? "Sin eventos destacados" : "Nessun evento in evidenza"} />
         )}
 
         {/* 4 - SCUOLE DI BALLO */}
-        <SectionHeader title="Scuole di ballo" onSeeAll={() => router.push("/(tabs)/schools")} />
+        <SectionHeader title={t("home.danceSchools")} onSeeAll={() => router.push("/(tabs)/schools")} seeAllLabel={t("common.seeAll")} />
         {schools.length > 0 ? (
           <ScrollView
             horizontal
@@ -219,7 +221,7 @@ export default function HomeScreen() {
         )}
 
         {/* 5 - TOP DJ */}
-        <SectionHeader title="Top DJ" onSeeAll={() => router.push("/(tabs)/djs")} />
+        <SectionHeader title={t("home.topDjs")} onSeeAll={() => router.push("/(tabs)/djs")} seeAllLabel={t("common.seeAll")} />
         {djs.length > 0 ? (
           <ScrollView
             horizontal
@@ -260,7 +262,7 @@ export default function HomeScreen() {
         )}
 
         {/* 6 - PLAYLIST SCELTE PER VOI */}
-        <SectionHeader title="Playlist scelte per voi" onSeeAll={() => router.push("/(tabs)/music")} />
+        <SectionHeader title={lang === "es" ? "Playlists para ti" : "Playlist scelte per voi"} onSeeAll={() => router.push("/(tabs)/music")} seeAllLabel={t("common.seeAll")} />
         {playlists.length > 0 ? (
           <View style={{ paddingHorizontal: spacing.lg, gap: 10 }}>
             {playlists.slice(0, 4).map((m) => (
@@ -295,13 +297,13 @@ export default function HomeScreen() {
   );
 }
 
-function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => void }) {
+function SectionHeader({ title, onSeeAll, seeAllLabel }: { title: string; onSeeAll?: () => void; seeAllLabel?: string }) {
   return (
     <View style={styles.sectionHead}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {onSeeAll ? (
         <TouchableOpacity onPress={onSeeAll} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-          <Text style={styles.sectionSee}>Vedi tutti</Text>
+          <Text style={styles.sectionSee}>{seeAllLabel || "Vedi tutti"}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

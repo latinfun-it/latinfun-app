@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "../../src/auth";
+import { useI18n } from "../../src/i18n";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import type { DJ, EventItem, School } from "../../src/types";
@@ -12,6 +13,7 @@ import type { DJ, EventItem, School } from "../../src/types";
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t, lang } = useI18n();
   const [myDj, setMyDj] = useState<DJ | null>(null);
   const [mySchool, setMySchool] = useState<School | null>(null);
   const [myEvents, setMyEvents] = useState<EventItem[]>([]);
@@ -136,29 +138,29 @@ export default function ProfileScreen() {
             </>
           ) : null}
 
-          <Text style={styles.sectionLabel}>LA TUA PRESENZA</Text>
+          <Text style={styles.sectionLabel}>{t("profile.yourPresence")}</Text>
 
           <MenuItem
             icon="megaphone-outline"
-            label="Crea un nuovo evento"
-            hint="Pubblicalo e promuovilo con BOOST"
+            label={t("profile.createEvent")}
+            hint={t("profile.createEventHint")}
             onPress={() => router.push("/event/create")}
           />
 
           {myDj ? (
             <MenuItem
               icon="disc-outline"
-              label="Il tuo profilo DJ"
-              hint={myDj.boosted ? "GIA PROMOSSO - badge BOOST attivo" : "Apri per promuoverlo con BOOST"}
-              rightBadge={myDj.boosted ? "BOOST" : "PROMUOVI"}
+              label={lang === "es" ? "Tu perfil DJ" : "Il tuo profilo DJ"}
+              hint={myDj.boosted ? (lang === "es" ? "YA PROMOCIONADO" : "GIA PROMOSSO - badge BOOST attivo") : (lang === "es" ? "Promociónalo con BOOST" : "Apri per promuoverlo con BOOST")}
+              rightBadge={myDj.boosted ? "BOOST" : (lang === "es" ? "PROMOCIONAR" : "PROMUOVI")}
               badgeTone={myDj.boosted ? "gold" : "brand"}
               onPress={() => router.push(`/dj/${myDj.id}`)}
             />
           ) : (
             <MenuItem
               icon="disc-outline"
-              label="Registra il tuo profilo DJ"
-              hint="Crea la tua pagina artista"
+              label={t("profile.registerDj")}
+              hint={t("profile.registerDjHint")}
               onPress={() => router.push("/dj/register")}
             />
           )}
@@ -168,18 +170,18 @@ export default function ProfileScreen() {
               <MenuItem
                 icon="dance-ballroom"
                 iconSet="mci"
-                label="La tua scuola di ballo"
+                label={lang === "es" ? "Tu escuela de baile" : "La tua scuola di ballo"}
                 hint={
-                  mySchool.boosted ? "GIA PROMOSSA - badge BOOST attivo" : "Apri per promuoverla con BOOST"
+                  mySchool.boosted ? (lang === "es" ? "YA PROMOCIONADA" : "GIA PROMOSSA - badge BOOST attivo") : (lang === "es" ? "Promociónala con BOOST" : "Apri per promuoverla con BOOST")
                 }
-                rightBadge={mySchool.boosted ? "BOOST" : "PROMUOVI"}
+                rightBadge={mySchool.boosted ? "BOOST" : (lang === "es" ? "PROMOCIONAR" : "PROMUOVI")}
                 badgeTone={mySchool.boosted ? "gold" : "brand"}
                 onPress={() => router.push(`/school/${mySchool.id}`)}
               />
               <MenuItem
                 icon="paper-plane-outline"
-                label="Lead ricevuti"
-                hint="Studenti interessati a contattarti"
+                label={lang === "es" ? "Leads recibidos" : "Lead ricevuti"}
+                hint={lang === "es" ? "Estudiantes interesados en contactarte" : "Studenti interessati a contattarti"}
                 onPress={() => router.push("/school/leads" as any)}
               />
             </>
@@ -187,8 +189,8 @@ export default function ProfileScreen() {
             <MenuItem
               icon="dance-ballroom"
               iconSet="mci"
-              label="Registra la tua scuola"
-              hint="Aumenta visibilita tra gli studenti latini"
+              label={t("profile.registerSchool")}
+              hint={t("profile.registerSchoolHint")}
               onPress={() => router.push("/school/register")}
             />
           )}
@@ -230,65 +232,65 @@ export default function ProfileScreen() {
             </View>
           ) : null}
 
-          <Text style={styles.sectionLabel}>PREFERENZE</Text>
+          <Text style={styles.sectionLabel}>{t("profile.preferences")}</Text>
 
           <MenuItem
             icon="heart-outline"
-            label="I miei preferiti"
-            hint="DJ seguiti ed eventi salvati"
+            label={t("profile.favorites")}
+            hint={t("profile.favoritesHint")}
             onPress={() => router.push("/favorites")}
           />
           <MenuItem
             icon="download-outline"
-            label="Logo LatinFun (kit promo)"
-            hint="Banner, quadrato, tondo - condividi e promuovi"
+            label={t("profile.logoKit")}
+            hint={t("profile.logoKitHint")}
             onPress={() => router.push("/logo-kit")}
           />
           <MenuItem
             icon="notifications-outline"
-            label="Notifiche smart"
-            hint="Eventi vicino a te"
+            label={t("profile.notifications")}
+            hint={t("profile.notificationsHint")}
             onPress={() => router.push("/notifications")}
           />
           <MenuItem
             icon="musical-notes-outline"
-            label="Le mie playlist Spotify / Tidal"
-            hint="Presto disponibile"
+            label={t("profile.myPlaylists")}
+            hint={t("profile.myPlaylistsHint")}
           />
           <MenuItem
             icon="help-circle-outline"
-            label="Supporto & contatti"
-            hint="Scrivi al team LatinFun"
+            label={t("profile.support")}
+            hint={t("profile.supportHint")}
             onPress={() => router.push("/contact")}
           />
           <MenuItem
             icon="gift-outline"
-            label="Programma Affiliati"
-            hint="Guadagna il 10% invitando amici"
+            label={t("profile.affiliate")}
+            hint={t("profile.affiliateHint")}
             onPress={() => router.push("/affiliate" as any)}
           />
           <MenuItem
             icon="globe-outline"
-            label="Lingua / Idioma"
+            label={t("profile.language")}
             hint="Italiano · Español"
             onPress={() => router.push("/settings/language" as any)}
           />
           <MenuItem
             icon="flag-outline"
-            label="Paese / País"
-            hint="Mostra eventi del tuo paese"
+            label={lang === "es" ? "País" : "Paese"}
+            hint={lang === "es" ? "Muestra eventos de tu país" : "Mostra eventi del tuo paese"}
             onPress={() => router.push("/settings/country" as any)}
           />
           <MenuItem
             icon="shield-checkmark-outline"
-            label="Privacy Policy"
-            hint="Come trattiamo i tuoi dati"
+            label={t("profile.privacy")}
+            hint={t("profile.privacyHint")}
             onPress={() => router.push("/legal/privacy" as any)}
           />
           <MenuItem
             icon="document-text-outline"
-            label="Termini di Servizio"
-            hint="Condizioni d'uso dell'app"
+            label={t("profile.terms")}
+            hint={t("profile.termsHint")}
             onPress={() => router.push("/legal/terms" as any)}
           />
 
@@ -299,10 +301,10 @@ export default function ProfileScreen() {
             onPress={onLogout}
           >
             <Ionicons name="log-out-outline" size={18} color={colors.brand} />
-            <Text style={styles.logoutText}>Esci</Text>
+            <Text style={styles.logoutText}>{t("auth.logout")}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.footer}>LatinFun v1.0 - Made in Italia con ritmo</Text>
+          <Text style={styles.footer}>{t("profile.footer")}</Text>
         </View>
       </ScrollView>
     </View>

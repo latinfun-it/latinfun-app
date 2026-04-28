@@ -70,6 +70,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         i18n.locale = initialLang;
         setLangState(initialLang);
         setCountryState(initialCountry);
+
+        // Persist auto-detected values so axios interceptor picks them up
+        if (!storedLang) await AsyncStorage.setItem(STORAGE_KEY_LANG, initialLang);
+        if (!storedCountry) await AsyncStorage.setItem(STORAGE_KEY_COUNTRY, initialCountry);
       } finally {
         setReady(true);
       }

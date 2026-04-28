@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useI18n } from "../../src/i18n";
 import type { EventItem } from "../../src/types";
 import EventsMap from "../../src/EventsMap";
 
@@ -53,6 +54,7 @@ function normalize(s: string) {
 
 export default function EventsScreen() {
   const router = useRouter();
+  const { t, lang, country } = useI18n();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [genre, setGenre] = useState("all");
@@ -159,8 +161,10 @@ export default function EventsScreen() {
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Eventi</Text>
-            <Text style={styles.subtitle}>La scena latina in tutta Italia</Text>
+            <Text style={styles.title}>{t("events.title")}</Text>
+            <Text style={styles.subtitle}>
+              {country === "ES" ? (lang === "es" ? "La escena latina en toda España" : "La scena latina in tutta la Spagna") : (lang === "es" ? "La escena latina en toda Italia" : "La scena latina in tutta Italia")}
+            </Text>
           </View>
           <View style={styles.toggle}>
             <TouchableOpacity
@@ -169,7 +173,7 @@ export default function EventsScreen() {
               style={[styles.toggleBtn, view === "list" && styles.toggleBtnActive]}
             >
               <Ionicons name="list" size={16} color={view === "list" ? "#fff" : colors.textSecondary} />
-              <Text style={[styles.toggleText, view === "list" && styles.toggleTextActive]}>Lista</Text>
+              <Text style={[styles.toggleText, view === "list" && styles.toggleTextActive]}>{t("events.list")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="view-map"
@@ -177,7 +181,7 @@ export default function EventsScreen() {
               style={[styles.toggleBtn, view === "map" && styles.toggleBtnActive]}
             >
               <Ionicons name="map" size={16} color={view === "map" ? "#fff" : colors.textSecondary} />
-              <Text style={[styles.toggleText, view === "map" && styles.toggleTextActive]}>Mappa</Text>
+              <Text style={[styles.toggleText, view === "map" && styles.toggleTextActive]}>{t("events.map")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -187,7 +191,7 @@ export default function EventsScreen() {
           <Ionicons name="search" size={18} color={colors.textSecondary} />
           <TextInput
             testID="events-search"
-            placeholder="Cerca citta, evento, DJ..."
+            placeholder={t("events.searchPlaceholder")}
             placeholderTextColor={colors.textMuted}
             style={styles.searchInput}
             value={query}
