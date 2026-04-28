@@ -2880,26 +2880,40 @@ DEMO_MIXES = [
 
 
 async def seed_admin():
-    email = os.environ.get("ADMIN_EMAIL", "admin@latinfun.it")
     pw = os.environ.get("ADMIN_PASSWORD", "admin123")
-    existing = await db.users.find_one({"email": email})
-    if not existing:
-        await db.users.insert_one(
-            {
-                "id": str(uuid.uuid4()),
-                "email": email,
-                "name": "Mauro Catalini",
-                "password_hash": hash_password(pw),
-                "role": "admin",
-                "created_at": datetime.now(timezone.utc),
-            }
-        )
-        logger.info("Seeded admin user %s", email)
-    elif not verify_password(pw, existing["password_hash"]):
-        await db.users.update_one(
-            {"email": email}, {"$set": {"password_hash": hash_password(pw)}}
-        )
-        logger.info("Updated admin password for %s", email)
+    # Seed BOTH admin emails so old/new deployments work seamlessly after rebrand
+    primary_email = os.environ.get("ADMIN_EMAIL", "admin@latinfun.it")
+    legacy_emails = ["admin@latinfun.it", "admin@latinhub.it"]
+    if primary_email not in legacy_emails:
+        legacy_emails.insert(0, primary_email)
+
+    for email in legacy_emails:
+        existing = await db.users.find_one({"email": email})
+        if not existing:
+            await db.users.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "email": email,
+                    "name": "Mauro Catalini",
+                    "password_hash": hash_password(pw),
+                    "role": "admin",
+                    "created_at": datetime.now(timezone.utc),
+                }
+            )
+            logger.info("Seeded admin user %s", email)
+        else:
+            # Always re-sync the password to admin123 so login is guaranteed
+            if not verify_password(pw, existing["password_hash"]):
+                await db.users.update_one(
+                    {"email": email},
+                    {"$set": {"password_hash": hash_password(pw), "role": "admin"}},
+                )
+                logger.info("Reset admin password for %s", email)
+            elif existing.get("role") != "admin":
+                await db.users.update_one(
+                    {"email": email}, {"$set": {"role": "admin"}}
+                )
+                logger.info("Promoted %s to admin", email)
 
 
 async def seed_content():

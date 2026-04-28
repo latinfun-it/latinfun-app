@@ -53,7 +53,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(TOKEN_KEY, data.access_token);
       setUser(data.user);
     } catch (e: any) {
-      throw new Error(formatApiError(e?.response?.data?.detail) || e.message);
+      // Build a verbose error so we can see WHAT actually failed
+      const status = e?.response?.status;
+      const detail = e?.response?.data?.detail;
+      const code = e?.code;
+      const baseUrl = (api.defaults?.baseURL || "").toString();
+      let msg: string;
+      if (detail) {
+        msg = formatApiError(detail);
+      } else if (status) {
+        msg = `Errore server ${status}`;
+      } else if (code === "ECONNABORTED") {
+        msg = `Timeout: il server non risponde. URL: ${baseUrl}`;
+      } else if (e?.message?.includes("Network")) {
+        msg = `Errore di rete. Server non raggiungibile.\nURL: ${baseUrl}\nMsg: ${e.message}`;
+      } else {
+        msg = `${e?.message || "Errore sconosciuto"} (URL: ${baseUrl})`;
+      }
+      console.log("[LOGIN ERROR]", { status, detail, code, message: e?.message, baseUrl });
+      throw new Error(msg);
     }
   };
 
