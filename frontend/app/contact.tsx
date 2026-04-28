@@ -55,20 +55,37 @@ export default function ContactScreen() {
       setSubject("");
       setMessage("");
       setCategory("altro");
-      // Naviga subito indietro per evitare doppi invii (alert su web non blocca)
-      router.back();
-      // Conferma soft (toast) su web compare a parte; su mobile l'Alert si vede comunque
+      // Naviga al profilo - usiamo replace per essere deterministici (anche se non c'è history)
+      try {
+        if (router.canGoBack && router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/(tabs)/profile" as any);
+        }
+      } catch {
+        router.replace("/(tabs)/profile" as any);
+      }
+      // Conferma soft (su web compare dopo, su mobile in tempo)
       setTimeout(() => {
-        Alert.alert(
-          "Messaggio inviato! ✉️",
-          "Grazie. Il team LatinFun ti risponderà via email."
-        );
+        if (Platform.OS === "web") {
+          // eslint-disable-next-line no-alert
+          window.alert("Messaggio inviato! ✉️\nTi risponderemo via email.");
+        } else {
+          Alert.alert(
+            "Messaggio inviato! ✉️",
+            "Grazie. Il team LatinFun ti risponderà via email."
+          );
+        }
       }, 200);
     } catch (err: any) {
-      Alert.alert(
-        "Errore invio",
-        err?.response?.data?.detail || "Impossibile inviare. Riprova più tardi."
-      );
+      const msg =
+        err?.response?.data?.detail || "Impossibile inviare. Riprova più tardi.";
+      if (Platform.OS === "web") {
+        // eslint-disable-next-line no-alert
+        window.alert("Errore: " + msg);
+      } else {
+        Alert.alert("Errore invio", msg);
+      }
       setBusy(false);
     }
   };
