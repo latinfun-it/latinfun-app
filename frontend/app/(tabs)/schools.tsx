@@ -130,14 +130,7 @@ export default function SchoolsScreen() {
                 onPress={() => setStyle(g.key)}
                 style={[styles.pill, active && styles.pillActive]}
               >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{g.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
-
-      {loading ? (
+                <Text style={[styles.pillText, active && styles.pillTextActive]}>{g.key === "all" ? t("common.all") : g.label}</Text>
         <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
       ) : (
         <FlatList

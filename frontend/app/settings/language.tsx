@@ -40,6 +40,10 @@ export default function LanguageSettings() {
               activeOpacity={0.85}
               onPress={async () => {
                 await setLang(l.code);
+                // Smart UX: when switching language, also align the default country
+                // (ES → Spain, IT → Italy). User can manually override later.
+                if (l.code === "es") await setCountry("ES");
+                if (l.code === "it") await setCountry("IT");
               }}
             >
               <Text style={styles.flag}>{l.flag}</Text>

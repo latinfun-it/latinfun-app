@@ -23,19 +23,34 @@ import { colors, radii, spacing } from "../../src/theme";
 import { useI18n } from "../../src/i18n";
 import type { Playlist } from "../../src/types";
 
-const GENRES = [
-  { key: "all", label: "Tutte" },
-  { key: "bachata", label: "Bachata" },
-  { key: "bachata sensual", label: "Bachata Sensual" },
-  { key: "reggaeton", label: "Reggaeton" },
-  { key: "salsa", label: "Salsa" },
-  { key: "salsa cubana", label: "Salsa Cubana" },
-  { key: "merengue", label: "Merengue" },
-  { key: "dembow", label: "Dembow" },
-  { key: "urban mix", label: "Urban Mix" },
-  { key: "reparto", label: "Reparto" },
-  { key: "latin", label: "Latin" },
+const GENRES_BASE = [
+  { key: "all" },
+  { key: "bachata" },
+  { key: "bachata sensual" },
+  { key: "reggaeton" },
+  { key: "salsa" },
+  { key: "salsa cubana" },
+  { key: "merengue" },
+  { key: "dembow" },
+  { key: "urban mix" },
+  { key: "reparto" },
+  { key: "latin" },
 ];
+
+function localizedGenre(key: string, lang: string, t: (k: string) => string) {
+  if (key === "all") return t("common.all");
+  if (key === "bachata") return "Bachata";
+  if (key === "bachata sensual") return lang === "es" ? "Bachata Sensual" : "Bachata Sensual";
+  if (key === "reggaeton") return "Reggaeton";
+  if (key === "salsa") return "Salsa";
+  if (key === "salsa cubana") return lang === "es" ? "Salsa Cubana" : "Salsa Cubana";
+  if (key === "merengue") return "Merengue";
+  if (key === "dembow") return "Dembow";
+  if (key === "urban mix") return "Urban Mix";
+  if (key === "reparto") return "Reparto";
+  if (key === "latin") return "Latin";
+  return key;
+}
 
 export default function MusicScreen() {
   const router = useRouter();
@@ -80,7 +95,7 @@ export default function MusicScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.pillsRow}
         >
-          {GENRES.map((g) => {
+          {GENRES_BASE.map((g) => {
             const active = genre === g.key;
             return (
               <TouchableOpacity
@@ -89,7 +104,7 @@ export default function MusicScreen() {
                 onPress={() => setGenre(g.key)}
                 style={[styles.pill, active && styles.pillActive]}
               >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{g.label}</Text>
+                <Text style={[styles.pillText, active && styles.pillTextActive]}>{localizedGenre(g.key, lang, t)}</Text>
               </TouchableOpacity>
             );
           })}
@@ -130,7 +145,7 @@ export default function MusicScreen() {
                   <Text style={styles.heroDesc} numberOfLines={2}>{hero.description}</Text>
                   <View style={styles.heroCta}>
                     <Ionicons name="play" size={14} color="#fff" />
-                    <Text style={styles.heroCtaText}>Ascolta ora</Text>
+                    <Text style={styles.heroCtaText}>{t("music.listenNow")}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
