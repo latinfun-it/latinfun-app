@@ -76,9 +76,12 @@ export default function Login() {
                   placeholderTextColor={colors.textMuted}
                   style={styles.input}
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  textContentType="emailAddress"
                   keyboardType="email-address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(t) => setEmail(t.trim().toLowerCase())}
                 />
               </View>
 
@@ -90,6 +93,10 @@ export default function Login() {
                   placeholderTextColor={colors.textMuted}
                   style={styles.input}
                   secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  textContentType="password"
                   value={password}
                   onChangeText={setPassword}
                 />
