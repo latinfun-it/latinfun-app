@@ -291,6 +291,13 @@ export default function EventsScreen() {
                 style={[styles.pill, active && styles.pillActive]}
               >
                 <Text style={[styles.pillText, active && styles.pillTextActive]}>{g.key === "all" ? t("common.all") : g.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </SafeAreaView>
+
+      {loading ? (
         <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
       ) : view === "map" ? (
         <EventsMap events={filteredEvents} />
