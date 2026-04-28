@@ -132,6 +132,7 @@ class DJ(BaseModel):
     boosted_until: Optional[datetime] = None
     avg_rating: float = 0.0
     reviews_count: int = 0
+    country: str = "IT"
 
 
 class DJCreate(BaseModel):
@@ -144,6 +145,7 @@ class DJCreate(BaseModel):
     instagram: Optional[str] = None
     spotify_playlist_url: Optional[str] = None
     tidal_playlist_url: Optional[str] = None
+    country: str = "IT"
 
 
 class Event(BaseModel):
@@ -170,6 +172,7 @@ class Event(BaseModel):
     contact_phone: Optional[str] = None
     avg_rating: float = 0.0
     reviews_count: int = 0
+    country: str = "IT"  # ISO-3166-1 alpha-2: IT | ES | AR
 
 
 class EventCreate(BaseModel):
@@ -187,6 +190,7 @@ class EventCreate(BaseModel):
     longitude: Optional[float] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
+    country: str = "IT"
 
 
 INQUIRY_TYPES = {"info", "reservation", "guestlist"}
@@ -278,6 +282,7 @@ class School(BaseModel):
     saves: int = 0
     avg_rating: float = 0.0
     reviews_count: int = 0
+    country: str = "IT"
 
 
 class SchoolCreate(BaseModel):
@@ -293,6 +298,7 @@ class SchoolCreate(BaseModel):
     email: Optional[str] = None
     website: Optional[str] = None
     instagram: Optional[str] = None
+    country: str = "IT"
 
 
 # ----------------------------- Auth routes ---------------------------
@@ -614,9 +620,24 @@ async def send_test_push(
 
 
 # ----------------------------- Events --------------------------------
+def _country_filter_from_request(request: Request) -> Optional[str]:
+    """Extract X-Country header (IT / ES / AR / INT). Returns None if INT (no filter)."""
+    try:
+        c = (request.headers.get("x-country") or "").upper().strip()
+        if c in ("IT", "ES", "AR"):
+            return c
+    except Exception:
+        pass
+    return None
+
+
 @api.get("/events", response_model=List[Event])
 async def list_events(
-    city: Optional[str] = None, genre: Optional[str] = None, featured: Optional[bool] = None
+    request: Request,
+    city: Optional[str] = None,
+    genre: Optional[str] = None,
+    featured: Optional[bool] = None,
+    country: Optional[str] = None,
 ):
     q: dict = {}
     if city:
@@ -625,6 +646,14 @@ async def list_events(
         q["genre"] = genre
     if featured is not None:
         q["featured"] = featured
+    # Country filter: query param wins, otherwise X-Country header
+    effective_country = (country or "").upper() if country else _country_filter_from_request(request)
+    if effective_country and effective_country != "INT":
+        # Match events whose country is the requested one OR legacy events without country (treated as IT)
+        if effective_country == "IT":
+            q["$or"] = [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]
+        else:
+            q["country"] = effective_country
     docs = await db.events.find(q, {"_id": 0}).sort("date", 1).to_list(500)
     return [Event(**d) for d in docs]
 
@@ -1005,12 +1034,18 @@ async def list_cities():
 
 # ----------------------------- DJs -----------------------------------
 @api.get("/djs", response_model=List[DJ])
-async def list_djs(city: Optional[str] = None, verified: Optional[bool] = None):
+async def list_djs(request: Request, city: Optional[str] = None, verified: Optional[bool] = None, country: Optional[str] = None):
     q: dict = {}
     if city:
         q["city"] = city
     if verified is not None:
         q["verified_by_mauro"] = verified
+    effective_country = (country or "").upper() if country else _country_filter_from_request(request)
+    if effective_country and effective_country != "INT":
+        if effective_country == "IT":
+            q["$or"] = [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]
+        else:
+            q["country"] = effective_country
     docs = await db.djs.find(q, {"_id": 0}).sort([("boosted", -1), ("followers", -1)]).to_list(500)
     return [DJ(**d) for d in docs]
 
@@ -1383,12 +1418,18 @@ def _slugify(value: str) -> str:
 
 
 @api.get("/schools", response_model=List[School])
-async def list_schools(city: Optional[str] = None, style: Optional[str] = None):
+async def list_schools(request: Request, city: Optional[str] = None, style: Optional[str] = None, country: Optional[str] = None):
     q: dict = {}
     if city:
         q["city"] = city
     if style and style != "all":
         q["styles"] = style
+    effective_country = (country or "").upper() if country else _country_filter_from_request(request)
+    if effective_country and effective_country != "INT":
+        if effective_country == "IT":
+            q["$or"] = [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]
+        else:
+            q["country"] = effective_country
     docs = await db.schools.find(q, {"_id": 0}).sort([("boosted", -1), ("students", -1)]).to_list(500)
     return [School(**d) for d in docs]
 
@@ -2957,6 +2998,69 @@ async def seed_content():
             slug = _slugify(f"{s['name']}-{s['city']}")
             await db.schools.insert_one(School(**s, slug=slug).model_dump())
         logger.info("Seeded %d schools", len(DEMO_SCHOOLS))
+
+    # ----- Spain demo content (idempotent: only seeds if no ES records exist) -----
+    if await db.events.count_documents({"country": "ES"}) == 0:
+        try:
+            now = datetime.now(timezone.utc)
+            es_events = [
+                Event(
+                    title="LatinFun Madrid - Bachata Sensual Night",
+                    description="La mejor noche de Bachata Sensual en Madrid. DJ residentes top de la escena latina española.",
+                    city="Madrid", venue="Sala Latina", address="Calle de la Salsa 12, Madrid",
+                    genre="bachata", date=now + timedelta(days=14),
+                    image_url="https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg",
+                    organizer="LatinFun ES", featured=True, country="ES",
+                    latitude=40.4168, longitude=-3.7038,
+                ).model_dump(),
+                Event(
+                    title="Salsa Cubana Barcelona",
+                    description="Noche cubana auténtica en el corazón de Barcelona. Clase + social.",
+                    city="Barcelona", venue="Antilla BCN", address="Carrer d'Aragó 141, Barcelona",
+                    genre="salsa", date=now + timedelta(days=21),
+                    image_url="https://images.pexels.com/photos/1701202/pexels-photo-1701202.jpeg",
+                    organizer="LatinFun ES", country="ES",
+                    latitude=41.3851, longitude=2.1734,
+                ).model_dump(),
+                Event(
+                    title="Reggaeton Valencia Festival",
+                    description="El festival de reggaeton más grande de la Comunidad Valenciana.",
+                    city="Valencia", venue="Pabellón Latino", address="Av. Reggaeton 33, Valencia",
+                    genre="reggaeton", date=now + timedelta(days=35),
+                    image_url="https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg",
+                    organizer="LatinFun ES", country="ES",
+                    latitude=39.4699, longitude=-0.3763,
+                ).model_dump(),
+            ]
+            await db.events.insert_many(es_events)
+            logger.info("Seeded %d Spain events", len(es_events))
+        except Exception as e:
+            logger.warning("Spain events seed failed: %s", e)
+
+    if await db.schools.count_documents({"country": "ES"}) == 0:
+        try:
+            es_schools = [
+                School(
+                    name="Academia Latin Madrid", city="Madrid", address="Gran Vía 28, Madrid",
+                    bio="La academia de baile latino de referencia en Madrid. Bachata, Salsa, Reggaeton.",
+                    image_url="https://images.pexels.com/photos/3253735/pexels-photo-3253735.jpeg",
+                    styles=["bachata", "salsa", "reggaeton"], levels=["principiante", "intermedio", "avanzado"],
+                    email="info@latinmadrid.es", verified_by_mauro=True, country="ES",
+                    slug=_slugify("Academia Latin Madrid-Madrid"),
+                ).model_dump(),
+                School(
+                    name="Bachata Sensual Barcelona", city="Barcelona", address="Passeig de Gràcia 88",
+                    bio="Especialistas en Bachata Sensual y Bachatango. Clases todos los días.",
+                    image_url="https://images.pexels.com/photos/3253735/pexels-photo-3253735.jpeg",
+                    styles=["bachata", "bachata_sensual"], levels=["principiante", "intermedio"],
+                    email="hola@bachatasensualbcn.es", country="ES",
+                    slug=_slugify("Bachata Sensual Barcelona-Barcelona"),
+                ).model_dump(),
+            ]
+            await db.schools.insert_many(es_schools)
+            logger.info("Seeded %d Spain schools", len(es_schools))
+        except Exception as e:
+            logger.warning("Spain schools seed failed: %s", e)
 
 
 @app.on_event("startup")

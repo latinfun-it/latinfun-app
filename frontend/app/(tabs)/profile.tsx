@@ -268,6 +268,18 @@ export default function ProfileScreen() {
             onPress={() => router.push("/affiliate" as any)}
           />
           <MenuItem
+            icon="globe-outline"
+            label="Lingua / Idioma"
+            hint="Italiano · Español"
+            onPress={() => router.push("/settings/language" as any)}
+          />
+          <MenuItem
+            icon="flag-outline"
+            label="Paese / País"
+            hint="Mostra eventi del tuo paese"
+            onPress={() => router.push("/settings/country" as any)}
+          />
+          <MenuItem
             icon="shield-checkmark-outline"
             label="Privacy Policy"
             hint="Come trattiamo i tuoi dati"
