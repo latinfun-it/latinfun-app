@@ -20,6 +20,7 @@ import BoostButton from "../../src/BoostButton";
 import DeleteButton from "../../src/DeleteButton";
 import ReviewsSection from "../../src/ReviewsSection";
 import FavoriteHeart from "../../src/FavoriteHeart";
+import SchoolLeadModal from "../../src/SchoolLeadModal";
 import type { School } from "../../src/types";
 
 export default function SchoolDetail() {
@@ -28,6 +29,7 @@ export default function SchoolDetail() {
   const { user } = useAuth();
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
+  const [leadOpen, setLeadOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -176,6 +178,25 @@ export default function SchoolDetail() {
             ) : null}
           </View>
 
+          {/* CTA RICHIEDI INFO (Lead Generation) */}
+          <TouchableOpacity
+            testID="lead-cta"
+            activeOpacity={0.9}
+            onPress={() => setLeadOpen(true)}
+            style={styles.leadCta}
+          >
+            <View style={styles.leadCtaIcon}>
+              <Ionicons name="paper-plane" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.leadCtaTitle}>Richiedi info su un corso</Text>
+              <Text style={styles.leadCtaSub}>
+                La scuola ti contatterà via email entro 48h
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+
           <DeleteButton
             kind="school"
             entityId={school.id}
@@ -186,6 +207,14 @@ export default function SchoolDetail() {
           <ReviewsSection kind="school" targetId={school.id} />
         </View>
       </ScrollView>
+
+      <SchoolLeadModal
+        visible={leadOpen}
+        onClose={() => setLeadOpen(false)}
+        schoolId={school.id}
+        schoolName={school.name}
+        defaultStyles={school.styles || []}
+      />
     </View>
   );
 }
@@ -241,6 +270,25 @@ const styles = StyleSheet.create({
   heartBtn: {
     margin: spacing.md,
   },
+  leadCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: colors.brand,
+    padding: 14,
+    borderRadius: radii.lg,
+    marginTop: spacing.lg,
+  },
+  leadCtaIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  leadCtaTitle: { color: "#fff", fontWeight: "900", fontSize: 15 },
+  leadCtaSub: { color: "rgba(255,255,255,0.92)", fontSize: 12, marginTop: 2 },
   heroBottom: { position: "absolute", bottom: spacing.lg, left: spacing.lg, right: spacing.lg },
   city: { color: colors.gold, fontSize: 12, fontWeight: "800", letterSpacing: 2 },
   name: { color: "#fff", fontSize: 32, fontWeight: "900", letterSpacing: -0.8, marginTop: 6 },

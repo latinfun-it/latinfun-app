@@ -158,17 +158,25 @@ export default function ProfileScreen() {
           )}
 
           {mySchool ? (
-            <MenuItem
-              icon="dance-ballroom"
-              iconSet="mci"
-              label="La tua scuola di ballo"
-              hint={
-                mySchool.boosted ? "GIA PROMOSSA - badge BOOST attivo" : "Apri per promuoverla con BOOST"
-              }
-              rightBadge={mySchool.boosted ? "BOOST" : "PROMUOVI"}
-              badgeTone={mySchool.boosted ? "gold" : "brand"}
-              onPress={() => router.push(`/school/${mySchool.id}`)}
-            />
+            <>
+              <MenuItem
+                icon="dance-ballroom"
+                iconSet="mci"
+                label="La tua scuola di ballo"
+                hint={
+                  mySchool.boosted ? "GIA PROMOSSA - badge BOOST attivo" : "Apri per promuoverla con BOOST"
+                }
+                rightBadge={mySchool.boosted ? "BOOST" : "PROMUOVI"}
+                badgeTone={mySchool.boosted ? "gold" : "brand"}
+                onPress={() => router.push(`/school/${mySchool.id}`)}
+              />
+              <MenuItem
+                icon="paper-plane-outline"
+                label="Lead ricevuti"
+                hint="Studenti interessati a contattarti"
+                onPress={() => router.push("/school/leads" as any)}
+              />
+            </>
           ) : (
             <MenuItem
               icon="dance-ballroom"

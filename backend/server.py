@@ -850,6 +850,15 @@ _ENTITY_COLLECTIONS = {"event": "events", "dj": "djs", "school": "schools"}
 
 async def _mark_entity_boosted(tx: dict, boosted_until):
     kind = tx.get("kind") or ("event" if tx.get("event_id") else None)
+    # Lead unlock: tx.kind == "lead_unlock"
+    if kind == "lead_unlock":
+        lead_id = tx.get("lead_id")
+        if lead_id:
+            await db.school_leads.update_one(
+                {"id": lead_id},
+                {"$set": {"unlocked": True, "unlocked_at": datetime.now(timezone.utc)}},
+            )
+        return
     entity_id = tx.get("entity_id") or tx.get("event_id")
     if not kind or not entity_id:
         return
@@ -1784,6 +1793,222 @@ async def chat_unread_count(current_user: dict = Depends(get_current_user)):
         "read": False,
     })
     return {"unread": n}
+
+
+# ----------------------------- School Leads (paid) ------------------
+LEAD_UNLOCK_PRICE_EUR = 2.00
+
+
+class SchoolLeadIn(BaseModel):
+    sender_name: str = Field(min_length=1, max_length=100)
+    sender_email: EmailStr
+    sender_phone: Optional[str] = Field(default=None, max_length=30)
+    level: str = Field(default="principiante")  # principiante|intermedio|avanzato
+    styles: List[str] = []
+    message: str = Field(min_length=10, max_length=2000)
+
+
+class SchoolLead(BaseModel):
+    id: str
+    school_id: str
+    school_name: str
+    sender_user_id: Optional[str] = None
+    sender_name: str
+    sender_email: Optional[str] = None  # nascosto se !unlocked
+    sender_phone: Optional[str] = None  # nascosto se !unlocked
+    level: str
+    styles: List[str] = []
+    message: str
+    unlocked: bool = False
+    unlocked_at: Optional[datetime] = None
+    contacted: bool = False
+    created_at: datetime
+
+
+@api.post("/schools/{school_id}/leads", response_model=SchoolLead)
+async def submit_school_lead(
+    school_id: str,
+    payload: SchoolLeadIn,
+    current_user: dict = Depends(get_current_user),
+):
+    school = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    if not school:
+        raise HTTPException(status_code=404, detail="Scuola non trovata")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "school_id": school_id,
+        "school_name": school.get("name") or "",
+        "sender_user_id": current_user.get("id") if current_user else None,
+        "sender_name": payload.sender_name.strip()[:100],
+        "sender_email": str(payload.sender_email),
+        "sender_phone": (payload.sender_phone or "").strip()[:30] or None,
+        "level": (payload.level or "principiante").lower(),
+        "styles": [s.strip() for s in (payload.styles or []) if s.strip()][:6],
+        "message": payload.message.strip()[:2000],
+        "unlocked": False,
+        "unlocked_at": None,
+        "contacted": False,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.school_leads.insert_one(doc)
+
+    # Push notifica all'owner (e admin)
+    try:
+        owner_id = school.get("owner_id")
+        targets: List[str] = []
+        if owner_id:
+            owner = await db.users.find_one(
+                {"id": owner_id},
+                {"_id": 0, "push_token": 1, "notifications_enabled": 1},
+            )
+            if owner and owner.get("push_token") and owner.get("notifications_enabled", True):
+                targets.append(owner["push_token"])
+        admins = await db.users.find(
+            {"role": "admin", "push_token": {"$ne": None, "$exists": True}},
+            {"_id": 0, "push_token": 1},
+        ).to_list(50)
+        targets.extend([a["push_token"] for a in admins if a.get("push_token")])
+        targets = list({t for t in targets})
+        if targets:
+            asyncio.create_task(
+                _send_expo_push(
+                    targets,
+                    f"📨 Nuovo lead - {school.get('name')}",
+                    f"{doc['sender_name']} ({doc['level']}): {doc['message'][:80]}",
+                    {"type": "school_lead", "school_id": school_id, "lead_id": doc["id"]},
+                )
+            )
+    except Exception as e:
+        logger.warning("Push lead fail: %s", e)
+
+    doc.pop("_id", None)
+    return SchoolLead(**doc)
+
+
+def _mask_lead_for_owner(doc: dict, owner: bool) -> dict:
+    """Restituisce la versione del lead da mostrare. Se non sbloccato, oscura email/phone."""
+    out = dict(doc)
+    out.pop("_id", None)
+    if not out.get("unlocked"):
+        out["sender_email"] = None
+        out["sender_phone"] = None
+    return out
+
+
+@api.get("/schools/{school_id}/leads", response_model=List[SchoolLead])
+async def list_school_leads(
+    school_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    school = await db.schools.find_one({"id": school_id}, {"_id": 0, "owner_id": 1})
+    if not school:
+        raise HTTPException(status_code=404, detail="Scuola non trovata")
+    is_owner = (school.get("owner_id") == current_user["id"])
+    is_admin = current_user.get("role") == "admin"
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Non sei il titolare di questa scuola")
+    leads = await db.school_leads.find({"school_id": school_id}).sort("created_at", -1).to_list(500)
+    return [SchoolLead(**_mask_lead_for_owner(l, True)) for l in leads]
+
+
+@api.get("/my/school-leads", response_model=List[SchoolLead])
+async def my_school_leads(
+    current_user: dict = Depends(get_current_user),
+):
+    """Tutti i lead delle scuole che il current user possiede."""
+    my_schools = await db.schools.find(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1}
+    ).to_list(50)
+    school_ids = [s["id"] for s in my_schools]
+    if not school_ids:
+        return []
+    leads = await db.school_leads.find({"school_id": {"$in": school_ids}}).sort("created_at", -1).to_list(500)
+    return [SchoolLead(**_mask_lead_for_owner(l, True)) for l in leads]
+
+
+@api.post("/schools/{school_id}/leads/{lead_id}/unlock")
+async def unlock_lead_checkout(
+    school_id: str,
+    lead_id: str,
+    payload: dict,
+    http_request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Crea checkout Stripe per sbloccare un lead. Costo fisso EUR 2."""
+    school = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    if not school:
+        raise HTTPException(status_code=404, detail="Scuola non trovata")
+    is_owner = (school.get("owner_id") == current_user["id"])
+    is_admin = current_user.get("role") == "admin"
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Solo il titolare puo sbloccare i lead")
+    lead = await db.school_leads.find_one({"id": lead_id, "school_id": school_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead non trovato")
+    if lead.get("unlocked"):
+        return {"already_unlocked": True}
+
+    # admin sblocca gratis
+    if is_admin and not is_owner:
+        await db.school_leads.update_one(
+            {"id": lead_id},
+            {"$set": {"unlocked": True, "unlocked_at": datetime.now(timezone.utc)}},
+        )
+        return {"unlocked": True, "free_admin": True}
+
+    origin = (payload.get("origin_url") or str(http_request.base_url)).rstrip("/")
+    success_url = f"{origin}/lead-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/school/leads"
+    metadata = {
+        "purpose": "lead_unlock",
+        "user_id": current_user["id"],
+        "school_id": school_id,
+        "lead_id": lead_id,
+    }
+    stripe = _stripe_client(http_request)
+    req = CheckoutSessionRequest(
+        amount=LEAD_UNLOCK_PRICE_EUR,
+        currency="eur",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    session = await stripe.create_checkout_session(req)
+    await db.payment_transactions.insert_one({
+        "session_id": session.session_id,
+        "user_id": current_user["id"],
+        "kind": "lead_unlock",
+        "school_id": school_id,
+        "lead_id": lead_id,
+        "amount": LEAD_UNLOCK_PRICE_EUR,
+        "currency": "eur",
+        "status": "open",
+        "payment_status": "pending",
+        "metadata": metadata,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+    return {"session_id": session.session_id, "url": session.url}
+
+
+@api.post("/schools/{school_id}/leads/{lead_id}/contacted")
+async def mark_lead_contacted(
+    school_id: str,
+    lead_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    school = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    if not school:
+        raise HTTPException(status_code=404, detail="Scuola non trovata")
+    if school.get("owner_id") != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    r = await db.school_leads.update_one(
+        {"id": lead_id, "school_id": school_id},
+        {"$set": {"contacted": True}},
+    )
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lead non trovato")
+    return {"ok": True}
 
 
 # ----------------------------- Sponsors ------------------------------
