@@ -82,7 +82,22 @@ export default function DancerMatches() {
         ) : (
           <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 200 }}>
             {list.map((m) => (
-              <View key={m.profile.user_id} style={styles.row}>
+              <TouchableOpacity
+                key={m.profile.user_id}
+                testID={`match-${m.profile.user_id}`}
+                style={styles.row}
+                activeOpacity={0.85}
+                onPress={() =>
+                  router.push({
+                    pathname: "/dancer/chat/[peerId]",
+                    params: {
+                      peerId: m.profile.user_id,
+                      peerName: m.profile.display_name,
+                      peerPhoto: m.profile.photo_url,
+                    },
+                  } as any)
+                }
+              >
                 <Image source={{ uri: m.profile.photo_url }} style={styles.avatar} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.name}>
@@ -98,15 +113,23 @@ export default function DancerMatches() {
                     ))}
                   </View>
                 </View>
-                {m.profile.instagram ? (
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(`https://instagram.com/${m.profile.instagram!.replace("@", "")}`)}
-                    style={styles.igBtn}
-                  >
-                    <Ionicons name="logo-instagram" size={20} color="#fff" />
-                  </TouchableOpacity>
-                ) : null}
-              </View>
+                <View style={styles.actionsCol}>
+                  <View style={styles.chatBtn}>
+                    <Ionicons name="chatbubble-ellipses" size={18} color="#fff" />
+                  </View>
+                  {m.profile.instagram ? (
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        Linking.openURL(`https://instagram.com/${m.profile.instagram!.replace("@", "")}`);
+                      }}
+                      style={styles.igBtn}
+                    >
+                      <Ionicons name="logo-instagram" size={18} color="#fff" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         )}
@@ -150,6 +173,16 @@ const styles = StyleSheet.create({
   igBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: "#E4405F",
+    alignItems: "center", justifyContent: "center",
+  },
+  actionsCol: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+  },
+  chatBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: colors.brand,
     alignItems: "center", justifyContent: "center",
   },
   primaryBtn: {

@@ -1633,6 +1633,91 @@ async def my_matches(current_user: dict = Depends(get_current_user)):
     ]
 
 
+# ----------------------------- Dancer Chat ---------------------------
+class ChatMessage(BaseModel):
+    id: str
+    pair_id: str
+    sender_id: str
+    text: str
+    read: bool = False
+    created_at: datetime
+
+
+class ChatMessageIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
+def _pair_id(uid_a: str, uid_b: str) -> str:
+    return "_".join(sorted([uid_a, uid_b]))
+
+
+async def _verify_match(current_user_id: str, peer_user_id: str) -> str:
+    """Return pair_id se i due utenti sono in match, else 403."""
+    pid = _pair_id(current_user_id, peer_user_id)
+    m = await db.dancer_matches.find_one({"pair_id": pid})
+    if not m:
+        raise HTTPException(status_code=403, detail="Non sei in match con questo utente")
+    return pid
+
+
+@api.post("/dancer/chat/{peer_user_id}", response_model=ChatMessage)
+async def send_chat_message(
+    peer_user_id: str,
+    payload: ChatMessageIn,
+    current_user: dict = Depends(get_current_user),
+):
+    pid = await _verify_match(current_user["id"], peer_user_id)
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Messaggio vuoto")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "pair_id": pid,
+        "sender_id": current_user["id"],
+        "recipient_id": peer_user_id,
+        "text": text[:2000],
+        "read": False,
+        "created_at": datetime.utcnow(),
+    }
+    await db.chat_messages.insert_one(doc)
+    doc.pop("_id", None)
+    doc.pop("recipient_id", None)
+    return ChatMessage(**doc)
+
+
+@api.get("/dancer/chat/{peer_user_id}", response_model=List[ChatMessage])
+async def get_chat_messages(
+    peer_user_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    pid = await _verify_match(current_user["id"], peer_user_id)
+    msgs = (
+        await db.chat_messages.find({"pair_id": pid})
+        .sort("created_at", 1)
+        .to_list(length=2000)
+    )
+    # Mark unread (received) messages as read
+    await db.chat_messages.update_many(
+        {"pair_id": pid, "sender_id": peer_user_id, "read": False},
+        {"$set": {"read": True}},
+    )
+    out = []
+    for m in msgs:
+        m.pop("_id", None)
+        m.pop("recipient_id", None)
+        out.append(ChatMessage(**m))
+    return out
+
+
+@api.get("/dancer/chat-unread-count")
+async def chat_unread_count(current_user: dict = Depends(get_current_user)):
+    n = await db.chat_messages.count_documents({
+        "recipient_id": current_user["id"],
+        "read": False,
+    })
+    return {"unread": n}
+
+
 # ----------------------------- Sponsors ------------------------------
 class Sponsor(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
