@@ -55,7 +55,7 @@ Grazie alla geolocalizzazione, LatinFun ti avvisa solo degli eventi che ti inter
 Unisciti alla più grande comunità della musica latina in Italia. Scarica LatinFun e vivi la scena.
 
 —
-Per supporto: info@latinfun.it
+Per supporto: latinfun@gmail.com
 ```
 
 ### Descrizione (max 4000 caratteri) — ENGLISH
@@ -92,7 +92,7 @@ Thanks to geolocation, LatinFun only notifies you of events you really care abou
 Join the largest Latin music community in Italy. Download LatinFun and live the scene.
 
 —
-Support: info@latinfun.it
+Support: latinfun@gmail.com
 ```
 
 ### Keywords (max 100 caratteri, separati da virgola)
@@ -172,7 +172,7 @@ https://latinfun.it/privacy
 
 ### Email di contatto
 ```
-info@latinfun.it
+latinfun@gmail.com
 ```
 
 ### Sito web

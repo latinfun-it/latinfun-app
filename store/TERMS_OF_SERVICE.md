@@ -1,9 +1,9 @@
 # Termini di Servizio — LatinFun
 
-**Ultimo aggiornamento**: [INSERIRE DATA]
+**Ultimo aggiornamento**: 28 aprile 2026
 
 ## 1. Oggetto
-Questi Termini regolano l'utilizzo dell'applicazione mobile e web **LatinFun** ("Servizio"), gestita da **[Nome ragione sociale — P.IVA]**. Utilizzando il Servizio accetti integralmente questi Termini.
+Questi Termini regolano l'utilizzo dell'applicazione mobile e web **LatinFun** ("Servizio"), gestita da **Latinos Unidos Edizioni Musicali di Mauro Germano Catalini** — P.IVA **03738320401** — sede legale in San Giovanni in Marignano (RN), Italia. Utilizzando il Servizio accetti integralmente questi Termini.
 
 ## 2. Descrizione del Servizio
 LatinFun è una piattaforma che permette di:
@@ -51,7 +51,7 @@ I pacchetti BOOST **non sono rimborsabili** salvo:
 - Malfunzionamento tecnico imputabile a LatinFun che impedisca la fruizione
 - Errore di addebito
 
-Per richieste di rimborso: **support@latinfun.it**
+Per richieste di rimborso: **latinfun@gmail.com**
 
 ### 5.5 Fatturazione
 Per richiedere fattura indica la tua P.IVA nella sezione Profilo prima dell'acquisto. Fatture emesse entro 15 giorni.
@@ -65,7 +65,7 @@ Non puoi:
 - Utilizzare il Servizio per attività illegali
 
 ## 7. Proprietà intellettuale
-Il marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di **[Nome ragione sociale]**. L'uso non autorizzato è vietato.
+Il marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di **Latinos Unidos Edizioni Musicali di Mauro Germano Catalini**. L'uso non autorizzato è vietato.
 
 I contenuti degli utenti restano di proprietà degli utenti, che concedono a LatinFun una **licenza gratuita, non esclusiva e revocabile** di pubblicazione nell'ambito del Servizio.
 
@@ -89,12 +89,12 @@ LatinFun può sospendere o chiudere l'account in caso di:
 LatinFun può aggiornare questi Termini comunicandolo via email o in-app. L'uso continuato del Servizio dopo le modifiche costituisce accettazione.
 
 ## 12. Legge applicabile e foro competente
-Questi Termini sono regolati dalla **legge italiana**. Per qualsiasi controversia il foro competente è quello di **[Città di sede]**, salvo diversa disposizione di legge a tutela del consumatore.
+Questi Termini sono regolati dalla **legge italiana**. Per qualsiasi controversia il foro competente è quello di **Rimini**, salvo diversa disposizione di legge a tutela del consumatore.
 
 ## 13. Contatti
-- Supporto: **support@latinfun.it**
-- Privacy: **privacy@latinfun.it**
-- Legale: **legal@latinfun.it**
+- Supporto: **latinfun@gmail.com**
+- PEC: **maurocatalini@pec.it**
+- Titolare: Latinos Unidos Edizioni Musicali di Mauro Germano Catalini — P.IVA 03738320401
 
 ---
 

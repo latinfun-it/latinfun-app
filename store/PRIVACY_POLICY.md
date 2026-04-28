@@ -1,14 +1,15 @@
 # Privacy Policy — LatinFun
 
-**Ultimo aggiornamento**: [INSERIRE DATA DI PUBBLICAZIONE]
+**Ultimo aggiornamento**: 28 aprile 2026
 
 ## 1. Titolare del trattamento
-LatinFun è gestita da **[Nome ragione sociale / tua P.IVA]**
-Email: info@latinfun.it
-PEC: [se presente]
-Sede: [Città, Italia]
+LatinFun è gestita da **Latinos Unidos Edizioni Musicali di Mauro Germano Catalini**
+- P.IVA: **03738320401**
+- Sede legale: **San Giovanni in Marignano (RN), Italia**
+- Email: **latinfun@gmail.com**
+- PEC: **maurocatalini@pec.it**
 
-Per qualsiasi richiesta relativa alla privacy puoi contattarci a **privacy@latinfun.it**.
+Per qualsiasi richiesta relativa alla privacy puoi contattarci a **latinfun@gmail.com**.
 
 ## 2. Dati raccolti
 
@@ -67,7 +68,7 @@ Per la privacy policy di Stripe: https://stripe.com/it/privacy
 
 ## 6. Diritti dell'utente (GDPR)
 In qualsiasi momento puoi:
-- ✅ **Accedere** ai tuoi dati (scrivici a privacy@latinfun.it)
+- ✅ **Accedere** ai tuoi dati (scrivici a latinfun@gmail.com)
 - ✅ **Rettificare** dati inesatti (dalla sezione Profilo in app)
 - ✅ **Cancellare** il tuo account (dalla sezione Impostazioni → Elimina account)
 - ✅ **Opporti** al trattamento
@@ -75,7 +76,7 @@ In qualsiasi momento puoi:
 - ✅ **Limitare** il trattamento
 - ✅ **Revocare** il consenso alle notifiche (dalla sezione Notifiche)
 
-Per esercitare questi diritti scrivici a **privacy@latinfun.it**. Ti risponderemo entro 30 giorni.
+Per esercitare questi diritti scrivici a **latinfun@gmail.com**. Ti risponderemo entro 30 giorni.
 
 Puoi inoltre presentare reclamo al **Garante per la protezione dei dati personali** (www.garanteprivacy.it).
 
@@ -100,4 +101,4 @@ Pubblicheremo eventuali modifiche in questa pagina con la nuova data di aggiorna
 
 ---
 
-**Hai domande?** Contattaci a **privacy@latinfun.it**
+**Hai domande?** Contattaci a **latinfun@gmail.com**
