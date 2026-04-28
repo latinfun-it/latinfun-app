@@ -163,7 +163,7 @@ export default function EventsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{t("events.title")}</Text>
             <Text style={styles.subtitle}>
-              {country === "ES" ? (lang === "es" ? "La escena latina en toda España" : "La scena latina in tutta la Spagna") : (lang === "es" ? "La escena latina en toda Italia" : "La scena latina in tutta Italia")}
+              {lang === "es" ? "La escena latina en toda España" : "La scena latina in tutta Italia"}
             </Text>
           </View>
           <View style={styles.toggle}>

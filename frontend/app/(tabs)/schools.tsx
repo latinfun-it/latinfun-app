@@ -84,7 +84,7 @@ export default function SchoolsScreen() {
               {t("schools.title")}
             </Text>
             <Text style={styles.subtitle}>
-              {country === "ES" ? (lang === "es" ? "Encuentra tu academia favorita en España" : "Trova la tua academia preferita in Spagna") : (lang === "es" ? "Encuentra tu academia favorita en Italia" : "Trova la tua academia preferita in Italia")}
+              {lang === "es" ? "Encuentra tu academia favorita en España" : "Trova la tua academia preferita in Italia"}
             </Text>
           </View>
           <TouchableOpacity
