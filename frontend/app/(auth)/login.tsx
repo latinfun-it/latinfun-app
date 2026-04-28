@@ -131,8 +131,31 @@ export default function Login() {
                 </Link>
               </View>
 
+              <TouchableOpacity
+                testID="login-demo-tap"
+                onPress={async () => {
+                  setError(null);
+                  setEmail("admin@latinfun.it");
+                  setPassword("admin123");
+                  setLoading(true);
+                  try {
+                    await login("admin@latinfun.it", "admin123");
+                    router.replace("/(tabs)/home");
+                  } catch (e: any) {
+                    setError(e.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                style={styles.demoBtn}
+              >
+                <Text style={styles.demoBtnText}>
+                  Tocca qui per Login Demo Admin
+                </Text>
+              </TouchableOpacity>
+
               <Text style={styles.demoHint}>
-                Demo admin: admin@latinfun.it / admin123
+                admin@latinfun.it / admin123
               </Text>
             </View>
           </ScrollView>
@@ -200,5 +223,15 @@ const styles = StyleSheet.create({
   footerText: { color: colors.textSecondary },
   linkText: { color: colors.brand, fontWeight: "700" },
   error: { color: colors.error, marginBottom: spacing.sm, fontSize: 13 },
-  demoHint: { color: colors.textMuted, textAlign: "center", marginTop: spacing.md, fontSize: 12 },
+  demoHint: { color: colors.textMuted, textAlign: "center", marginTop: spacing.sm, fontSize: 12 },
+  demoBtn: {
+    marginTop: spacing.md,
+    paddingVertical: 12,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.brand,
+    alignItems: "center",
+    backgroundColor: "rgba(255,71,87,0.08)",
+  },
+  demoBtnText: { color: colors.brand, fontWeight: "700", fontSize: 14 },
 });
