@@ -97,7 +97,7 @@ Support: latinfunofficial@gmail.com
 
 ### Keywords (max 100 caratteri, separati da virgola)
 ```
-salsa,bachata,reggaeton,kizomba,eventi,dj,ballo,latino,discoteca,musica
+salsa,bachata,reggaeton,latino,ballo,eventi,dj
 ```
 
 ### Categoria primaria

@@ -32,9 +32,9 @@
 
 ### Keywords (100 char max)
 ```
-salsa,bachata,reggaeton,latino,ballo,eventi,dj,milano,roma,festa,musica,scuola,latin,club
+salsa,bachata,reggaeton,latino,ballo,eventi,dj
 ```
-*(98 caratteri inclusi - resta margine per 2 caratteri se servono)*
+*(46 caratteri - lista mirata e pulita)*
 
 ### Promotional Text (170 char max — modificabile senza review)
 ```
