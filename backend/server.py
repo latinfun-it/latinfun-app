@@ -1600,6 +1600,53 @@ async def swipe_dancer(
                 }},
                 upsert=True,
             )
+
+            # Push notifica nuovo match a entrambi gli utenti
+            try:
+                me_doc = await db.users.find_one(
+                    {"id": current_user["id"]}, {"_id": 0, "name": 1}
+                )
+                target_user = await db.users.find_one(
+                    {"id": target_user_id},
+                    {"_id": 0, "push_token": 1, "notifications_enabled": 1, "name": 1},
+                )
+                me_user_full = await db.users.find_one(
+                    {"id": current_user["id"]},
+                    {"_id": 0, "push_token": 1, "notifications_enabled": 1},
+                )
+                # Notifica al target
+                if (
+                    target_user
+                    and target_user.get("push_token")
+                    and target_user.get("notifications_enabled", True)
+                ):
+                    me_name = (me_doc or {}).get("name") or "Un ballerino"
+                    asyncio.create_task(
+                        _send_expo_push(
+                            [target_user["push_token"]],
+                            "💃 Nuovo Match!",
+                            f"Hai fatto match con {me_name} su LatinFun!",
+                            {"type": "match", "peer_user_id": current_user["id"]},
+                        )
+                    )
+                # Notifica a chi ha appena fatto like (conferma del match)
+                if (
+                    me_user_full
+                    and me_user_full.get("push_token")
+                    and me_user_full.get("notifications_enabled", True)
+                ):
+                    target_name = (target_user or {}).get("name") or "Un ballerino"
+                    asyncio.create_task(
+                        _send_expo_push(
+                            [me_user_full["push_token"]],
+                            "💃 Nuovo Match!",
+                            f"È match con {target_name}! Inizia a chattare 🔥",
+                            {"type": "match", "peer_user_id": target_user_id},
+                        )
+                    )
+            except Exception as e:
+                logger.warning("Push match fail: %s", e)
+
             return {
                 "match": True,
                 "with_user_id": target_user_id,
@@ -1680,6 +1727,27 @@ async def send_chat_message(
         "created_at": datetime.utcnow(),
     }
     await db.chat_messages.insert_one(doc)
+
+    # Push notification to peer (if has token & notifications enabled)
+    try:
+        peer = await db.users.find_one(
+            {"id": peer_user_id},
+            {"_id": 0, "push_token": 1, "notifications_enabled": 1},
+        )
+        if peer and peer.get("push_token") and peer.get("notifications_enabled", True):
+            sender_name = current_user.get("name") or "Un partner"
+            preview = text[:100] + ("..." if len(text) > 100 else "")
+            asyncio.create_task(
+                _send_expo_push(
+                    [peer["push_token"]],
+                    f"{sender_name}",
+                    preview,
+                    {"type": "chat", "peer_user_id": current_user["id"]},
+                )
+            )
+    except Exception as e:
+        logger.warning("Push chat fail: %s", e)
+
     doc.pop("_id", None)
     doc.pop("recipient_id", None)
     return ChatMessage(**doc)
@@ -1878,6 +1946,29 @@ async def submit_contact_message(
         "created_at": datetime.now(timezone.utc),
     }
     await db.contact_messages.insert_one(doc)
+
+    # Notifica push agli admin (se hanno token)
+    try:
+        admins = await db.users.find(
+            {
+                "role": "admin",
+                "push_token": {"$ne": None, "$exists": True},
+            },
+            {"_id": 0, "push_token": 1},
+        ).to_list(50)
+        admin_tokens = [a["push_token"] for a in admins if a.get("push_token")]
+        if admin_tokens:
+            asyncio.create_task(
+                _send_expo_push(
+                    admin_tokens,
+                    f"📬 Nuovo messaggio: {cat}",
+                    f"Da {doc['sender_name']}: {subject[:60]}",
+                    {"type": "contact_message", "message_id": doc["id"]},
+                )
+            )
+    except Exception as e:
+        logger.warning("Push contact admin fail: %s", e)
+
     doc.pop("_id", None)
     return ContactMessage(**doc)
 
