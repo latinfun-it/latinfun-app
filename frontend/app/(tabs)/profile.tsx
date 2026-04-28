@@ -267,6 +267,18 @@ export default function ProfileScreen() {
             hint="Guadagna il 10% invitando amici"
             onPress={() => router.push("/affiliate" as any)}
           />
+          <MenuItem
+            icon="shield-checkmark-outline"
+            label="Privacy Policy"
+            hint="Come trattiamo i tuoi dati"
+            onPress={() => router.push("/legal/privacy" as any)}
+          />
+          <MenuItem
+            icon="document-text-outline"
+            label="Termini di Servizio"
+            hint="Condizioni d'uso dell'app"
+            onPress={() => router.push("/legal/terms" as any)}
+          />
 
           <TouchableOpacity
             testID="logout-btn"

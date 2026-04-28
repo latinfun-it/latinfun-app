@@ -2969,6 +2969,35 @@ async def on_startup():
     await db.schools.create_index("owner_id")
     await seed_admin()
     await seed_content()
+    await migrate_latinhub_to_latinfun()
+
+
+async def migrate_latinhub_to_latinfun():
+    """One-time idempotent rename: LatinHub -> LatinFun in seeded data fields.
+    Runs on every startup so any deployment with stale data gets fixed automatically.
+    """
+    try:
+        for coll, fields in [
+            ("events", ["title", "description", "venue"]),
+            ("djs", ["name", "bio", "stage_name"]),
+            ("schools", ["name", "description"]),
+            ("playlists", ["title", "description"]),
+            ("sponsors", ["name", "label", "subtitle"]),
+            ("mixes", ["title", "description"]),
+        ]:
+            c = db[coll]
+            for field in fields:
+                try:
+                    r = await c.update_many(
+                        {field: {"$regex": "LatinHub", "$options": "i"}},
+                        [{"$set": {field: {"$replaceAll": {"input": f"${field}", "find": "LatinHub", "replacement": "LatinFun"}}}}],
+                    )
+                    if r.modified_count:
+                        logger.info("[migrate] %s.%s: renamed %d docs LatinHub->LatinFun", coll, field, r.modified_count)
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.warning("migrate_latinhub_to_latinfun failed: %s", e)
 
 
 @app.on_event("shutdown")
