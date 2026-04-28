@@ -55,28 +55,26 @@ export default function ContactScreen() {
       setSubject("");
       setMessage("");
       setCategory("altro");
-      // Naviga al profilo - usiamo replace per essere deterministici (anche se non c'è history)
-      try {
-        if (router.canGoBack && router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace("/(tabs)/profile" as any);
-        }
-      } catch {
+      setBusy(false);
+
+      // Conferma: usiamo soluzioni native per piattaforma
+      if (Platform.OS === "web") {
+        // eslint-disable-next-line no-alert
+        window.alert("Messaggio inviato! ✉️\nTi risponderemo via email.");
+        // Naviga via replace (sicuro su web)
         router.replace("/(tabs)/profile" as any);
+      } else {
+        Alert.alert(
+          "Messaggio inviato! ✉️",
+          "Grazie. Il team LatinFun ti risponderà via email.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(tabs)/profile" as any),
+            },
+          ]
+        );
       }
-      // Conferma soft (su web compare dopo, su mobile in tempo)
-      setTimeout(() => {
-        if (Platform.OS === "web") {
-          // eslint-disable-next-line no-alert
-          window.alert("Messaggio inviato! ✉️\nTi risponderemo via email.");
-        } else {
-          Alert.alert(
-            "Messaggio inviato! ✉️",
-            "Grazie. Il team LatinFun ti risponderà via email."
-          );
-        }
-      }, 200);
     } catch (err: any) {
       const msg =
         err?.response?.data?.detail || "Impossibile inviare. Riprova più tardi.";
