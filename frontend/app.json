@@ -15,7 +15,10 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te",
         "NSPhotoLibraryUsageDescription": "Carica la foto di copertina della tua scuola",
-        "NSCameraUsageDescription": "Scatta una foto di copertina per la tua scuola"
+        "NSCameraUsageDescription": "Scatta una foto di copertina per la tua scuola",
+        "NSMicrophoneUsageDescription": "Registra brevi clip audio per i tuoi mix",
+        "NSUserTrackingUsageDescription": "Per mostrarti eventi e DJ rilevanti vicino a te",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

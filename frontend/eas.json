@@ -35,7 +35,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://api.latinfun.it"
+        "EXPO_PUBLIC_BACKEND_URL": "https://dj-italia-hub.preview.emergentagent.com"
       }
     }
   },
