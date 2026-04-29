@@ -2483,6 +2483,14 @@ async def root():
 
 app.include_router(api)
 
+# Static files mount for store assets (icon, feature graphic, legal pages)
+from fastapi.staticfiles import StaticFiles
+import os as _os
+_STATIC_DIR = _os.path.join(_os.path.dirname(__file__), "static")
+if _os.path.isdir(_STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+    app.mount("/api/static", StaticFiles(directory=_STATIC_DIR), name="api_static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
