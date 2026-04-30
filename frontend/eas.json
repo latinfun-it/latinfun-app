@@ -44,7 +44,7 @@
       "ios": {
         "appleId": "maurocatalini9@hotmail.com",
         "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "593U4P33GG"
+        "appleTeamId": "78VNPP2S87"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
