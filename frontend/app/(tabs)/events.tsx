@@ -174,7 +174,7 @@ export default function EventsScreen() {
                 activeOpacity={0.85}
               >
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={styles.addBtnText}>Aggiungi</Text>
+                <Text style={styles.addBtnText}>{t("events.add")}</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.subtitle}>

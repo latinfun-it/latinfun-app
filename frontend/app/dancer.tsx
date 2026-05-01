@@ -17,6 +17,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { api } from "../src/api";
 import { useAuth } from "../src/auth";
 import { colors, radii, spacing } from "../src/theme";
+import { useI18n } from "../src/i18n";
 import BrandHeader from "../src/BrandHeader";
 
 type DancerProfile = {
@@ -36,6 +37,7 @@ type DancerProfile = {
 export default function DancerDiscover() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [myProfile, setMyProfile] = useState<DancerProfile | null>(null);
   const [profiles, setProfiles] = useState<DancerProfile[]>([]);
@@ -120,11 +122,9 @@ export default function DancerDiscover() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.kicker}>MATCH PARTNER DI BALLO</Text>
-          <Text style={styles.title}>Crea il tuo profilo ballerino</Text>
-          <Text style={styles.dim}>
-            Per scoprire altri ballerini e fare match, crea prima il tuo profilo.
-          </Text>
+          <Text style={styles.kicker}>{t("match.title").toUpperCase()}</Text>
+          <Text style={styles.title}>{t("match.onboarding")}</Text>
+          <Text style={styles.dim}>{t("match.onboardingHint")}</Text>
           <TouchableOpacity
             testID="dancer-create-profile"
             style={styles.primaryBtn}
@@ -132,7 +132,7 @@ export default function DancerDiscover() {
             activeOpacity={0.9}
           >
             <Ionicons name="add-circle" size={18} color="#fff" />
-            <Text style={styles.primaryText}>Crea profilo</Text>
+            <Text style={styles.primaryText}>{t("match.createProfile")}</Text>
           </TouchableOpacity>
         </SafeAreaView>
       </View>
@@ -149,7 +149,7 @@ export default function DancerDiscover() {
             <TouchableOpacity onPress={() => router.replace("/(tabs)/home" as any)} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.topBarTitle}>Il mio profilo ballerino</Text>
+            <Text style={styles.topBarTitle}>{t("match.myProfileTitle")}</Text>
             <View style={{ width: 40 }} />
           </View>
 
@@ -185,14 +185,14 @@ export default function DancerDiscover() {
 
             {myProfile.bio ? (
               <View style={styles.bioBox}>
-                <Text style={styles.bioLabel}>BIO</Text>
+                <Text style={styles.bioLabel}>{t("match.bio")}</Text>
                 <Text style={styles.bioText}>{myProfile.bio}</Text>
               </View>
             ) : null}
 
             {myProfile.looking_for && myProfile.looking_for.length > 0 ? (
               <View style={styles.bioBox}>
-                <Text style={styles.bioLabel}>CERCO</Text>
+                <Text style={styles.bioLabel}>{t("match.lookingFor")}</Text>
                 <View style={styles.tagsRow}>
                   {myProfile.looking_for.map((l) => (
                     <View key={l} style={styles.styleTag}>
@@ -205,7 +205,7 @@ export default function DancerDiscover() {
 
             {myProfile.instagram ? (
               <View style={styles.bioBox}>
-                <Text style={styles.bioLabel}>INSTAGRAM</Text>
+                <Text style={styles.bioLabel}>{t("match.instagram")}</Text>
                 <Text style={styles.bioText}>@{myProfile.instagram.replace(/^@/, "")}</Text>
               </View>
             ) : null}
@@ -218,7 +218,7 @@ export default function DancerDiscover() {
               activeOpacity={0.9}
             >
               <Ionicons name="create" size={18} color="#fff" />
-              <Text style={styles.primaryText}>Modifica profilo</Text>
+              <Text style={styles.primaryText}>{t("match.editProfile")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -228,7 +228,7 @@ export default function DancerDiscover() {
               activeOpacity={0.9}
             >
               <Ionicons name="search" size={18} color={colors.brand} />
-              <Text style={[styles.primaryText, { color: colors.brand }]}>Scopri ballerini</Text>
+              <Text style={[styles.primaryText, { color: colors.brand }]}>{t("match.discover")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -238,7 +238,7 @@ export default function DancerDiscover() {
               activeOpacity={0.9}
             >
               <Ionicons name="people" size={18} color="#fff" />
-              <Text style={styles.primaryText}>I miei match</Text>
+              <Text style={styles.primaryText}>{t("match.myMatches")}</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -258,8 +258,8 @@ export default function DancerDiscover() {
             <Ionicons name="chevron-back" size={20} color="#fff" />
           </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.kicker}>BALLERINI VICINO A TE</Text>
-            <Text style={styles.title}>Match</Text>
+            <Text style={styles.kicker}>{t("match.discoverKicker")}</Text>
+            <Text style={styles.title}>{t("match.matched")}</Text>
           </View>
           <TouchableOpacity
             onPress={() => router.push("/dancer/matches" as any)}
@@ -273,15 +273,15 @@ export default function DancerDiscover() {
         {!cur ? (
           <View style={styles.center}>
             <Ionicons name="checkmark-done-circle" size={56} color={colors.brand} />
-            <Text style={styles.endTitle}>Hai visto tutti per ora!</Text>
-            <Text style={styles.dim}>Torna più tardi per scoprire nuovi ballerini.</Text>
+            <Text style={styles.endTitle}>{t("match.allSeen")}</Text>
+            <Text style={styles.dim}>{t("match.allSeenHint")}</Text>
             <TouchableOpacity
               style={styles.primaryBtn}
               onPress={load}
               activeOpacity={0.9}
             >
               <Ionicons name="refresh" size={18} color="#fff" />
-              <Text style={styles.primaryText}>Ricarica</Text>
+              <Text style={styles.primaryText}>{t("match.reload")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -316,14 +316,14 @@ export default function DancerDiscover() {
 
             {cur.bio ? (
               <View style={styles.bioBox}>
-                <Text style={styles.bioLabel}>BIO</Text>
+                <Text style={styles.bioLabel}>{t("match.bio")}</Text>
                 <Text style={styles.bioText}>{cur.bio}</Text>
               </View>
             ) : null}
 
             {cur.looking_for && cur.looking_for.length > 0 ? (
               <View style={styles.bioBox}>
-                <Text style={styles.bioLabel}>CERCO</Text>
+                <Text style={styles.bioLabel}>{t("match.lookingFor")}</Text>
                 <View style={styles.tagsRow}>
                   {cur.looking_for.map((l) => (
                     <View key={l} style={styles.styleTag}>
@@ -365,7 +365,7 @@ export default function DancerDiscover() {
       >
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>🎉 È UN MATCH!</Text>
+            <Text style={styles.modalTitle}>{t("match.matchTitle")}</Text>
             {matchModal ? (
               <>
                 <Image
@@ -373,9 +373,7 @@ export default function DancerDiscover() {
                   style={styles.modalImg}
                 />
                 <Text style={styles.modalName}>{matchModal.display_name}</Text>
-                <Text style={styles.dim}>
-                  Vi siete scelti a vicenda. Trovate un evento e ballate!
-                </Text>
+                <Text style={styles.dim}>{t("match.matchBody")}</Text>
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 18 }}>
                   <TouchableOpacity
                     style={[styles.primaryBtn, { flex: 1 }]}
@@ -384,13 +382,13 @@ export default function DancerDiscover() {
                       router.push("/dancer/matches" as any);
                     }}
                   >
-                    <Text style={styles.primaryText}>Vedi i match</Text>
+                    <Text style={styles.primaryText}>{t("match.seeMatches")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.secondaryBtn, { flex: 1 }]}
                     onPress={() => setMatchModal(null)}
                   >
-                    <Text style={styles.secondaryText}>Continua</Text>
+                    <Text style={styles.secondaryText}>{t("match.continue")}</Text>
                   </TouchableOpacity>
                 </View>
               </>

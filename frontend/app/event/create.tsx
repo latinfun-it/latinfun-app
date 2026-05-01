@@ -19,15 +19,17 @@ import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { api, formatApiError } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
+import { useI18n } from "../../src/i18n";
 
-const ORGANIZER_TYPES: { key: string; label: string; icon: string }[] = [
-  { key: "dj", label: "DJ", icon: "headset" },
-  { key: "gestore_locale", label: "Gestore locale", icon: "business" },
-  { key: "promoter", label: "Promoter", icon: "megaphone" },
-  { key: "festival", label: "Festival", icon: "musical-notes" },
-  { key: "scuola_ballo", label: "Scuola di ballo", icon: "school" },
-  { key: "privato", label: "Privato", icon: "person" },
-];
+const ORGANIZER_TYPE_ICONS: Record<string, string> = {
+  dj: "headset",
+  gestore_locale: "business",
+  promoter: "megaphone",
+  festival: "musical-notes",
+  scuola_ballo: "school",
+  privato: "person",
+};
+const ORGANIZER_TYPE_KEYS = ["dj", "gestore_locale", "promoter", "festival", "scuola_ballo", "privato"];
 
 const DEFAULT_IMAGE = "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg";
 
@@ -53,6 +55,7 @@ function combineDateTime(date: Date, time: Date): Date {
 
 export default function CreateEvent() {
   const router = useRouter();
+  const { t } = useI18n();
 
   // form state
   const [organizerType, setOrganizerType] = useState<string>("dj");
@@ -132,15 +135,15 @@ export default function CreateEvent() {
   const submit = async () => {
     setError(null);
     if (title.trim().length < 3 || description.trim().length < 10) {
-      setError("Titolo (min 3) e descrizione (min 10) obbligatori");
+      setError(t("events.fields.errors.titleDesc"));
       return;
     }
     if (!city.trim() || !venue.trim() || !address.trim()) {
-      setError("Città, locale e indirizzo obbligatori");
+      setError(t("events.fields.errors.location"));
       return;
     }
     if (!genre.trim()) {
-      setError("Inserisci almeno un genere");
+      setError(t("events.fields.errors.genre"));
       return;
     }
     if (endTime.getTime() <= startTime.getTime()) {
@@ -178,15 +181,15 @@ export default function CreateEvent() {
       if (ticket.trim()) payload.ticket_url = ticket.trim();
       const r = await api.post("/events", payload);
       Alert.alert(
-        "Evento pubblicato!",
-        "Il tuo evento è online. Vuoi promuoverlo subito con BOOST?",
+        t("events.fields.publishedTitle"),
+        t("events.fields.publishedBody"),
         [
-          { text: "Più tardi", onPress: () => router.replace("/(tabs)/events") },
-          { text: "Promuovi ora", onPress: () => router.replace(`/event/${r.data.id}`) },
+          { text: t("events.fields.publishedLater"), onPress: () => router.replace("/(tabs)/events") },
+          { text: t("events.fields.publishedBoost"), onPress: () => router.replace(`/event/${r.data.id}`) },
         ]
       );
     } catch (e: any) {
-      setError(formatApiError(e?.response?.data?.detail) || e.message || "Errore di rete");
+      setError(formatApiError(e?.response?.data?.detail) || e.message || t("events.fields.errors.network"));
     } finally {
       setSubmitting(false);
     }
@@ -200,8 +203,8 @@ export default function CreateEvent() {
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>NUOVO</Text>
-            <Text style={styles.title}>Crea evento</Text>
+            <Text style={styles.kicker}>{t("common.optional") ? "NUOVO / NUEVO" : "NUOVO"}</Text>
+            <Text style={styles.title}>{t("events.create")}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -213,69 +216,68 @@ export default function CreateEvent() {
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 200 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.lead}>
-            Pubblica la tua serata latina. Dopo la pubblicazione puoi promuoverla con BOOST (da 4,99 €)
-            per apparire in cima alla lista.
-          </Text>
+          <Text style={styles.lead}>{t("events.fields.lead")}</Text>
 
           {/* Tipo organizzatore */}
-          <L t="Tipo organizzatore *" />
+          <L t={t("events.fields.organizerType")} />
           <View style={styles.chipRow}>
-            {ORGANIZER_TYPES.map((o) => {
-              const active = organizerType === o.key;
+            {ORGANIZER_TYPE_KEYS.map((key) => {
+              const active = organizerType === key;
+              const icon = ORGANIZER_TYPE_ICONS[key] || "person";
+              const label = t(`events.organizerTypes.${key}`);
               return (
                 <TouchableOpacity
-                  key={o.key}
-                  onPress={() => setOrganizerType(o.key)}
+                  key={key}
+                  onPress={() => setOrganizerType(key)}
                   style={[styles.chip, active && styles.chipActive]}
                 >
                   <Ionicons
-                    name={o.icon as any}
+                    name={icon as any}
                     size={14}
                     color={active ? "#fff" : colors.textSecondary}
                     style={{ marginRight: 6 }}
                   />
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{o.label}</Text>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <L t="Titolo *" />
+          <L t={`${t("events.fields.title")} *`} />
           <TextInput
             testID="ce-title"
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="Es. Latin Night Roma"
+            placeholder="Latin Night Roma"
             placeholderTextColor={colors.textMuted}
           />
 
-          <L t="Descrizione *" />
+          <L t={`${t("events.fields.description")} *`} />
           <TextInput
             testID="ce-desc"
             style={[styles.input, { height: 110, textAlignVertical: "top" }]}
             value={description}
             onChangeText={setDescription}
-            placeholder="Atmosfera, artisti, dress code..."
+            placeholder="..."
             placeholderTextColor={colors.textMuted}
             multiline
           />
 
           {/* Generi - testo libero con virgole */}
-          <L t="Generi musicali *" />
+          <L t={`${t("events.fields.genre")} *`} />
           <TextInput
             testID="ce-genre"
             style={styles.input}
             value={genre}
             onChangeText={setGenre}
-            placeholder="Es. Bachata, Salsa, Reggaeton, Kizomba"
+            placeholder={t("events.fields.genrePlaceholder")}
             placeholderTextColor={colors.textMuted}
           />
-          <Text style={styles.hint}>Separa i generi con una virgola</Text>
+          <Text style={styles.hint}>{t("events.fields.genreHint")}</Text>
 
           {/* Data */}
-          <L t="Data evento *" />
+          <L t={`${t("events.fields.date")} *`} />
           <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
             <Text style={{ color: "#fff", fontSize: 14 }}>{formatDate(eventDate)}</Text>
           </TouchableOpacity>
@@ -294,14 +296,14 @@ export default function CreateEvent() {
           )}
           {Platform.OS === "ios" && showDatePicker && (
             <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.pickerDone}>
-              <Text style={styles.pickerDoneText}>Conferma</Text>
+              <Text style={styles.pickerDoneText}>{t("events.fields.confirm")}</Text>
             </TouchableOpacity>
           )}
 
           {/* Orario Dalle / Alle */}
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <L t="Dalle *" />
+              <L t={`${t("events.fields.startTime")} *`} />
               <TouchableOpacity style={styles.input} onPress={() => setShowStartPicker(true)} activeOpacity={0.7}>
                 <Text style={{ color: "#fff", fontSize: 14 }}>{formatTime(startTime)}</Text>
               </TouchableOpacity>
@@ -325,7 +327,7 @@ export default function CreateEvent() {
               )}
             </View>
             <View style={{ flex: 1 }}>
-              <L t="Alle *" />
+              <L t={`${t("events.fields.endTime")} *`} />
               <TouchableOpacity style={styles.input} onPress={() => setShowEndPicker(true)} activeOpacity={0.7}>
                 <Text style={{ color: "#fff", fontSize: 14 }}>{formatTime(endTime)}</Text>
               </TouchableOpacity>
@@ -353,7 +355,7 @@ export default function CreateEvent() {
           {/* Locali frequenti (autocomplete) */}
           {recentVenues.length > 0 && (
             <>
-              <L t="I tuoi locali frequenti" />
+              <L t={t("events.fields.recentVenues")} />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
                 {recentVenues.map((v, idx) => (
                   <TouchableOpacity
@@ -372,7 +374,7 @@ export default function CreateEvent() {
             </>
           )}
 
-          <L t="Città *" />
+          <L t={`${t("events.fields.city")} *`} />
           <TextInput
             testID="ce-city"
             style={styles.input}
@@ -382,7 +384,7 @@ export default function CreateEvent() {
             placeholderTextColor={colors.textMuted}
           />
 
-          <L t="Nome locale *" />
+          <L t={`${t("events.fields.venue")} *`} />
           <TextInput
             testID="ce-venue"
             style={styles.input}
@@ -392,17 +394,17 @@ export default function CreateEvent() {
             placeholderTextColor={colors.textMuted}
           />
 
-          <L t="Indirizzo *" />
+          <L t={`${t("events.fields.address")} *`} />
           <TextInput
             testID="ce-address"
             style={styles.input}
             value={address}
             onChangeText={setAddress}
-            placeholder="Via Roma 12, Milano"
+            placeholder="Via Roma 12"
             placeholderTextColor={colors.textMuted}
           />
 
-          <L t="Line-up DJ (separati da virgola)" />
+          <L t={t("events.fields.lineup")} />
           <TextInput
             testID="ce-lineup"
             style={styles.input}
@@ -413,32 +415,32 @@ export default function CreateEvent() {
           />
 
           {/* Locandina */}
-          <L t="Locandina evento (1080×1080 - quadrato Instagram)" />
+          <L t={t("events.fields.image")} />
           <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.85}>
             {imageData ? (
               <Image source={{ uri: imageData }} style={styles.imagePreview} />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image" size={42} color={colors.textMuted} />
-                <Text style={styles.imageHint}>Tocca per caricare la locandina</Text>
-                <Text style={styles.imageHintSmall}>Formato consigliato: post Instagram quadrato</Text>
+                <Text style={styles.imageHint}>{t("events.fields.imageHint")}</Text>
+                <Text style={styles.imageHintSmall}>{t("events.fields.imageSubHint")}</Text>
               </View>
             )}
           </TouchableOpacity>
           {imageData && (
             <TouchableOpacity onPress={() => setImageData("")} style={styles.removeImage}>
               <Ionicons name="close-circle" size={16} color={colors.error} />
-              <Text style={styles.removeImageText}>Rimuovi locandina</Text>
+              <Text style={styles.removeImageText}>{t("events.fields.removeImage")}</Text>
             </TouchableOpacity>
           )}
 
-          <L t="Link biglietteria (URL)" />
+          <L t={t("events.fields.ticket")} />
           <TextInput
             testID="ce-ticket"
             style={styles.input}
             value={ticket}
             onChangeText={setTicket}
-            placeholder="https://eventbrite.com/... (opzionale)"
+            placeholder={t("events.fields.ticketPlaceholder")}
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             keyboardType="url"
@@ -462,7 +464,7 @@ export default function CreateEvent() {
             ) : (
               <>
                 <Ionicons name="megaphone" size={18} color="#fff" />
-                <Text style={styles.submitText}>Pubblica evento</Text>
+                <Text style={styles.submitText}>{t("events.fields.publish")}</Text>
               </>
             )}
           </TouchableOpacity>
