@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { api, formatApiError } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 
@@ -32,6 +34,27 @@ export default function RegisterDJ() {
   const [genres, setGenres] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Permesso negato", "Concedi accesso alla galleria foto");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets[0]?.base64) return;
+      setImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    } catch {
+      Alert.alert("Errore", "Impossibile caricare l'immagine");
+    }
+  };
 
   const toggle = (g: string) =>
     setGenres((arr) => (arr.includes(g) ? arr.filter((x) => x !== g) : [...arr, g]));
@@ -127,8 +150,24 @@ export default function RegisterDJ() {
           <L t="Playlist Tidal (URL)" />
           <TextInput testID="dj-tidal" style={styles.input} value={tidal} onChangeText={setTidal} placeholder="https://tidal.com/..." placeholderTextColor={colors.textMuted} autoCapitalize="none" />
 
-          <L t="Foto profilo (URL)" />
-          <TextInput testID="dj-image" style={styles.input} value={image} onChangeText={setImage} placeholder="https://... (opzionale)" placeholderTextColor={colors.textMuted} autoCapitalize="none" />
+          <L t="Foto profilo (carica file dal telefono)" />
+          <TouchableOpacity testID="dj-image" style={styles.imagePicker} onPress={pickImage} activeOpacity={0.85}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera" size={42} color={colors.textMuted} />
+                <Text style={styles.imageHint}>Tocca per caricare la foto profilo</Text>
+                <Text style={styles.imageHintSmall}>Quadrata 1:1, formato Instagram</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          {image && (
+            <TouchableOpacity onPress={() => setImage("")} style={styles.removeImage}>
+              <Ionicons name="close-circle" size={16} color={colors.error} />
+              <Text style={styles.removeImageText}>Rimuovi foto</Text>
+            </TouchableOpacity>
+          )}
 
           {error ? <Text style={styles.error} testID="dj-reg-error">{error}</Text> : null}
 
