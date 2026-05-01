@@ -37,10 +37,12 @@ export default function DancerDiscover() {
   const router = useRouter();
   const { user } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [myProfile, setMyProfile] = useState<DancerProfile | null>(null);
   const [profiles, setProfiles] = useState<DancerProfile[]>([]);
   const [idx, setIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [matchModal, setMatchModal] = useState<DancerProfile | null>(null);
+  const [mode, setMode] = useState<"view" | "swipe">("view"); // dopo creato profilo, default = vista scheda
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -49,9 +51,11 @@ export default function DancerDiscover() {
       const me = await api.get("/dancer/profile/me");
       if (!me.data) {
         setHasProfile(false);
+        setMyProfile(null);
         return;
       }
       setHasProfile(true);
+      setMyProfile(me.data);
       const r = await api.get<DancerProfile[]>("/dancer/discover");
       setProfiles(r.data || []);
       setIdx(0);
@@ -105,11 +109,17 @@ export default function DancerDiscover() {
     );
   }
 
+  // ============== STATO 1: nessun profilo ancora creato ==============
   if (hasProfile === false) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <BrandHeader />
         <SafeAreaView edges={["top"]} style={{ padding: spacing.lg }}>
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => router.replace("/(tabs)/home" as any)} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.kicker}>MATCH PARTNER DI BALLO</Text>
           <Text style={styles.title}>Crea il tuo profilo ballerino</Text>
           <Text style={styles.dim}>
@@ -129,6 +139,114 @@ export default function DancerDiscover() {
     );
   }
 
+  // ============== STATO 2: profilo creato, vista scheda profilo (DEFAULT) ==============
+  if (mode === "view" && myProfile) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }} testID="dancer-my-profile">
+        <BrandHeader />
+        <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => router.replace("/(tabs)/home" as any)} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={22} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.topBarTitle}>Il mio profilo ballerino</Text>
+            <View style={{ width: 40 }} />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ padding: spacing.lg, paddingBottom: 200 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Profile card */}
+            <View style={styles.card}>
+              <Image source={{ uri: myProfile.photo_url }} style={styles.cardImg} />
+              <LinearGradient
+                colors={["transparent", "rgba(5,5,5,0.95)"]}
+                style={styles.grad}
+              />
+              <View style={styles.cardOverlay}>
+                <Text style={styles.cardName}>
+                  {myProfile.display_name}
+                  {myProfile.age ? <Text style={styles.cardAge}>, {myProfile.age}</Text> : null}
+                </Text>
+                <Text style={styles.cardCity}>📍 {myProfile.city}</Text>
+                <View style={styles.tagsRow}>
+                  <View style={styles.levelTag}>
+                    <Text style={styles.levelTagText}>{(myProfile.level || "").toUpperCase()}</Text>
+                  </View>
+                  {(myProfile.styles || []).slice(0, 4).map((s) => (
+                    <View key={s} style={styles.styleTag}>
+                      <Text style={styles.styleTagText}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {myProfile.bio ? (
+              <View style={styles.bioBox}>
+                <Text style={styles.bioLabel}>BIO</Text>
+                <Text style={styles.bioText}>{myProfile.bio}</Text>
+              </View>
+            ) : null}
+
+            {myProfile.looking_for && myProfile.looking_for.length > 0 ? (
+              <View style={styles.bioBox}>
+                <Text style={styles.bioLabel}>CERCO</Text>
+                <View style={styles.tagsRow}>
+                  {myProfile.looking_for.map((l) => (
+                    <View key={l} style={styles.styleTag}>
+                      <Text style={styles.styleTagText}>{l}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {myProfile.instagram ? (
+              <View style={styles.bioBox}>
+                <Text style={styles.bioLabel}>INSTAGRAM</Text>
+                <Text style={styles.bioText}>@{myProfile.instagram.replace(/^@/, "")}</Text>
+              </View>
+            ) : null}
+
+            {/* Buttons */}
+            <TouchableOpacity
+              testID="edit-my-profile"
+              style={styles.primaryBtn}
+              onPress={() => router.push("/dancer/profile" as any)}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="create" size={18} color="#fff" />
+              <Text style={styles.primaryText}>Modifica profilo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              testID="open-discover"
+              style={[styles.primaryBtn, { backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => setMode("swipe")}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="search" size={18} color={colors.brand} />
+              <Text style={[styles.primaryText, { color: colors.brand }]}>Scopri ballerini</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              testID="open-matches"
+              style={[styles.primaryBtn, { backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => router.push("/dancer/matches" as any)}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="people" size={18} color="#fff" />
+              <Text style={styles.primaryText}>I miei match</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // ============== STATO 3: swipe mode (scopri ballerini) ==============
   const cur = profiles[idx];
 
   return (
@@ -136,33 +254,27 @@ export default function DancerDiscover() {
       <BrandHeader />
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
         <View style={styles.header}>
-          <View>
+          <TouchableOpacity onPress={() => setMode("view")} style={styles.iconBtn} testID="back-to-profile">
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.kicker}>BALLERINI VICINO A TE</Text>
             <Text style={styles.title}>Match</Text>
           </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => router.push("/dancer/matches" as any)}
-              style={styles.iconBtn}
-              testID="go-matches"
-            >
-              <Ionicons name="people" size={20} color={colors.brand} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/dancer/profile" as any)}
-              style={styles.iconBtn}
-              testID="edit-profile"
-            >
-              <Ionicons name="person" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/dancer/matches" as any)}
+            style={styles.iconBtn}
+            testID="go-matches"
+          >
+            <Ionicons name="people" size={20} color={colors.brand} />
+          </TouchableOpacity>
         </View>
 
         {!cur ? (
           <View style={styles.center}>
             <Ionicons name="checkmark-done-circle" size={56} color={colors.brand} />
             <Text style={styles.endTitle}>Hai visto tutti per ora!</Text>
-            <Text style={styles.dim}>Torna piu tardi per scoprire nuovi ballerini.</Text>
+            <Text style={styles.dim}>Torna più tardi per scoprire nuovi ballerini.</Text>
             <TouchableOpacity
               style={styles.primaryBtn}
               onPress={load}
@@ -292,10 +404,34 @@ export default function DancerDiscover() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: 8,
+  },
+  topBarTitle: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "center",
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.bgSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
@@ -362,11 +498,11 @@ const styles = StyleSheet.create({
   dim: { color: colors.textSecondary, textAlign: "center", marginTop: 6, fontSize: 13 },
   primaryBtn: {
     flexDirection: "row",
-    alignItems: "center", justifyContent: "center", gap: 6,
+    alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: colors.brand,
-    paddingVertical: 13, paddingHorizontal: 20,
+    paddingVertical: 14, paddingHorizontal: 20,
     borderRadius: radii.pill,
-    marginTop: 18,
+    marginTop: 14,
   },
   primaryText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   secondaryBtn: {

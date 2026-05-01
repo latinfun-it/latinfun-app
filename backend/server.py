@@ -155,12 +155,14 @@ class Event(BaseModel):
     city: str
     venue: str
     address: str
-    genre: str  # bachata | reggaeton | salsa | latin
-    date: datetime
+    genre: str  # free text comma-separated: "Bachata, Salsa, Reggaeton"
+    date: datetime  # start datetime
+    end_date: Optional[datetime] = None  # end datetime (optional)
     image_url: str
     lineup: List[str] = []  # DJ names
     ticket_url: Optional[str] = None
     organizer: str
+    organizer_type: Optional[str] = None  # dj | gestore_locale | promoter | festival | scuola_ballo | privato
     featured: bool = False
     boosted: bool = False
     boosted_until: Optional[datetime] = None
@@ -183,9 +185,11 @@ class EventCreate(BaseModel):
     address: str
     genre: str
     date: datetime
+    end_date: Optional[datetime] = None
     image_url: str
     lineup: List[str] = []
     ticket_url: Optional[str] = None
+    organizer_type: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     contact_email: Optional[str] = None
@@ -668,18 +672,58 @@ async def get_event(event_id: str):
 
 @api.post("/events", response_model=Event)
 async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
+    # Anti-flood: max 3 events per day per user (admin esente)
+    if not current_user.get("is_admin"):
+        from datetime import timedelta
+        since = datetime.utcnow() - timedelta(days=1)
+        recent = await db.events.count_documents({
+            "owner_id": current_user["id"],
+            "created_at_ts": {"$gte": since},
+        })
+        if recent >= 3:
+            raise HTTPException(
+                status_code=429,
+                detail="Hai raggiunto il limite di 3 eventi al giorno. Riprova domani.",
+            )
     ev = Event(
         **payload.model_dump(),
         organizer=current_user["name"],
         owner_id=current_user["id"],
     )
-    await db.events.insert_one(ev.model_dump())
+    doc = ev.model_dump()
+    doc["created_at_ts"] = datetime.utcnow()
+    await db.events.insert_one(doc)
     # fire-and-forget push notifications to nearby users
     try:
         asyncio.create_task(_notify_nearby_users_about_event(ev.model_dump()))
     except Exception as e:
         logger.warning("notify_nearby failed: %s", e)
     return ev
+
+
+@api.get("/events/my/venues")
+async def my_recent_venues(current_user: dict = Depends(get_current_user)):
+    """Restituisce i locali usati di recente dall'utente per autocomplete del form."""
+    pipeline = [
+        {"$match": {"owner_id": current_user["id"]}},
+        {"$group": {
+            "_id": {"venue": "$venue", "city": "$city", "address": "$address"},
+            "count": {"$sum": 1},
+            "last_used": {"$max": "$date"},
+        }},
+        {"$sort": {"count": -1, "last_used": -1}},
+        {"$limit": 10},
+    ]
+    cursor = db.events.aggregate(pipeline)
+    venues = []
+    async for r in cursor:
+        venues.append({
+            "venue": r["_id"].get("venue"),
+            "city": r["_id"].get("city"),
+            "address": r["_id"].get("address"),
+            "count": r.get("count", 0),
+        })
+    return venues
 
 
 # ----------------------------- Payments / BOOST ----------------------

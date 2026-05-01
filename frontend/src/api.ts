@@ -47,6 +47,34 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Response interceptor: gestisce token scaduto/non valido (401)
+// pulisce lo storage in modo che AuthProvider rilevi l'assenza di token e riporti al login
+let tokenExpiredHandler: (() => void) | null = null;
+export function setTokenExpiredHandler(h: () => void) {
+  tokenExpiredHandler = h;
+}
+
+api.interceptors.response.use(
+  (resp) => resp,
+  async (error) => {
+    const status = error?.response?.status;
+    const url = (error?.config?.url || "") as string;
+    // ignora 401 sull'endpoint di login (non è scadenza ma credenziali errate)
+    const isLogin = url.includes("/auth/login") || url.includes("/auth/register");
+    if (status === 401 && !isLogin) {
+      try {
+        await AsyncStorage.removeItem(TOKEN_KEY);
+      } catch {}
+      if (tokenExpiredHandler) {
+        try {
+          tokenExpiredHandler();
+        } catch {}
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export function formatApiError(detail: any): string {
   if (detail == null) return "Qualcosa è andato storto. Riprova.";
   if (typeof detail === "string") return detail;

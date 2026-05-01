@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { api, TOKEN_KEY, formatApiError } from "./api";
+import { api, TOKEN_KEY, formatApiError, setTokenExpiredHandler } from "./api";
 
 export type User = {
   id: string;
@@ -46,6 +46,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Quando il backend risponde 401 (token scaduto/non valido) -> forza logout
+  useEffect(() => {
+    setTokenExpiredHandler(() => {
+      setUser(null);
+    });
+    return () => {
+      setTokenExpiredHandler(() => {});
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {

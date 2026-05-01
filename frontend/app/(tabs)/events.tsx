@@ -165,7 +165,18 @@ export default function EventsScreen() {
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t("events.title")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={styles.title}>{t("events.title")}</Text>
+              <TouchableOpacity
+                testID="events-add-btn"
+                onPress={() => router.push("/event/create" as any)}
+                style={styles.addBtn}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.addBtnText}>Aggiungi</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.subtitle}>
               {lang === "es" ? "La escena latina en toda España" : "La scena latina in tutta Italia"}
             </Text>
@@ -396,6 +407,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.brand,
+    borderRadius: radii.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  addBtnText: { color: "#fff", fontWeight: "800", fontSize: 12, letterSpacing: 0.3 },
   toggleBtn: {
     flexDirection: "row",
     alignItems: "center",
