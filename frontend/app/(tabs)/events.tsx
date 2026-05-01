@@ -169,7 +169,18 @@ export default function EventsScreen() {
               <Text style={styles.title}>{t("events.title")}</Text>
               <TouchableOpacity
                 testID="events-add-btn"
-                onPress={() => router.push("/event/create" as any)}
+                onPress={async () => {
+                  try {
+                    const r = await api.get("/me/organizer");
+                    if (r.data?.is_organizer) {
+                      router.push("/event/create" as any);
+                    } else {
+                      router.push("/become-organizer" as any);
+                    }
+                  } catch {
+                    router.push("/become-organizer" as any);
+                  }
+                }}
                 style={styles.addBtn}
                 activeOpacity={0.85}
               >

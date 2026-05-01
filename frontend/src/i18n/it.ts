@@ -161,6 +161,35 @@ export default {
     open: "Apri",
   },
 
+  // Organizer activation (diventa organizzatore)
+  organizer: {
+    kicker: "ATTIVAZIONE",
+    title: "Diventa Organizzatore",
+    editTitle: "Modifica profilo organizzatore",
+    lead: "Per creare eventi, profili DJ o scuole di ballo devi attivare il profilo Organizzatore. È gratuito: solo compilare qualche info così sappiamo chi pubblica contenuti.",
+    type: "Tipo organizzatore",
+    businessName: "Nome artista / attività",
+    businessNamePlaceholder: "DJ Mauro / Latin Club Roma / Tropicana",
+    phone: "Telefono",
+    phoneHint: "Servirà per verifica via SMS in futuro (anti-spam)",
+    taxId: "P.IVA / Codice Fiscale (opzionale)",
+    taxIdPlaceholder: "IT12345678901",
+    instagram: "Instagram (opzionale)",
+    website: "Sito web (opzionale)",
+    agreeLabel: "Dichiaro di essere effettivamente un organizzatore nel settore latino e accetto che account falsi o contenuti ingannevoli verranno rimossi e bannati.",
+    activate: "Attiva profilo organizzatore",
+    save: "Salva modifiche",
+    successTitle: "Profilo organizzatore attivato!",
+    successBody: "Ora puoi creare eventi, profili DJ e scuole di ballo. Se sei un top organizer contattaci per ottenere il badge ⭐ verificato.",
+    verified: "Profilo verificato dal team LatinFun",
+    notVerified: "Profilo non ancora verificato. Contattaci per ottenere il badge ⭐.",
+    errors: {
+      businessName: "Nome artista/attività obbligatorio (min 2 caratteri)",
+      phone: "Numero di telefono obbligatorio (min 6 caratteri)",
+      agree: "Devi accettare la dichiarazione per procedere",
+    },
+  },
+
   // Match
   match: {
     title: "Match Partner di Ballo",

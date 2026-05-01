@@ -161,6 +161,35 @@ export default {
     open: "Abrir",
   },
 
+  // Organizer activation (conviértete en organizador)
+  organizer: {
+    kicker: "ACTIVACIÓN",
+    title: "Conviértete en Organizador",
+    editTitle: "Editar perfil de organizador",
+    lead: "Para crear eventos, perfiles de DJ o escuelas de baile debes activar el perfil de Organizador. Es gratis: solo unos datos para saber quién publica contenido.",
+    type: "Tipo de organizador",
+    businessName: "Nombre artístico / actividad",
+    businessNamePlaceholder: "DJ Carlos / Club Latino Madrid / Tropicana",
+    phone: "Teléfono",
+    phoneHint: "Se usará para verificación por SMS en el futuro (anti-spam)",
+    taxId: "NIF / CIF (opcional)",
+    taxIdPlaceholder: "ES12345678Z",
+    instagram: "Instagram (opcional)",
+    website: "Sitio web (opcional)",
+    agreeLabel: "Declaro ser realmente un organizador en el sector latino y acepto que las cuentas falsas o contenidos engañosos serán eliminados y bloqueados.",
+    activate: "Activar perfil de organizador",
+    save: "Guardar cambios",
+    successTitle: "¡Perfil de organizador activado!",
+    successBody: "Ya puedes crear eventos, perfiles de DJ y escuelas de baile. Si eres un top organizer contáctanos para obtener la insignia ⭐ verificado.",
+    verified: "Perfil verificado por el equipo LatinFun",
+    notVerified: "Perfil aún no verificado. Contáctanos para obtener la insignia ⭐.",
+    errors: {
+      businessName: "Nombre artístico/actividad obligatorio (mín 2 caracteres)",
+      phone: "Número de teléfono obligatorio (mín 6 caracteres)",
+      agree: "Debes aceptar la declaración para proceder",
+    },
+  },
+
   // Match
   match: {
     title: "Match Partner de Baile",

@@ -270,6 +270,12 @@ export default function ProfileScreen() {
             onPress={() => router.push("/affiliate" as any)}
           />
           <MenuItem
+            icon="briefcase-outline"
+            label={lang === "es" ? "Conviértete en Organizador" : "Diventa Organizzatore"}
+            hint={lang === "es" ? "Crea eventos, DJs, escuelas de baile" : "Crea eventi, DJ, scuole di ballo"}
+            onPress={() => router.push("/become-organizer" as any)}
+          />
+          <MenuItem
             icon="globe-outline"
             label={t("profile.language")}
             hint="Italiano · Español"

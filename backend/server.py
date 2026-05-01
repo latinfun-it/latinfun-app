@@ -113,6 +113,45 @@ class AuthResponse(BaseModel):
     access_token: str
 
 
+# ============== ORGANIZER PROFILE (attivazione creazione contenuti) ==============
+class OrganizerProfile(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    organizer_type: str  # dj | gestore_locale | promoter | festival | scuola_ballo | privato
+    business_name: str
+    phone: str
+    tax_id: Optional[str] = None  # P.IVA o Codice Fiscale
+    instagram: Optional[str] = None
+    website: Optional[str] = None
+    verified: bool = False  # badge ⭐ admin-approved
+    active: bool = True  # admin può revocare
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class OrganizerProfileIn(BaseModel):
+    organizer_type: str
+    business_name: str
+    phone: str
+    tax_id: Optional[str] = None
+    instagram: Optional[str] = None
+    website: Optional[str] = None
+
+
+async def require_organizer(current_user: dict) -> dict:
+    """Verifica che l'utente corrente sia un organizer attivo o admin.
+    Ritorna il profilo organizer (o None per admin).
+    Solleva 403 se non autorizzato."""
+    if current_user.get("role") == "admin":
+        return current_user
+    prof = await db.organizer_profiles.find_one({"user_id": current_user["id"], "active": True})
+    if not prof:
+        raise HTTPException(
+            status_code=403,
+            detail="Devi attivare il profilo Organizzatore per creare contenuti. Vai su Profilo > Diventa Organizzatore.",
+        )
+    return prof
+
+
 class DJ(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -672,6 +711,8 @@ async def get_event(event_id: str):
 
 @api.post("/events", response_model=Event)
 async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
+    # Deve essere organizer attivo o admin
+    await require_organizer(current_user)
     # Anti-flood: max 3 events per day per user (admin esente)
     if current_user.get("role") != "admin":
         from datetime import timedelta
@@ -685,6 +726,24 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
                 status_code=429,
                 detail="Hai raggiunto il limite di 3 eventi al giorno. Riprova domani.",
             )
+
+    # Anti-duplicazione: stesso giorno + stessa città + stesso locale (case-insensitive)
+    try:
+        day_start = payload.date.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+    except Exception:
+        day_start = payload.date
+        day_end = payload.date
+    dup = await db.events.find_one({
+        "city": {"$regex": f"^{payload.city.strip()}$", "$options": "i"},
+        "venue": {"$regex": f"^{payload.venue.strip()}$", "$options": "i"},
+        "date": {"$gte": day_start, "$lt": day_end},
+    })
+    if dup:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Esiste già un evento in '{dup.get('venue')}' il {day_start.strftime('%d/%m/%Y')} ({dup.get('title')}). Contatta l'organizzatore per collaborare invece di creare un duplicato.",
+        )
     ev = Event(
         **payload.model_dump(),
         organizer=current_user["name"],
@@ -724,6 +783,121 @@ async def my_recent_venues(current_user: dict = Depends(get_current_user)):
             "count": r.get("count", 0),
         })
     return venues
+
+
+# ================== ORGANIZER ACTIVATION ==================
+@api.get("/me/organizer")
+async def get_my_organizer(current_user: dict = Depends(get_current_user)):
+    """Restituisce il profilo organizzatore dell'utente corrente o None.
+    Admin sono sempre considerati organizer con 'admin: true'."""
+    if current_user.get("role") == "admin":
+        return {
+            "is_organizer": True,
+            "verified": True,
+            "admin": True,
+            "business_name": current_user.get("name", "Admin"),
+            "organizer_type": "admin",
+        }
+    prof = await db.organizer_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not prof:
+        return {"is_organizer": False}
+    return {
+        "is_organizer": bool(prof.get("active", True)),
+        "verified": bool(prof.get("verified", False)),
+        "admin": False,
+        **{k: v for k, v in prof.items() if k in ("id", "organizer_type", "business_name", "phone", "tax_id", "instagram", "website", "created_at")},
+    }
+
+
+@api.post("/me/organizer", response_model=OrganizerProfile)
+async def become_organizer(payload: OrganizerProfileIn, current_user: dict = Depends(get_current_user)):
+    """Crea o aggiorna il profilo organizzatore. Il telefono è obbligatorio."""
+    if not payload.phone or len(payload.phone.strip()) < 6:
+        raise HTTPException(status_code=400, detail="Numero di telefono obbligatorio (min 6 caratteri)")
+    if not payload.business_name or len(payload.business_name.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Nome artista/attività obbligatorio")
+    existing = await db.organizer_profiles.find_one({"user_id": current_user["id"]})
+    now = datetime.utcnow()
+    if existing:
+        await db.organizer_profiles.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {
+                "organizer_type": payload.organizer_type,
+                "business_name": payload.business_name.strip(),
+                "phone": payload.phone.strip(),
+                "tax_id": (payload.tax_id or "").strip() or None,
+                "instagram": (payload.instagram or "").strip() or None,
+                "website": (payload.website or "").strip() or None,
+                "active": True,
+            }},
+        )
+        doc = await db.organizer_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+        return OrganizerProfile(**doc)
+    prof = OrganizerProfile(
+        user_id=current_user["id"],
+        organizer_type=payload.organizer_type,
+        business_name=payload.business_name.strip(),
+        phone=payload.phone.strip(),
+        tax_id=(payload.tax_id or "").strip() or None,
+        instagram=(payload.instagram or "").strip() or None,
+        website=(payload.website or "").strip() or None,
+    )
+    await db.organizer_profiles.insert_one(prof.model_dump())
+    return prof
+
+
+# ================== ADMIN PANEL: organizer management ==================
+@api.get("/admin/organizers")
+async def admin_list_organizers(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    cursor = db.organizer_profiles.find({}, {"_id": 0}).sort("created_at", -1)
+    out = []
+    async for doc in cursor:
+        u = await db.users.find_one({"id": doc.get("user_id")}, {"_id": 0, "password_hash": 0})
+        out.append({**doc, "user": u})
+    return out
+
+
+@api.post("/admin/organizers/{user_id}/verify")
+async def admin_verify_organizer(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    r = await db.organizer_profiles.update_one(
+        {"user_id": user_id},
+        {"$set": {"verified": True}},
+    )
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Organizzatore non trovato")
+    return {"ok": True, "verified": True}
+
+
+@api.post("/admin/organizers/{user_id}/unverify")
+async def admin_unverify_organizer(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    r = await db.organizer_profiles.update_one(
+        {"user_id": user_id},
+        {"$set": {"verified": False}},
+    )
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Organizzatore non trovato")
+    return {"ok": True, "verified": False}
+
+
+@api.delete("/admin/organizers/{user_id}")
+async def admin_revoke_organizer(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Revoca il ruolo organizer (active=False). Non cancella contenuti esistenti."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    r = await db.organizer_profiles.update_one(
+        {"user_id": user_id},
+        {"$set": {"active": False}},
+    )
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Organizzatore non trovato")
+    return {"ok": True, "revoked": True}
+
 
 
 # ----------------------------- Payments / BOOST ----------------------
@@ -1104,6 +1278,7 @@ async def get_dj(dj_id: str):
 
 @api.post("/djs", response_model=DJ)
 async def create_dj(payload: DJCreate, current_user: dict = Depends(get_current_user)):
+    await require_organizer(current_user)
     base_slug = _slugify(f"{payload.name}-{payload.city}")
     slug = base_slug
     if await db.djs.find_one({"slug": slug}):
@@ -1488,6 +1663,7 @@ async def get_school(school_id: str):
 
 @api.post("/schools", response_model=School)
 async def create_school(payload: SchoolCreate, current_user: dict = Depends(get_current_user)):
+    await require_organizer(current_user)
     slug = _slugify(f"{payload.name}-{payload.city}")
     if await db.schools.find_one({"slug": slug}):
         slug = f"{slug}-{uuid.uuid4().hex[:6]}"
