@@ -131,12 +131,15 @@ backend:
 
   - task: "Anti-duplicate event (same venue+city+day)"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
+      - working: true
+        agent: "testing"
+        comment: "RETEST PASS (3/3) dopo fix 1-line (rimossa riga shadowing `from datetime import timedelta` dentro la funzione). Admin login OK. Test 1: POST /api/events con venue='AntiDupTest', city='Roma', date='2026-12-26T22:00:00' -> 200 OK (id=ba00d301...). Test 2: POST /api/events stesso venue+city+stesso giorno (title diverso, ora 23:30) -> 409 con messaggio italiano corretto: 'Esiste già un evento in AntiDupTest il 26/12/2026 (AntiDupEvent 1). Contatta l'organizzatore per collaborare invece di creare un duplicato.' OK. Test 3: POST /api/events stesso venue+city data diversa (2026-12-27) -> 200 OK. Cleanup DELETE x2 = 200. Il bug Python scoping è risolto, timedelta ora risolto al livello modulo per tutti i code path (admin e non-admin)."
       - working: false
         agent: "testing"
         comment: "FAIL (1/3) - BUG CRITICO Python scoping. Test 3.1 (primo POST /events) -> 200 OK. Test 3.3 (stesso venue+city diversa data) -> 200 OK. MA Test 3.2 (stesso venue+city+stesso giorno) -> 200 invece del 409 atteso. ROOT CAUSE: a server.py:718 c'è `from datetime import timedelta` DENTRO il blocco `if current_user.get('role') != 'admin':`. In Python, qualsiasi `from X import name` dentro una funzione rende `name` una variabile LOCALE per TUTTA la funzione, indipendentemente dal flusso di esecuzione. Per admin, line 718 NON viene eseguita -> `timedelta` resta unbound -> a riga 733 `day_start + timedelta(days=1)` solleva UnboundLocalError -> catturato dal bare `except Exception` a riga 734 -> fallback `day_start = day_end = payload.date` -> range vuoto `{$gte: 22:00, $lt: 22:00}` -> nessun duplicato trovato -> 200 OK invece di 409. CONFERMATO via debug log: `date: {'$gte': datetime(2026,12,25,22,0), '$lt': datetime(2026,12,25,22,0)}`. FIX (1 riga): rimuovere `from datetime import timedelta` a riga 718 (timedelta è già importato a riga 12 a livello modulo). Anche per non-admin lo stesso bug può causare problemi se l'import locale fallisse, ma è meno probabile. Same bug pattern presente in altri punti? Controllare. Test verificato direttamente con motor: la query MongoDB con day_start corretto 00:00 e day_end 00:00+1day TROVA il duplicato. Il problema è solo lo scoping Python."
@@ -257,8 +260,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Anti-duplicate event (same venue+city+day)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

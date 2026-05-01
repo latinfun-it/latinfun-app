@@ -715,7 +715,6 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
     await require_organizer(current_user)
     # Anti-flood: max 3 events per day per user (admin esente)
     if current_user.get("role") != "admin":
-        from datetime import timedelta
         since = datetime.utcnow() - timedelta(days=1)
         recent = await db.events.count_documents({
             "owner_id": current_user["id"],
