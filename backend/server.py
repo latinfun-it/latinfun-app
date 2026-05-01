@@ -673,7 +673,7 @@ async def get_event(event_id: str):
 @api.post("/events", response_model=Event)
 async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
     # Anti-flood: max 3 events per day per user (admin esente)
-    if not current_user.get("is_admin"):
+    if current_user.get("role") != "admin":
         from datetime import timedelta
         since = datetime.utcnow() - timedelta(days=1)
         recent = await db.events.count_documents({

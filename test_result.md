@@ -122,18 +122,21 @@ backend:
 
   - task: "POST /api/events con anti-flood (max 3 eventi/giorno per utente non-admin)"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Aggiunto rate limit 3 eventi/24h per utente standard. Admin esente. Salva created_at_ts nel doc per query rate limit. Da testare: 1) admin può creare 4+ eventi senza limite, 2) utente non-admin riceve 429 al 4° evento, 3) il messaggio italiano 'Hai raggiunto il limite di 3 eventi al giorno' viene restituito."
       - working: false
         agent: "testing"
-        comment: "BUG CRITICO: il check di esenzione admin usa `current_user.get('is_admin')` (server.py:676) ma nel documento utente NON esiste il campo 'is_admin' — il ruolo viene salvato come 'role': 'admin'. Risultato: anche l'admin viene rate-limited. Test: l'admin nel mio test si ferma dopo 3 eventi su 5 e riceve 429 al 4° tentativo. La parte non-admin funziona correttamente (3 eventi OK, 4° ritorna 429 con messaggio italiano corretto). FIX: cambiare `if not current_user.get('is_admin'):` in `if current_user.get('role') != 'admin':` (line 676). Ulteriore conseguenza: questo bug blocca anche la creazione del 4° evento amministrativo nel test del task 3 (vedi sotto)."
+        comment: "BUG CRITICO: il check di esenzione admin usa `current_user.get('is_admin')` (server.py:676) ma nel documento utente NON esiste il campo 'is_admin' — il ruolo viene salvato come 'role': 'admin'. Risultato: anche l'admin viene rate-limited. Test: l'admin nel mio test si ferma dopo 3 eventi su 5 e riceve 429 al 4° tentativo. La parte non-admin funziona correttamente (3 eventi OK, 4° ritorna 429 con messaggio italiano corretto). FIX: cambiare `if not current_user.get('is_admin'):` in `if current_user.get('role') != 'admin':` (line 676)."
+      - working: true
+        agent: "testing"
+        comment: "RETEST PASS dopo fix 1-line a server.py:676. Admin login OK, POST /api/events x6 in rapida successione ha ritornato tutti 200 (nessun 429). DELETE cleanup x6 = 200. Admin ora correttamente esente da rate limit. Non-admin già validato nel test precedente (funziona con 429 al 4° evento). Feature completa."
 
   - task: "GET /api/events/my/venues - locali frequenti dell'utente per autocomplete"
     implemented: true
