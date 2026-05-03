@@ -289,3 +289,12 @@ agent_communication:
       ✅ TEST 5 Regression /events/my/venues: 200 con lista.
       
       AZIONE PER MAIN AGENT: Cancellare la riga `from datetime import timedelta` a server.py:718 e ri-testare il task "Anti-duplicate event".
+
+  - agent: "main"
+    message: |
+      UI ENHANCEMENT (no backend changes): Uniformato il pattern di upload immagine in 3 schermate.
+      Modifiche frontend ONLY:
+      - app/event/create.tsx: sostituito il placeholder grigio con dropzone tratteggiato rosa stile Scuole + opzione URL fallback ("oppure incolla un link"). Aggiunto state imageUrl + pickingImage. Stili: picDropzone, picPreview, picRemove, picBadge, orDivider.
+      - app/dj/register.tsx: stesso pattern (dropzone + URL fallback). Aggiunto state imageUrl + pickingImage.
+      - i18n/it.ts + es.ts: aggiornate chiavi events.fields.image* con dropzone hints, imageOr, imageUrlPlaceholder, imageUrlHint, imageUploaded.
+      Nessuna modifica backend, nessun nuovo endpoint, schema DB invariato. Non richiede retest backend.

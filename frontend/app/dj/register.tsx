@@ -31,11 +31,14 @@ export default function RegisterDJ() {
   const [spotify, setSpotify] = useState("");
   const [tidal, setTidal] = useState("");
   const [image, setImage] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [pickingImage, setPickingImage] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async () => {
+    setPickingImage(true);
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
@@ -51,9 +54,17 @@ export default function RegisterDJ() {
       });
       if (result.canceled || !result.assets[0]?.base64) return;
       setImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setImageUrl("");
     } catch {
       Alert.alert("Errore", "Impossibile caricare l'immagine");
+    } finally {
+      setPickingImage(false);
     }
+  };
+
+  const clearImage = () => {
+    setImage("");
+    setImageUrl("");
   };
 
   const toggle = (g: string) =>
@@ -76,7 +87,7 @@ export default function RegisterDJ() {
         city,
         bio,
         genres,
-        image_url: image.trim() || DEFAULT_IMAGE,
+        image_url: image.trim() || (imageUrl.trim() ? (imageUrl.startsWith("http") ? imageUrl.trim() : `https://${imageUrl.trim()}`) : DEFAULT_IMAGE),
       };
       if (instagram)
         payload.instagram = instagram.startsWith("http")
@@ -150,24 +161,62 @@ export default function RegisterDJ() {
           <L t="Playlist Tidal (URL)" />
           <TextInput testID="dj-tidal" style={styles.input} value={tidal} onChangeText={setTidal} placeholder="https://tidal.com/..." placeholderTextColor={colors.textMuted} autoCapitalize="none" />
 
-          <L t="Foto profilo (carica file dal telefono)" />
-          <TouchableOpacity testID="dj-image" style={styles.imagePicker} onPress={pickImage} activeOpacity={0.85}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.imagePreview} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Ionicons name="camera" size={42} color={colors.textMuted} />
-                <Text style={styles.imageHint}>Tocca per caricare la foto profilo</Text>
-                <Text style={styles.imageHintSmall}>Quadrata 1:1, formato Instagram</Text>
+          <L t="Foto profilo (JPG/PNG)" />
+          {image ? (
+            <View style={styles.picPreview} testID="dj-image-preview">
+              <Image
+                source={{ uri: image }}
+                style={{ width: "100%", height: "100%", borderRadius: radii.md }}
+                resizeMode="cover"
+              />
+              <TouchableOpacity onPress={clearImage} style={styles.picRemove} testID="dj-image-remove">
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.picBadge}>
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                <Text style={styles.picBadgeText}>File caricato</Text>
               </View>
-            )}
-          </TouchableOpacity>
-          {image && (
-            <TouchableOpacity onPress={() => setImage("")} style={styles.removeImage}>
-              <Ionicons name="close-circle" size={16} color={colors.error} />
-              <Text style={styles.removeImageText}>Rimuovi foto</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              testID="dj-image-pick"
+              style={styles.picDropzone}
+              onPress={pickImage}
+              activeOpacity={0.8}
+              disabled={pickingImage}
+            >
+              {pickingImage ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : (
+                <>
+                  <Ionicons name="image-outline" size={32} color={colors.brand} />
+                  <Text style={styles.picDropzoneTitle}>Carica una foto (JPG/PNG)</Text>
+                  <Text style={styles.picDropzoneDesc}>
+                    Tocca per scegliere dalla galleria. Ritaglio 1:1 (Instagram).
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
           )}
+
+          <Text style={styles.orDivider}>— oppure —</Text>
+
+          <TextInput
+            testID="dj-image-url"
+            style={styles.input}
+            value={imageUrl}
+            onChangeText={(v) => {
+              setImageUrl(v);
+              if (v) setImage("");
+            }}
+            placeholder="Incolla un link https://... (opzionale)"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            editable={!image}
+          />
+          <Text style={styles.hint}>
+            Puoi caricare un file o incollare un URL. Se lasci vuoto useremo l&apos;immagine di default.
+          </Text>
 
           {error ? <Text style={styles.error} testID="dj-reg-error">{error}</Text> : null}
 
@@ -209,6 +258,63 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     width: "100%",
   },
+  picDropzone: {
+    borderWidth: 2,
+    borderColor: colors.brand,
+    borderStyle: "dashed",
+    borderRadius: radii.md,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(236,72,153,0.05)",
+    gap: 6,
+  },
+  picDropzoneTitle: { color: "#fff", fontWeight: "800", fontSize: 14, marginTop: 8 },
+  picDropzoneDesc: { color: colors.textSecondary, fontSize: 12, textAlign: "center", marginTop: 2 },
+  picPreview: {
+    aspectRatio: 1,
+    width: "100%",
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: "#111",
+    position: "relative",
+  },
+  picRemove: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picBadge: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(16,185,129,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#10B981",
+  },
+  picBadgeText: { color: "#10B981", fontSize: 11, fontWeight: "800" },
+  orDivider: {
+    color: colors.textMuted,
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  hint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
   imagePreview: { width: "100%", height: "100%" },
   imagePlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
   imageHint: { color: colors.text, fontSize: 14, fontWeight: "700", marginTop: 12 },

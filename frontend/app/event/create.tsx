@@ -82,8 +82,10 @@ export default function CreateEvent() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  // image state (base64 data URL after resize)
+  // image state (base64 data URL after resize) + URL fallback
   const [imageData, setImageData] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [pickingImage, setPickingImage] = useState(false);
 
   // recent venues for autocomplete
   const [recentVenues, setRecentVenues] = useState<Venue[]>([]);
@@ -111,6 +113,7 @@ export default function CreateEvent() {
   };
 
   const pickImage = async () => {
+    setPickingImage(true);
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
@@ -127,9 +130,17 @@ export default function CreateEvent() {
       });
       if (result.canceled || !result.assets[0]?.base64) return;
       setImageData(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setImageUrl("");
     } catch (e: any) {
       Alert.alert("Errore", "Impossibile caricare l'immagine");
+    } finally {
+      setPickingImage(false);
     }
+  };
+
+  const clearImage = () => {
+    setImageData("");
+    setImageUrl("");
   };
 
   const submit = async () => {
@@ -171,7 +182,7 @@ export default function CreateEvent() {
         genre: genre.trim(),
         date: startDateTime.toISOString(),
         end_date: endDateTime.toISOString(),
-        image_url: imageData || DEFAULT_IMAGE,
+        image_url: imageData || (imageUrl.trim() ? (imageUrl.startsWith("http") ? imageUrl.trim() : `https://${imageUrl.trim()}`) : DEFAULT_IMAGE),
         organizer_type: organizerType,
         lineup: lineup
           .split(",")
@@ -416,23 +427,57 @@ export default function CreateEvent() {
 
           {/* Locandina */}
           <L t={t("events.fields.image")} />
-          <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.85}>
-            {imageData ? (
-              <Image source={{ uri: imageData }} style={styles.imagePreview} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Ionicons name="image" size={42} color={colors.textMuted} />
-                <Text style={styles.imageHint}>{t("events.fields.imageHint")}</Text>
-                <Text style={styles.imageHintSmall}>{t("events.fields.imageSubHint")}</Text>
+          {imageData ? (
+            <View style={styles.picPreview} testID="ce-image-preview">
+              <Image
+                source={{ uri: imageData }}
+                style={{ width: "100%", height: "100%", borderRadius: radii.md }}
+                resizeMode="cover"
+              />
+              <TouchableOpacity onPress={clearImage} style={styles.picRemove} testID="ce-image-remove">
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.picBadge}>
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                <Text style={styles.picBadgeText}>{t("events.fields.imageUploaded")}</Text>
               </View>
-            )}
-          </TouchableOpacity>
-          {imageData && (
-            <TouchableOpacity onPress={() => setImageData("")} style={styles.removeImage}>
-              <Ionicons name="close-circle" size={16} color={colors.error} />
-              <Text style={styles.removeImageText}>{t("events.fields.removeImage")}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              testID="ce-image-pick"
+              style={styles.picDropzone}
+              onPress={pickImage}
+              activeOpacity={0.8}
+              disabled={pickingImage}
+            >
+              {pickingImage ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : (
+                <>
+                  <Ionicons name="image-outline" size={32} color={colors.brand} />
+                  <Text style={styles.picDropzoneTitle}>{t("events.fields.imageHint")}</Text>
+                  <Text style={styles.picDropzoneDesc}>{t("events.fields.imageSubHint")}</Text>
+                </>
+              )}
             </TouchableOpacity>
           )}
+
+          <Text style={styles.orDivider}>{t("events.fields.imageOr")}</Text>
+
+          <TextInput
+            testID="ce-image-url"
+            style={styles.input}
+            value={imageUrl}
+            onChangeText={(v) => {
+              setImageUrl(v);
+              if (v) setImageData("");
+            }}
+            placeholder={t("events.fields.imageUrlPlaceholder")}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            editable={!imageData}
+          />
+          <Text style={styles.hint}>{t("events.fields.imageUrlHint")}</Text>
 
           <L t={t("events.fields.ticket")} />
           <TextInput
@@ -547,6 +592,67 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     aspectRatio: 1,
     width: "100%",
+  },
+  picDropzone: {
+    borderWidth: 2,
+    borderColor: colors.brand,
+    borderStyle: "dashed",
+    borderRadius: radii.md,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(236,72,153,0.05)",
+    gap: 6,
+  },
+  picDropzoneTitle: { color: "#fff", fontWeight: "800", fontSize: 14, marginTop: 8 },
+  picDropzoneDesc: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 2,
+  },
+  picPreview: {
+    aspectRatio: 1,
+    width: "100%",
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: "#111",
+    position: "relative",
+  },
+  picRemove: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picBadge: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(16,185,129,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#10B981",
+  },
+  picBadgeText: { color: "#10B981", fontSize: 11, fontWeight: "800" },
+  orDivider: {
+    color: colors.textMuted,
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
   },
   imagePreview: { width: "100%", height: "100%" },
   imagePlaceholder: {
