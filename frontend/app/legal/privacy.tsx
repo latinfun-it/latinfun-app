@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
 
         <Text style={styles.h2}>1. Titolare del trattamento</Text>
         <Text style={styles.p}>
-          LatinFun è gestita da <Text style={styles.b}>Latinos Unidos Edizioni Musicali di Mauro Germano Catalini</Text>.{"\n"}
+          LatinFun è gestita da <Text style={styles.b}>Latinos Unidos Edizioni Musicali di Mauro G. Catalini</Text>.{"\n"}
           P.IVA: 03738320401{"\n"}
           Sede legale: San Giovanni in Marignano (RN), Italia{"\n"}
           Email: latinfunofficial@gmail.com{"\n"}

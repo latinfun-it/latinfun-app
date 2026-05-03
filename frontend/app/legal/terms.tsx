@@ -23,7 +23,7 @@ export default function Terms() {
 
         <Text style={styles.h2}>1. Oggetto</Text>
         <Text style={styles.p}>
-          Questi Termini regolano l'utilizzo dell'applicazione mobile e web <Text style={styles.b}>LatinFun</Text>, gestita da <Text style={styles.b}>Latinos Unidos Edizioni Musicali di Mauro Germano Catalini</Text> — P.IVA 03738320401 — sede in San Giovanni in Marignano (RN), Italia.
+          Questi Termini regolano l'utilizzo dell'applicazione mobile e web <Text style={styles.b}>LatinFun</Text>, gestita da <Text style={styles.b}>Latinos Unidos Edizioni Musicali di Mauro G. Catalini</Text> — P.IVA 03738320401 — sede in San Giovanni in Marignano (RN), Italia.
         </Text>
 
         <Text style={styles.h2}>2. Descrizione del Servizio</Text>
@@ -56,7 +56,7 @@ export default function Terms() {
 
         <Text style={styles.h2}>7. Proprietà intellettuale</Text>
         <Text style={styles.p}>
-          Marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di Latinos Unidos Edizioni Musicali di Mauro Germano Catalini. I contenuti utenti restano degli utenti, che concedono a LatinFun una licenza gratuita non esclusiva per la pubblicazione nell'ambito del Servizio.
+          Marchio, logo, design e codice di LatinFun sono di proprietà esclusiva di Latinos Unidos Edizioni Musicali di Mauro G. Catalini. I contenuti utenti restano degli utenti, che concedono a LatinFun una licenza gratuita non esclusiva per la pubblicazione nell'ambito del Servizio.
         </Text>
 
         <Text style={styles.h2}>8. Disponibilità</Text>
