@@ -80,6 +80,14 @@ export default function SchoolsScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)/home" as any)}
+            style={styles.backHomeBtn}
+            testID="schools-back-home"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.kicker}>{lang === "es" ? "DÓNDE APRENDER" : "DOVE IMPARARE"}</Text>
             <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
@@ -222,6 +230,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     gap: 12,
   },
+  backHomeBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bgSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, alignSelf: "flex-end", marginBottom: 4 },
   kicker: { color: colors.brand, fontSize: 11, letterSpacing: 2.2, fontWeight: "800" },
   title: { color: "#fff", fontSize: 30, fontWeight: "900", letterSpacing: -0.8, marginTop: 2 },
   subtitle: { color: colors.textSecondary, marginTop: 2, fontSize: 13 },

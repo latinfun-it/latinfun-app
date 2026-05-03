@@ -85,9 +85,21 @@ export default function MusicScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>{lang === "es" ? "LATINFUN MÚSICA" : "LATINFUN MUSICA"}</Text>
-          <Text style={styles.title}>{t("music.title")}</Text>
-          <Text style={styles.sub}>{t("music.subtitle")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <TouchableOpacity
+              onPress={() => router.replace("/(tabs)/home" as any)}
+              style={styles.backHomeBtn}
+              testID="music-back-home"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={20} color="#fff" />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.kicker}>{lang === "es" ? "LATINFUN MÚSICA" : "LATINFUN MUSICA"}</Text>
+              <Text style={styles.title}>{t("music.title")}</Text>
+              <Text style={styles.sub}>{t("music.subtitle")}</Text>
+            </View>
+          </View>
         </View>
 
         <ScrollView
@@ -196,6 +208,7 @@ export default function MusicScreen() {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  backHomeBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bgSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
   kicker: { color: colors.brand, fontSize: 11, letterSpacing: 2.5, fontWeight: "800" },
   title: { color: "#fff", fontSize: 32, fontWeight: "900", letterSpacing: -1, marginTop: 4 },
   sub: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },

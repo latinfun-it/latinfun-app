@@ -62,8 +62,18 @@ export default function DjsScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Text style={styles.title}>{t("djs.title")}</Text>
-          <Text style={styles.subtitle}>{t("djs.subtitle")}</Text>
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)/home" as any)}
+            style={styles.backHomeBtn}
+            testID="djs-back-home"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t("djs.title")}</Text>
+            <Text style={styles.subtitle}>{t("djs.subtitle")}</Text>
+          </View>
         </View>
         <ScrollView
           horizontal
@@ -177,7 +187,8 @@ export default function DjsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, flexDirection: "row", alignItems: "center", gap: 10 },
+  backHomeBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bgSecondary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
   title: { color: "#fff", fontSize: 34, fontWeight: "900", letterSpacing: -1 },
   subtitle: { color: colors.textSecondary, marginTop: 2 },
   pillsRow: { paddingHorizontal: spacing.lg, paddingVertical: 8, gap: 8 },

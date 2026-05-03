@@ -164,6 +164,14 @@ export default function EventsScreen() {
       <BrandHeader />
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)/home" as any)}
+            style={styles.backHomeBtn}
+            testID="events-back-home"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Text style={styles.title}>{t("events.title")}</Text>
@@ -417,6 +425,17 @@ const styles = StyleSheet.create({
     padding: 4,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  backHomeBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.bgSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 4,
   },
   addBtn: {
     flexDirection: "row",
