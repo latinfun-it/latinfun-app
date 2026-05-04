@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { api, formatApiError } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 import { useAuth } from "../../src/auth";
@@ -197,11 +198,43 @@ function Editor({
   const [description, setDescription] = useState(initial?.description || "");
   const [spotifyUrl, setSpotifyUrl] = useState(initial?.external_url || "");
   const [coverUrl, setCoverUrl] = useState(initial?.cover_url || "");
+  const [coverFile, setCoverFile] = useState<string>("");
+  const [pickingImage, setPickingImage] = useState(false);
   const [genre, setGenre] = useState(initial?.genre || "latin");
   const [position, setPosition] = useState(String(initial?.position ?? 10));
   const [featured, setFeatured] = useState(!!initial?.featured);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    setPickingImage(true);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Permesso negato", "Concedi accesso alla galleria foto");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets[0]?.base64) return;
+      setCoverFile(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setCoverUrl("");
+    } catch {
+      Alert.alert("Errore", "Impossibile caricare l'immagine");
+    } finally {
+      setPickingImage(false);
+    }
+  };
+
+  const clearCover = () => {
+    setCoverFile("");
+    setCoverUrl("");
+  };
 
   const submit = async () => {
     setError(null);
@@ -224,7 +257,7 @@ function Editor({
       const payload = {
         title: title.trim(),
         description: description.trim(),
-        cover_url: coverUrl.trim() || DEFAULT_COVER,
+        cover_url: coverFile || coverUrl.trim() || DEFAULT_COVER,
         platform: "spotify",
         embed_url: parsed.embed,
         external_url: parsed.external,
@@ -250,12 +283,15 @@ function Editor({
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.backBtn} testID="editor-close">
-            <Ionicons name="close" size={22} color="#fff" />
+            <Ionicons name="chevron-back" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.kicker}>{initial ? "MODIFICA" : "NUOVA"}</Text>
             <Text style={styles.title}>{initial ? "Modifica playlist" : "Nuova playlist"}</Text>
           </View>
+          <TouchableOpacity onPress={onClose} style={styles.cancelTopBtn} testID="editor-cancel-top">
+            <Text style={styles.cancelTopText}>Annulla</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
       <KeyboardAvoidingView
@@ -301,16 +337,62 @@ function Editor({
             Incolla il link di condivisione Spotify. L&apos;embed viene generato automaticamente.
           </Text>
 
-          <Label text="Immagine di copertina (URL)" />
+          <Label text="Immagine di copertina (JPG/PNG)" />
+          {coverFile ? (
+            <View style={styles.picPreview} testID="cover-preview">
+              <Image
+                source={{ uri: coverFile }}
+                style={{ width: "100%", height: "100%", borderRadius: radii.md }}
+                resizeMode="cover"
+              />
+              <TouchableOpacity onPress={clearCover} style={styles.picRemove} testID="cover-remove">
+                <Ionicons name="close" size={18} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.picBadge}>
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                <Text style={styles.picBadgeText}>File caricato</Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              testID="cover-pick"
+              style={styles.picDropzone}
+              onPress={pickImage}
+              activeOpacity={0.8}
+              disabled={pickingImage}
+            >
+              {pickingImage ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : (
+                <>
+                  <Ionicons name="image-outline" size={32} color={colors.brand} />
+                  <Text style={styles.picDropzoneTitle}>Carica una foto (JPG/PNG)</Text>
+                  <Text style={styles.picDropzoneDesc}>
+                    Tocca per scegliere dalla galleria. Ritaglio 1:1.
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
+          <Text style={styles.orDivider}>— oppure —</Text>
+
           <TextInput
             testID="editor-cover"
             style={styles.input}
             value={coverUrl}
-            onChangeText={setCoverUrl}
-            placeholder="https://... (opzionale)"
+            onChangeText={(v) => {
+              setCoverUrl(v);
+              if (v) setCoverFile("");
+            }}
+            placeholder="Incolla un link https://... (opzionale)"
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
+            editable={!coverFile}
           />
+          <Text style={styles.hint}>
+            Puoi caricare un file o incollare un URL. Se lasci vuoto useremo l&apos;immagine di default.
+          </Text>
 
           <Label text="Genere *" />
           <View style={styles.chipRow}>
@@ -383,6 +465,16 @@ function Editor({
                 </Text>
               </>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="editor-cancel-bottom"
+            style={styles.cancelBtn}
+            onPress={onClose}
+            disabled={submitting}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cancelBtnText}>Annulla</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -469,6 +561,82 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   hint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  cancelTopBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
+    backgroundColor: colors.bgSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelTopText: { color: colors.textSecondary, fontWeight: "700", fontSize: 13 },
+  cancelBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    marginTop: 12,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "transparent",
+  },
+  cancelBtnText: { color: colors.textSecondary, fontWeight: "700", fontSize: 14 },
+  picDropzone: {
+    borderWidth: 2,
+    borderColor: colors.brand,
+    borderStyle: "dashed",
+    borderRadius: radii.md,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(236,72,153,0.05)",
+    gap: 6,
+  },
+  picDropzoneTitle: { color: "#fff", fontWeight: "800", fontSize: 14, marginTop: 8 },
+  picDropzoneDesc: { color: colors.textSecondary, fontSize: 12, textAlign: "center", marginTop: 2 },
+  picPreview: {
+    aspectRatio: 1,
+    width: "100%",
+    borderRadius: radii.md,
+    overflow: "hidden",
+    backgroundColor: "#111",
+    position: "relative",
+  },
+  picRemove: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picBadge: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(16,185,129,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#10B981",
+  },
+  picBadgeText: { color: "#10B981", fontSize: 11, fontWeight: "800" },
+  orDivider: {
+    color: colors.textMuted,
+    textAlign: "center",
+    marginVertical: 10,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     backgroundColor: colors.bgTertiary,
