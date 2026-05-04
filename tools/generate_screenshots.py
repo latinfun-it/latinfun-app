@@ -18,8 +18,12 @@ BASE_URL = os.environ.get("APP_URL", "http://localhost:3000")
 OUT_DIR = Path("/app/tools/screenshots")
 
 # iPhone 6.9" (iPhone 16 Pro Max) - output 1320x2868
-IOS_VIEWPORT = {"width": 440, "height": 956}
-IOS_SCALE = 3
+IOS_69_VIEWPORT = {"width": 440, "height": 956}
+IOS_69_SCALE = 3
+
+# iPhone 6.5" (iPhone 11 Pro Max / XS Max) - output 1242x2688
+IOS_65_VIEWPORT = {"width": 414, "height": 896}
+IOS_65_SCALE = 3
 
 # Android phone (Pixel 7) - output 1236x2745
 ANDROID_VIEWPORT = {"width": 412, "height": 915}
@@ -112,11 +116,19 @@ async def main():
         try:
             await take_screenshots(
                 browser,
-                "ios",
-                IOS_VIEWPORT,
-                IOS_SCALE,
+                "ios-6.9",
+                IOS_69_VIEWPORT,
+                IOS_69_SCALE,
                 "ios-6.9",
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+            )
+            await take_screenshots(
+                browser,
+                "ios-6.5",
+                IOS_65_VIEWPORT,
+                IOS_65_SCALE,
+                "ios-6.5",
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
             )
             await take_screenshots(
                 browser,
@@ -129,7 +141,8 @@ async def main():
         finally:
             await browser.close()
     print(f"\n✨ Done!")
-    print(f"   iOS: {OUT_DIR / 'ios-6.9'}")
+    print(f"   iOS 6.9\": {OUT_DIR / 'ios-6.9'}")
+    print(f"   iOS 6.5\": {OUT_DIR / 'ios-6.5'}")
     print(f"   Android: {OUT_DIR / 'android'}")
 
 
