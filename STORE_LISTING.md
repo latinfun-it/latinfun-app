@@ -19,9 +19,9 @@
 | **Acquisti in-app** | BOOST promozione eventi: 4,99 € - 14,99 € |
 
 ### URL da inserire negli Store
-- **Privacy Policy**: `https://dj-italia-hub.preview.emergentagent.com/static/privacy.html`
-- **Termini di Servizio**: `https://dj-italia-hub.preview.emergentagent.com/static/terms.html`
-- **Supporto**: `https://dj-italia-hub.preview.emergentagent.com/static/support.html`
+- **Privacy Policy**: `https://dj-italia-hub.preview.emergentagent.com/api/static/privacy.html`
+- **Termini di Servizio**: `https://dj-italia-hub.preview.emergentagent.com/api/static/terms.html`
+- **Supporto**: `https://dj-italia-hub.preview.emergentagent.com/api/static/support.html`
 - **Email supporto**: `latinfunofficial@gmail.com`
 - **Marketing URL**: `https://www.maurocatalini.com`
 
@@ -209,7 +209,7 @@ Quando apri [App Store Connect](https://appstoreconnect.apple.com) → App Latin
 - **Novità in questa versione**: (primo lancio) "Prima versione di LatinFun 🎉 Scopri eventi, DJ, scuole, playlist e trova il tuo partner di ballo."
 - **Descrizione**: [incolla descrizione lunga italiana sopra]
 - **Keywords**: [incolla keywords sopra]
-- **URL supporto**: https://dj-italia-hub.preview.emergentagent.com/static/support.html
+- **URL supporto**: https://dj-italia-hub.preview.emergentagent.com/api/static/support.html
 - **URL marketing**: https://www.maurocatalini.com
 
 ### ✅ Sezione "App Privacy"
@@ -251,7 +251,7 @@ Dichiara:
 - Scopi: Funzionalità app, Personalizzazione, Analytics
 - Condivisione: Solo con Stripe (pagamenti) e Apple/Google (push notifications)
 - Criptati in transito: Sì (HTTPS)
-- Richiesta eliminazione dati: Sì — https://dj-italia-hub.preview.emergentagent.com/static/delete-account.html
+- Richiesta eliminazione dati: Sì — https://dj-italia-hub.preview.emergentagent.com/api/static/delete-account.html
 
 ### ✅ Pubblico
 - **Fasce di età**: 13+ (richiesto per geolocalizzazione e chat)
