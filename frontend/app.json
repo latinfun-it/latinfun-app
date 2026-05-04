@@ -9,21 +9,20 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.latinfun.app",
-      "buildNumber": "5",
+      "buildNumber": "7",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te",
         "NSPhotoLibraryUsageDescription": "Carica la foto di copertina della tua scuola",
         "NSCameraUsageDescription": "Scatta una foto di copertina per la tua scuola",
         "NSMicrophoneUsageDescription": "Registra brevi clip audio per i tuoi mix",
-        "NSUserTrackingUsageDescription": "Per mostrarti eventi e DJ rilevanti vicino a te",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "it.latinfun.app",
-      "versionCode": 5,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050505"
