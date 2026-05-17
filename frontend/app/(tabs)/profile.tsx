@@ -300,6 +300,30 @@ export default function ProfileScreen() {
             onPress={() => router.push("/legal/terms" as any)}
           />
 
+          <Text style={styles.sectionLabel}>
+            {lang === "es" ? "Cuenta" : "Account"}
+          </Text>
+
+          <TouchableOpacity
+            testID="delete-account-menu"
+            style={styles.deleteAccountBtn}
+            activeOpacity={0.85}
+            onPress={() => router.push("/account/delete" as any)}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.brand} />
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={styles.deleteAccountLabel}>
+                {lang === "es" ? "Eliminar cuenta" : "Elimina account"}
+              </Text>
+              <Text style={styles.deleteAccountHint}>
+                {lang === "es"
+                  ? "Borra permanentemente tu cuenta y todos tus datos"
+                  : "Cancella definitivamente account e dati"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.brand} />
+          </TouchableOpacity>
+
           <TouchableOpacity
             testID="logout-btn"
             style={styles.logout}
@@ -491,5 +515,25 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   logoutText: { color: colors.brand, fontWeight: "800" },
+  deleteAccountBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(229, 41, 71, 0.08)",
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(229, 41, 71, 0.35)",
+    padding: 16,
+    marginBottom: 10,
+  },
+  deleteAccountLabel: {
+    color: colors.brand,
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  deleteAccountHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
   footer: { color: colors.textMuted, textAlign: "center", marginTop: spacing.xl, fontSize: 12 },
 });

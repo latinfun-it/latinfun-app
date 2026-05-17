@@ -404,6 +404,88 @@ async def logout(current_user: dict = Depends(get_current_user)):
     return {"ok": True}
 
 
+@api.delete("/auth/me")
+async def delete_my_account(current_user: dict = Depends(get_current_user)):
+    """
+    Hard-delete the authenticated user's account and ALL related personal data.
+
+    Required by Apple App Store guideline 5.1.1(v) - account deletion.
+    The admin account (role == admin) cannot delete itself for safety.
+    """
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Utente non valido")
+
+    # Safety: admin cannot self-destruct (would lock everyone out of the app)
+    if current_user.get("role") == "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="L'account admin non puo essere eliminato da questa schermata. Contatta il supporto.",
+        )
+
+    summary = {
+        "events": 0,
+        "djs": 0,
+        "schools": 0,
+        "follows": 0,
+        "likes": 0,
+        "saved_schools": 0,
+        "saved_playlists": 0,
+        "reviews": 0,
+        "organizer_profile": 0,
+        "contact_messages": 0,
+        "dancer_chats": 0,
+        "dancer_profile": 0,
+        "user": 0,
+    }
+
+    # Helper that swallows errors per-collection so a single failure does not block the rest
+    async def _safe_delete_many(coll_name: str, filt: dict, summary_key: str):
+        try:
+            coll = getattr(db, coll_name)
+            res = await coll.delete_many(filt)
+            summary[summary_key] = getattr(res, "deleted_count", 0) or 0
+        except Exception:
+            # Collection might not exist on this instance, just continue
+            pass
+
+    # 1) Content owned by the user
+    await _safe_delete_many("events", {"owner_id": user_id}, "events")
+    await _safe_delete_many("djs", {"owner_id": user_id}, "djs")
+    await _safe_delete_many("schools", {"owner_id": user_id}, "schools")
+
+    # 2) User-generated personal data
+    await _safe_delete_many("user_follows", {"user_id": user_id}, "follows")
+    await _safe_delete_many("user_likes", {"user_id": user_id}, "likes")
+    await _safe_delete_many("user_saved_schools", {"user_id": user_id}, "saved_schools")
+    await _safe_delete_many("user_saved_playlists", {"user_id": user_id}, "saved_playlists")
+    await _safe_delete_many("reviews", {"user_id": user_id}, "reviews")
+    await _safe_delete_many("organizer_profiles", {"user_id": user_id}, "organizer_profile")
+    await _safe_delete_many("contact_messages", {"user_id": user_id}, "contact_messages")
+
+    # 3) Dancer / Match partner area (chats + profile)
+    try:
+        await db.dancer_chats.delete_many(
+            {"$or": [{"user_a": user_id}, {"user_b": user_id}, {"from_user": user_id}, {"to_user": user_id}]}
+        )
+    except Exception:
+        pass
+    await _safe_delete_many("dancer_profiles", {"user_id": user_id}, "dancer_profile")
+    await _safe_delete_many("dancer_likes", {"$or": [{"from_user": user_id}, {"to_user": user_id}]}, "dancer_chats")
+
+    # 4) Finally remove the user document itself
+    try:
+        ures = await db.users.delete_one({"id": user_id})
+        summary["user"] = getattr(ures, "deleted_count", 0) or 0
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore durante l'eliminazione: {e}")
+
+    if summary["user"] == 0:
+        raise HTTPException(status_code=404, detail="Account gia eliminato o non trovato")
+
+    return {"ok": True, "deleted": summary}
+
+
 # ----------------------------- Admin (users) ------------------------
 def _require_admin(current_user: dict):
     if current_user.get("role") != "admin":
