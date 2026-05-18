@@ -1019,6 +1019,7 @@ def _stripe_client(http_request: Request) -> StripeCheckout:
     host = str(http_request.base_url).rstrip("/")
     return StripeCheckout(
         api_key=os.environ["STRIPE_API_KEY"],
+        webhook_secret=os.environ.get("STRIPE_WEBHOOK_SECRET") or None,
         webhook_url=f"{host}/api/webhook/stripe",
     )
 
