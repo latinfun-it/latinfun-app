@@ -772,16 +772,27 @@ async def list_events(
         q["city"] = city
     if genre and genre != "all":
         q["genre"] = genre
-    if featured is not None:
-        q["featured"] = featured
+    # When the caller asks for "featured", include events that are EITHER manually
+    # marked as featured OR currently BOOSTED (paid promotion).
+    extra_filters: List[dict] = []
+    if featured is True:
+        extra_filters.append({"$or": [{"featured": True}, {"boosted": True}]})
+    elif featured is False:
+        extra_filters.append({"featured": {"$ne": True}})
+        extra_filters.append({"boosted": {"$ne": True}})
     # Country filter: query param wins, otherwise X-Country header
     effective_country = (country or "").upper() if country else _country_filter_from_request(request)
     if effective_country and effective_country != "INT":
         # Match events whose country is the requested one OR legacy events without country (treated as IT)
         if effective_country == "IT":
-            q["$or"] = [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]
+            extra_filters.append({"$or": [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]})
         else:
             q["country"] = effective_country
+    if extra_filters:
+        if len(extra_filters) == 1:
+            q.update(extra_filters[0])
+        else:
+            q["$and"] = extra_filters
     docs = await db.events.find(q, {"_id": 0}).sort("date", 1).to_list(500)
     return [Event(**d) for d in docs]
 
