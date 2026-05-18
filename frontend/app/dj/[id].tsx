@@ -218,6 +218,18 @@ export default function DjDetail() {
             </View>
           ) : null}
 
+          {(user?.role === "admin" || (dj.owner_id && user?.id === dj.owner_id)) ? (
+            <TouchableOpacity
+              testID="dj-edit-btn"
+              style={styles.editBtn}
+              activeOpacity={0.85}
+              onPress={() => router.push(`/dj/edit/${dj.id}` as any)}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.gold} />
+              <Text style={styles.editBtnText}>Modifica profilo DJ</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <DeleteButton
             kind="dj"
             entityId={dj.id}
@@ -242,6 +254,20 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(245,158,11,0.10)",
+  },
+  editBtnText: { color: colors.gold, fontWeight: "800", fontSize: 14 },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" },
   hero: { height: 260, overflow: "hidden", backgroundColor: "#111" },
   backBtn: {

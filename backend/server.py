@@ -804,7 +804,6 @@ async def get_event(event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
     return Event(**doc)
 
-
 @api.post("/events", response_model=Event)
 async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
     # Deve essere organizer attivo o admin
@@ -853,6 +852,91 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
     except Exception as e:
         logger.warning("notify_nearby failed: %s", e)
     return ev
+
+
+# ----- Edit content (event/dj/school) — owner or admin only -----
+_EVENT_EDITABLE_FIELDS = {
+    "title", "description", "city", "venue", "address", "genre",
+    "date", "end_date", "image_url", "lineup", "ticket_url",
+    "organizer_type", "latitude", "longitude", "contact_email",
+    "contact_phone", "country",
+}
+_DJ_EDITABLE_FIELDS = {
+    "name", "bio", "city", "genres", "image_url", "cover_url",
+    "instagram", "spotify_playlist_url", "tidal_playlist_url", "country",
+}
+_SCHOOL_EDITABLE_FIELDS = {
+    "name", "city", "address", "bio", "image_url", "cover_url",
+    "styles", "levels", "phone", "email", "website", "instagram", "country",
+}
+
+
+async def _check_owner_or_admin(coll_name: str, entity_id: str, user: dict) -> dict:
+    coll = getattr(db, coll_name)
+    doc = await coll.find_one({"id": entity_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Not found")
+    is_admin = user.get("role") == "admin"
+    is_owner = doc.get("owner_id") == user.get("id")
+    if not (is_admin or is_owner):
+        raise HTTPException(status_code=403, detail="Non sei il proprietario di questo contenuto")
+    return doc
+
+
+def _clean_update_payload(payload: dict, allowed: set) -> dict:
+    cleaned: dict = {}
+    for k, v in (payload or {}).items():
+        if k in allowed and v is not None:
+            cleaned[k] = v
+    return cleaned
+
+
+@api.patch("/events/{event_id}", response_model=Event)
+async def update_event(
+    event_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    await _check_owner_or_admin("events", event_id, current_user)
+    update_fields = _clean_update_payload(payload, _EVENT_EDITABLE_FIELDS)
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
+    update_fields["updated_at"] = datetime.now(timezone.utc)
+    await db.events.update_one({"id": event_id}, {"$set": update_fields})
+    fresh = await db.events.find_one({"id": event_id}, {"_id": 0})
+    return Event(**fresh)
+
+
+@api.patch("/djs/{dj_id}", response_model=DJ)
+async def update_dj(
+    dj_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    await _check_owner_or_admin("djs", dj_id, current_user)
+    update_fields = _clean_update_payload(payload, _DJ_EDITABLE_FIELDS)
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
+    update_fields["updated_at"] = datetime.now(timezone.utc)
+    await db.djs.update_one({"id": dj_id}, {"$set": update_fields})
+    fresh = await db.djs.find_one({"id": dj_id}, {"_id": 0})
+    return DJ(**fresh)
+
+
+@api.patch("/schools/{school_id}", response_model=School)
+async def update_school(
+    school_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    await _check_owner_or_admin("schools", school_id, current_user)
+    update_fields = _clean_update_payload(payload, _SCHOOL_EDITABLE_FIELDS)
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
+    update_fields["updated_at"] = datetime.now(timezone.utc)
+    await db.schools.update_one({"id": school_id}, {"$set": update_fields})
+    fresh = await db.schools.find_one({"id": school_id}, {"_id": 0})
+    return School(**fresh)
 
 
 @api.get("/events/my/venues")

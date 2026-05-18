@@ -223,6 +223,18 @@ export default function EventDetail() {
             </TouchableOpacity>
           ) : null}
 
+          {(user?.role === "admin" || (ev.owner_id && user?.id === ev.owner_id)) ? (
+            <TouchableOpacity
+              testID="event-edit-btn"
+              style={styles.editBtn}
+              activeOpacity={0.85}
+              onPress={() => router.push(`/event/edit/${ev.id}` as any)}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.gold} />
+              <Text style={styles.editBtnText}>Modifica evento</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <DeleteButton
             kind="event"
             entityId={ev.id}
@@ -372,6 +384,19 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   ticketText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    marginTop: 8,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(245,158,11,0.10)",
+  },
+  editBtnText: { color: colors.gold, fontWeight: "800", fontSize: 14 },
   boostBanner: {
     flexDirection: "row",
     alignItems: "center",

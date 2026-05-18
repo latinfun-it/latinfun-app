@@ -197,6 +197,18 @@ export default function SchoolDetail() {
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
 
+          {(user?.role === "admin" || (school.owner_id && user?.id === school.owner_id)) ? (
+            <TouchableOpacity
+              testID="school-edit-btn"
+              style={styles.editBtn}
+              activeOpacity={0.85}
+              onPress={() => router.push(`/school/edit/${school.id}` as any)}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.gold} />
+              <Text style={styles.editBtnText}>Modifica scuola</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <DeleteButton
             kind="school"
             entityId={school.id}
@@ -249,6 +261,20 @@ function ContactRow({
 }
 
 const styles = StyleSheet.create({
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(245,158,11,0.10)",
+  },
+  editBtnText: { color: colors.gold, fontWeight: "800", fontSize: 14 },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" },
   hero: { height: 360, overflow: "hidden", backgroundColor: "#111" },
   backBtn: {
