@@ -25,6 +25,9 @@ from emergentintegrations.payments.stripe.checkout import (
     StripeCheckout,
     CheckoutSessionRequest,
 )
+import stripe as stripe_sdk  # Official Stripe SDK - used as fallback for status checks
+                              # because the emergentintegrations library sometimes
+                              # returns stale "pending" status on the new API version.
 
 # ----------------------------- Mongo ---------------------------------
 mongo_url = os.environ["MONGO_URL"]
@@ -1152,11 +1155,21 @@ async def payment_status(session_id: str, http_request: Request):
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    stripe = _stripe_client(http_request)
+    # Use the OFFICIAL Stripe SDK directly to avoid stale status from the
+    # intermediate library when running against the latest API version.
+    stripe_sdk.api_key = os.environ["STRIPE_API_KEY"]
     try:
-        status = await stripe.get_checkout_status(session_id)
+        session_obj = stripe_sdk.checkout.Session.retrieve(session_id)
+        status_str = session_obj.status or "open"
+        payment_status_str = session_obj.payment_status or "unpaid"
+        amount_total_cents = session_obj.amount_total or 0
+        currency_str = (session_obj.currency or "eur").lower()
+        try:
+            md = dict(session_obj.metadata) if session_obj.metadata else {}
+        except Exception:
+            md = tx.get("metadata") or {}
     except Exception as e:
-        logger.warning("Stripe get_checkout_status failed for %s: %s", session_id, e)
+        logger.warning("Stripe Session.retrieve failed for %s: %s", session_id, e)
         return CheckoutStatusOut(
             status=tx.get("status", "initiated"),
             payment_status=tx.get("payment_status", "pending"),
@@ -1170,12 +1183,13 @@ async def payment_status(session_id: str, http_request: Request):
 
     already_paid = tx.get("payment_status") == "paid"
     update_fields = {
-        "status": status.status,
-        "payment_status": status.payment_status,
+        "status": status_str,
+        "payment_status": payment_status_str,
+        "amount_total": amount_total_cents,
         "updated_at": datetime.now(timezone.utc),
     }
     boosted_until = tx.get("boosted_until")
-    if status.payment_status == "paid" and not already_paid:
+    if payment_status_str == "paid" and not already_paid:
         boosted_until = _apply_boost_if_paid(tx)
         update_fields["boosted_until"] = boosted_until
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
@@ -1184,13 +1198,13 @@ async def payment_status(session_id: str, http_request: Request):
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_fields})
 
     return CheckoutStatusOut(
-        status=status.status,
-        payment_status=status.payment_status,
-        amount_total=status.amount_total,
-        currency=status.currency,
-        metadata=status.metadata or {},
+        status=status_str,
+        payment_status=payment_status_str,
+        amount_total=amount_total_cents,
+        currency=currency_str,
+        metadata=md,
         event_id=tx.get("event_id"),
-        boosted=status.payment_status == "paid",
+        boosted=payment_status_str == "paid",
         boosted_until=boosted_until,
     )
 
@@ -1304,34 +1318,63 @@ async def _credit_referral_commission(tx: dict):
 async def stripe_webhook(http_request: Request):
     """
     Stripe webhook handler.
-    - If STRIPE_WEBHOOK_SECRET is set, verifies the request signature.
-    - If not set (e.g. environment not yet provisioned), falls back to
-      parsing the raw event payload directly via the stripe SDK so the
-      BOOST status still gets updated on payment success.
+    Uses the official Stripe SDK to verify the signature and parse events,
+    avoiding any compatibility issues with intermediate libraries on the
+    latest Stripe API version.
     """
     body = await http_request.body()
     signature = http_request.headers.get("Stripe-Signature", "")
-    has_secret = bool(os.environ.get("STRIPE_WEBHOOK_SECRET"))
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    stripe_sdk.api_key = os.environ["STRIPE_API_KEY"]
 
     event_session_id: Optional[str] = None
     event_payment_status: Optional[str] = None
 
     try:
-        if has_secret:
-            stripe = _stripe_client(http_request)
-            event = await stripe.handle_webhook(body, signature)
-            event_session_id = getattr(event, "session_id", None)
-            event_payment_status = getattr(event, "payment_status", None)
+        if webhook_secret and signature:
+            event = stripe_sdk.Webhook.construct_event(
+                payload=body, sig_header=signature, secret=webhook_secret
+            )
+            etype = event.get("type") if isinstance(event, dict) else event.type
+            data_obj = (event.get("data") or {}).get("object") if isinstance(event, dict) else event.data.object
         else:
-            # Fallback: parse the raw JSON event without signature verification
+            # Fallback if webhook_secret missing - parse the JSON event without verification
             import json as _json
-            payload = _json.loads(body.decode("utf-8") or "{}")
-            etype = payload.get("type", "")
-            data_obj = (payload.get("data") or {}).get("object") or {}
-            if etype in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
-                event_session_id = data_obj.get("id")
-                event_payment_status = data_obj.get("payment_status") or "paid"
+            event = _json.loads(body.decode("utf-8") or "{}")
+            etype = event.get("type", "")
+            data_obj = (event.get("data") or {}).get("object") or {}
+
+        # Normalize data_obj to a dict
+        if hasattr(data_obj, "to_dict_recursive"):
+            obj = data_obj.to_dict_recursive()
+        elif hasattr(data_obj, "id"):
+            obj = {k: getattr(data_obj, k, None) for k in ("id", "payment_status", "status", "amount_total")}
+        else:
+            obj = dict(data_obj) if data_obj else {}
+
+        if etype in (
+            "checkout.session.completed",
+            "checkout.session.async_payment_succeeded",
+            "payment_intent.succeeded",
+        ):
+            # For checkout.session.* the object id IS the session id.
+            # For payment_intent.succeeded we fall back to retrieving the session.
+            sid = obj.get("id", "") or ""
+            if sid.startswith("cs_"):
+                event_session_id = sid
+                event_payment_status = obj.get("payment_status") or "paid"
+            elif sid:
+                # Look up the session by payment_intent
+                try:
+                    sessions = stripe_sdk.checkout.Session.list(payment_intent=sid, limit=1)
+                    if sessions and sessions.data:
+                        s = sessions.data[0]
+                        event_session_id = s.id
+                        event_payment_status = s.payment_status or "paid"
+                except Exception as _e:
+                    logger.warning("Unable to lookup session for payment_intent %s: %s", sid, _e)
     except Exception as e:
+        logger.warning("Stripe webhook processing failed: %s", e)
         raise HTTPException(status_code=400, detail=f"Invalid webhook: {e}")
 
     if event_payment_status == "paid" and event_session_id:
@@ -1348,6 +1391,7 @@ async def stripe_webhook(http_request: Request):
                 }},
             )
             await _mark_entity_boosted(tx, boosted_until)
+            logger.info("Webhook: BOOST attivato per session %s", event_session_id)
     return {"ok": True}
 
 
