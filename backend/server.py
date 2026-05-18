@@ -1096,8 +1096,12 @@ async def _create_boost_checkout(
     pkg = BOOST_PACKAGES[pkg_key]
 
     origin = payload.origin_url.rstrip("/")
-    success_url = f"{origin}/boost-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}{back_path}"
+    # Backend-hosted success page that auto-activates the BOOST and shows a
+    # nice confirmation screen. The page lives on emergent.host so it always
+    # works regardless of which mobile origin (deep link / web) was used.
+    base = str(http_request.base_url).rstrip("/")
+    success_url = f"{base}/api/payments/success/{{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{base}/api/payments/cancel?back={origin}{back_path}"
     metadata = {
         "kind": kind,
         "entity_id": entity_id,
@@ -1147,6 +1151,130 @@ def _apply_boost_if_paid(tx: dict) -> Optional[datetime]:
     """Return new boosted_until datetime if a paid tx should upgrade the event."""
     days = int(tx.get("days") or tx.get("metadata", {}).get("days") or 7)
     return datetime.now(timezone.utc) + timedelta(days=days)
+
+
+@api.get("/payments/success/{session_id}")
+async def payment_success_page(session_id: str, http_request: Request):
+    """
+    Backend-hosted success page shown to the user immediately after a successful
+    Stripe payment. It activates the BOOST server-side (idempotent) and shows a
+    clean confirmation screen with a button to go back to the LatinFun app.
+    """
+    from fastapi.responses import HTMLResponse
+
+    stripe_sdk.api_key = os.environ["STRIPE_API_KEY"]
+
+    # 1) Try to fetch and reconcile the transaction in the DB
+    paid = False
+    amount_eur = 0.0
+    pkg_label = ""
+    try:
+        sess = stripe_sdk.checkout.Session.retrieve(session_id)
+        paid = (sess.payment_status == "paid")
+        amount_eur = (sess.amount_total or 0) / 100
+        tx = await db.payment_transactions.find_one({"session_id": session_id})
+        if tx and paid and tx.get("payment_status") != "paid":
+            boosted_until = _apply_boost_if_paid(tx)
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {"$set": {
+                    "status": "complete",
+                    "payment_status": "paid",
+                    "amount_total": sess.amount_total or 0,
+                    "boosted_until": boosted_until,
+                    "updated_at": datetime.now(timezone.utc),
+                }},
+            )
+            await _mark_entity_boosted(tx, boosted_until)
+        if tx:
+            pkg_key = tx.get("package", "week")
+            pkg_label = BOOST_PACKAGES.get(pkg_key, {}).get("label", "")
+    except Exception as e:
+        logger.warning("payment_success_page: failed to reconcile %s: %s", session_id, e)
+
+    if paid:
+        title = "Pagamento riuscito"
+        emoji = "✅"
+        message = "Il tuo evento è ora <strong>BOOSTED</strong> 🔥"
+        sub = f"Pacchetto: <strong>{pkg_label}</strong> · €{amount_eur:.2f}"
+        accent = "#10B981"  # green
+    else:
+        title = "Pagamento in elaborazione"
+        emoji = "⏳"
+        message = "Stiamo verificando il tuo pagamento. Torna nell'app tra qualche secondo per vedere il BOOST attivo."
+        sub = ""
+        accent = "#F59E0B"  # amber
+
+    html = f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LatinFun · {title}</title>
+<style>
+  * {{ box-sizing: border-box; }}
+  html, body {{ margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0F0F12; color: #fff; }}
+  .wrap {{ min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; }}
+  .badge {{ width: 96px; height: 96px; border-radius: 48px; background: {accent}; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }}
+  h1 {{ font-size: 28px; margin: 0 0 12px 0; font-weight: 800; letter-spacing: -0.5px; }}
+  .msg {{ font-size: 16px; color: #B9BBC2; line-height: 1.5; max-width: 380px; margin: 0 0 8px 0; }}
+  .sub {{ font-size: 14px; color: #80838B; margin: 0 0 28px 0; }}
+  .btn {{ display: inline-flex; align-items: center; gap: 8px; background: #E52947; color: #fff; padding: 16px 28px; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 15px; box-shadow: 0 4px 16px rgba(229,41,71,0.4); min-height: 52px; }}
+  .btn:active {{ transform: scale(0.98); }}
+  .hint {{ font-size: 12px; color: #5b5e66; margin-top: 24px; max-width: 320px; line-height: 1.5; }}
+  .logo {{ font-weight: 900; font-size: 18px; letter-spacing: 1.5px; color: #E52947; margin-bottom: 40px; }}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">LATINFUN</div>
+    <div class="badge">{emoji}</div>
+    <h1>{title}</h1>
+    <p class="msg">{message}</p>
+    <p class="sub">{sub}</p>
+    <a class="btn" href="latinfun://" onclick="setTimeout(function(){{window.location.href='https://apps.apple.com/app/latinfun/id6764812867';}}, 1500);">
+      Torna all'app →
+    </a>
+    <p class="hint">Se l'app non si apre automaticamente, chiudi questa finestra e apri LatinFun manualmente dal tuo telefono.</p>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html, status_code=200)
+
+
+@api.get("/payments/cancel")
+async def payment_cancel_page(back: str = ""):
+    from fastapi.responses import HTMLResponse
+    html = f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LatinFun · Pagamento annullato</title>
+<style>
+  * {{ box-sizing: border-box; }}
+  html, body {{ margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0F0F12; color: #fff; }}
+  .wrap {{ min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; }}
+  .badge {{ width: 96px; height: 96px; border-radius: 48px; background: #6B7280; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 24px; }}
+  h1 {{ font-size: 26px; margin: 0 0 12px 0; font-weight: 800; }}
+  .msg {{ font-size: 16px; color: #B9BBC2; line-height: 1.5; max-width: 380px; margin: 0 0 28px 0; }}
+  .btn {{ display: inline-flex; align-items: center; gap: 8px; background: #E52947; color: #fff; padding: 16px 28px; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 15px; min-height: 52px; }}
+  .logo {{ font-weight: 900; font-size: 18px; letter-spacing: 1.5px; color: #E52947; margin-bottom: 40px; }}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">LATINFUN</div>
+    <div class="badge">✕</div>
+    <h1>Pagamento annullato</h1>
+    <p class="msg">Hai annullato il pagamento. Nessun addebito è stato effettuato. Puoi tornare all'app e riprovare quando vuoi.</p>
+    <a class="btn" href="latinfun://" onclick="setTimeout(function(){{window.location.href='https://apps.apple.com/app/latinfun/id6764812867';}}, 1500);">
+      Torna all'app
+    </a>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html, status_code=200)
 
 
 @api.get("/payments/status/{session_id}", response_model=CheckoutStatusOut)
