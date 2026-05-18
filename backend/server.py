@@ -983,6 +983,55 @@ async def admin_revoke_organizer(user_id: str, current_user: dict = Depends(get_
     return {"ok": True, "revoked": True}
 
 
+@api.post("/admin/boost/force")
+async def admin_force_boost(
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Admin-only safety net: manually attach a BOOST to an entity, useful when
+    a Stripe payment went through but the webhook/sync failed.
+    """
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    kind = (payload.get("kind") or "").strip()
+    entity_id = (payload.get("entity_id") or "").strip()
+    days = int(payload.get("days") or 7)
+    session_id = (payload.get("session_id") or "").strip()
+
+    coll = _ENTITY_COLLECTIONS.get(kind)
+    if not coll or not entity_id:
+        raise HTTPException(status_code=400, detail="kind and entity_id required")
+
+    boosted_until = datetime.now(timezone.utc) + timedelta(days=days)
+    r = await db[coll].update_one(
+        {"id": entity_id},
+        {"$set": {"boosted": True, "boosted_until": boosted_until}},
+    )
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail=f"{kind} not found")
+
+    if session_id:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "status": "complete",
+                "payment_status": "paid",
+                "boosted_until": boosted_until,
+                "updated_at": datetime.now(timezone.utc),
+                "manual_admin_override": True,
+            }},
+        )
+
+    return {
+        "ok": True,
+        "kind": kind,
+        "entity_id": entity_id,
+        "boosted_until": boosted_until.isoformat(),
+        "session_id_marked_paid": bool(session_id),
+    }
+
+
 
 # ----------------------------- Payments / BOOST ----------------------
 # Fixed server-side pricing catalog (never trust client-provided amounts).
