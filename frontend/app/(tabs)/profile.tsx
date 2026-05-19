@@ -110,6 +110,12 @@ export default function ProfileScreen() {
                 onPress={() => router.push("/admin/users")}
               />
               <MenuItem
+                icon="ribbon-outline"
+                label="Organizzatori (admin)"
+                hint="Verifica ⭐, revoca DJ/Scuole/Promoter/Locali"
+                onPress={() => router.push("/admin/organizers" as any)}
+              />
+              <MenuItem
                 icon="musical-notes-outline"
                 label="Gestisci playlist (admin)"
                 hint="Aggiungi, modifica, rimuovi le playlist curate"

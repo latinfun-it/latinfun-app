@@ -398,6 +398,7 @@ async def login(payload: UserLogin):
 
 
 @api.get("/auth/me", response_model=UserOut)
+@api.head("/auth/me")
 async def me(current_user: dict = Depends(get_current_user)):
     return current_user
 
@@ -1048,6 +1049,9 @@ async def admin_verify_organizer(user_id: str, current_user: dict = Depends(get_
     )
     if r.matched_count == 0:
         raise HTTPException(status_code=404, detail="Organizzatore non trovato")
+    # Propagate verified flag to all owned DJs and Schools so it shows on cards
+    await db.djs.update_many({"owner_id": user_id}, {"$set": {"verified_by_mauro": True}})
+    await db.schools.update_many({"owner_id": user_id}, {"$set": {"verified_by_mauro": True}})
     return {"ok": True, "verified": True}
 
 
@@ -1061,6 +1065,9 @@ async def admin_unverify_organizer(user_id: str, current_user: dict = Depends(ge
     )
     if r.matched_count == 0:
         raise HTTPException(status_code=404, detail="Organizzatore non trovato")
+    # Remove verified flag from owned DJs and Schools
+    await db.djs.update_many({"owner_id": user_id}, {"$set": {"verified_by_mauro": False}})
+    await db.schools.update_many({"owner_id": user_id}, {"$set": {"verified_by_mauro": False}})
     return {"ok": True, "verified": False}
 
 
