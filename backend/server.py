@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import os
+import re as _re
 import uuid
 import math
 import asyncio
@@ -1707,8 +1708,31 @@ async def get_dj(dj_id: str):
 
 
 @api.post("/djs", response_model=DJ)
-async def create_dj(payload: DJCreate, current_user: dict = Depends(get_current_user)):
+async def create_dj(
+    payload: DJCreate,
+    current_user: dict = Depends(get_current_user),
+    force: bool = False,
+):
     await require_organizer(current_user)
+    # Anti-duplication: check existing DJ with same name + city (case-insensitive)
+    if not force or current_user.get("role") != "admin":
+        existing = await db.djs.find_one(
+            {
+                "name": {"$regex": f"^{_re_escape(payload.name.strip())}$", "$options": "i"},
+                "city": {"$regex": f"^{_re_escape(payload.city.strip())}$", "$options": "i"},
+            },
+            {"_id": 0, "id": 1, "name": 1, "city": 1, "owner_id": 1},
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "duplicate",
+                    "message": f"Esiste gia un DJ chiamato '{existing.get('name')}' a {existing.get('city')}. Se sei il proprietario, contatta il supporto.",
+                    "existing_id": existing.get("id"),
+                    "is_owner": existing.get("owner_id") == current_user.get("id"),
+                },
+            )
     base_slug = _slugify(f"{payload.name}-{payload.city}")
     slug = base_slug
     if await db.djs.find_one({"slug": slug}):
@@ -2059,6 +2083,11 @@ async def delete_playlist(playlist_id: str, current_user: dict = Depends(get_cur
 
 
 # ----------------------------- Schools -------------------------------
+def _re_escape(value: str) -> str:
+    """Escape a string for safe use inside a MongoDB $regex."""
+    return _re.escape(str(value or ""))
+
+
 def _slugify(value: str) -> str:
     base = "".join(c if c.isalnum() else "-" for c in value.lower()).strip("-")
     while "--" in base:
@@ -2092,8 +2121,31 @@ async def get_school(school_id: str):
 
 
 @api.post("/schools", response_model=School)
-async def create_school(payload: SchoolCreate, current_user: dict = Depends(get_current_user)):
+async def create_school(
+    payload: SchoolCreate,
+    current_user: dict = Depends(get_current_user),
+    force: bool = False,
+):
     await require_organizer(current_user)
+    # Anti-duplication: check existing school with same name + city (case-insensitive)
+    if not force or current_user.get("role") != "admin":
+        existing = await db.schools.find_one(
+            {
+                "name": {"$regex": f"^{_re_escape(payload.name.strip())}$", "$options": "i"},
+                "city": {"$regex": f"^{_re_escape(payload.city.strip())}$", "$options": "i"},
+            },
+            {"_id": 0, "id": 1, "name": 1, "city": 1, "owner_id": 1},
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "duplicate",
+                    "message": f"Esiste gia una scuola chiamata '{existing.get('name')}' a {existing.get('city')}. Se sei il proprietario, contatta il supporto.",
+                    "existing_id": existing.get("id"),
+                    "is_owner": existing.get("owner_id") == current_user.get("id"),
+                },
+            )
     slug = _slugify(f"{payload.name}-{payload.city}")
     if await db.schools.find_one({"slug": slug}):
         slug = f"{slug}-{uuid.uuid4().hex[:6]}"
