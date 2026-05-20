@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>LatinFun · Instagram Stories</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; overflow: hidden; }
+  body { width: 1080px; height: 1920px; }
+  .root {
+    width: 1080px; height: 1920px;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 900;
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-dark, .pulse-bg {
+    width: 100%; height: 100%; position: relative;
+    padding: 100px 80px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .bg-dark {
+    background: radial-gradient(ellipse at 30% 15%, #7a1230 0%, #0a0a0c 60%),
+                radial-gradient(ellipse at 80% 90%, #1f0a30 0%, transparent 60%),
+                #0a0a0c;
+  }
+  .pulse-bg {
+    background: radial-gradient(circle at 50% 35%, rgba(225,29,72,0.35) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 100%, rgba(147,51,234,0.20) 0%, transparent 55%),
+                #0a0a0c;
+  }
+  .bg-dark::after, .pulse-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(225,29,72,0.16) 0, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(147,51,234,0.14) 0, transparent 40%);
+  }
+  .content { position: relative; z-index: 2; }
+  .logo-row { display: flex; align-items: center; gap: 22px; margin-bottom: 24px; }
+  .logo-row img { width: 90px; height: 90px; border-radius: 22px; }
+  .logo-row .name { font-size: 42px; font-weight: 900; letter-spacing: -0.5px; }
+  .pink { color: #E11D48; }
+
+  .progress-bar {
+    position: absolute; top: 50px; left: 80px; right: 80px;
+    display: flex; gap: 6px; z-index: 10;
+  }
+  .progress-bar .dot {
+    flex: 1; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.25);
+  }
+  .progress-bar .dot.active { background: #fff; }
+
+  .main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .tagline { color: #E11D48; font-size: 30px; letter-spacing: 8px; margin-bottom: 40px; font-weight: 900; }
+  .title { font-size: 160px; line-height: 0.92; letter-spacing: -4px; }
+  .title .pink { color: #E11D48; }
+  .sub { font-size: 42px; font-weight: 400; line-height: 1.3; margin-top: 40px; max-width: 95%; color: #d4d4d8; }
+  .emoji-hero { font-size: 280px; margin-bottom: 50px; line-height: 1; text-align: center; }
+
+  .match-tag {
+    background: #E11D48; color: #fff; display: inline-block;
+    padding: 18px 38px; border-radius: 999px; font-size: 32px; letter-spacing: 4px; font-weight: 900;
+    margin-bottom: 50px;
+  }
+
+  .footer {
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .footer .stores-row {
+    display: flex; gap: 20px;
+  }
+  .store-pill {
+    flex: 1;
+    background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.20);
+    padding: 30px 30px; border-radius: 24px; font-size: 32px; font-weight: 800;
+    color: #fff; display: flex; align-items: center; justify-content: center; gap: 18px;
+  }
+  .store-pill .em { font-size: 40px; }
+  .swipe-up {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    color: rgba(255,255,255,0.85); font-size: 28px; font-weight: 700;
+  }
+  .swipe-up .arrow { font-size: 32px; animation: bounce 1.5s ease infinite; }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  .feature-list { display: flex; flex-direction: column; gap: 30px; margin-top: 50px; }
+  .feat-row {
+    display: flex; align-items: center; gap: 30px;
+    padding: 30px 35px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.10);
+    border-radius: 32px;
+  }
+  .feat-row .ico { font-size: 70px; line-height: 1; }
+  .feat-row .txt { font-size: 38px; font-weight: 800; line-height: 1.1; }
+  .feat-row .desc { font-size: 24px; color: #d4d4d8; font-weight: 500; margin-top: 6px; }
+
+  .price-row { display: flex; gap: 24px; margin-top: 40px; }
+  .price-card {
+    flex: 1;
+    background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.10);
+    border-radius: 28px; padding: 40px 24px; text-align: center;
+  }
+  .price-card.top { background: linear-gradient(160deg, rgba(225,29,72,0.20), rgba(147,51,234,0.10)); border-color: #E11D48; }
+  .price-card .dur { font-size: 22px; color: #71717A; letter-spacing: 2px; font-weight: 800; }
+  .price-card .pr { font-size: 64px; font-weight: 900; color: #E11D48; margin: 14px 0; line-height: 1; }
+  .price-card.top .pr { color: #fff; }
+</style>
+</head>
+<body>
+<div class="root" id="root"></div>
+<script>
+  const total = 6;
+  function progressBar(active) {
+    let h = '<div class="progress-bar">';
+    for (let i=1;i<=total;i++) h += `<div class="dot ${i<=active?'active':''}"></div>`;
+    h += '</div>';
+    return h;
+  }
+  const logoBlock = `<div class="logo-row"><img src="/api/static/media/logo.png" alt=""><div class="name">LATIN<span class="pink">FUN</span></div></div>`;
+
+  const stories = {
+    1: progressBar(1) + `<div class="bg-dark">
+        <div class="content">${logoBlock}</div>
+        <div class="content main">
+          <div class="tagline">DISPONIBILE ORA</div>
+          <div class="title">L'app n°1<br>del<br><span class="pink">mondo latino</span><br>in Italia.</div>
+          <div class="sub">Eventi · DJ · Scuole · Match Partner di Ballo</div>
+        </div>
+        <div class="content footer">
+          <div class="stores-row">
+            <div class="store-pill"><span class="em">🍎</span>App Store</div>
+            <div class="store-pill"><span class="em">🤖</span>Google Play</div>
+          </div>
+          <div class="swipe-up"><span>tieni premuto per pausa</span></div>
+        </div>
+       </div>`,
+    2: progressBar(2) + `<div class="pulse-bg">
+        <div class="content">${logoBlock}</div>
+        <div class="content main">
+          <div class="match-tag">⭐ FEATURE ESCLUSIVA</div>
+          <div class="emoji-hero" style="font-size: 220px;">💃🕺</div>
+          <div class="title">Match<br>Partner<br>di <span class="pink">Ballo.</span></div>
+          <div class="sub">Trova chi balla il <strong style="color:#fff">tuo stile</strong>, al <strong style="color:#fff">tuo livello</strong>, nella <strong style="color:#fff">tua città</strong>.</div>
+        </div>
+        <div class="content footer">
+          <div class="swipe-up"><span>scopri di più</span><span class="arrow">⬆️</span></div>
+        </div>
+       </div>`,
+    3: progressBar(3) + `<div class="bg-dark">
+        <div class="content">${logoBlock}</div>
+        <div class="content main">
+          <div class="tagline">TUTTO IN UNA APP</div>
+          <div class="title" style="font-size: 110px;">Una sola<br>casa per il<br><span class="pink">ballo latino.</span></div>
+          <div class="feature-list">
+            <div class="feat-row"><div class="ico">📍</div><div><div class="txt">Eventi su mappa</div><div class="desc">Salsa, bachata, kizomba, reggaeton</div></div></div>
+            <div class="feat-row"><div class="ico">🎧</div><div><div class="txt">DJ &amp; Scuole verificate</div><div class="desc">Profili con bio, mix e recensioni</div></div></div>
+            <div class="feat-row"><div class="ico">🎵</div><div><div class="txt">Playlist settimanali</div><div class="desc">Curate dalla redazione</div></div></div>
+          </div>
+        </div>
+        <div class="content footer">
+          <div class="swipe-up"><span>continua</span><span class="arrow">⬆️</span></div>
+        </div>
+       </div>`,
+    4: progressBar(4) + `<div class="bg-dark">
+        <div class="content">${logoBlock}</div>
+        <div class="content main" style="text-align: center; align-items: center;">
+          <div class="emoji-hero">🎁</div>
+          <div class="title" style="text-align: center;">100%<br><span class="pink">GRATIS</span><br>per tutti.</div>
+          <div class="sub" style="text-align: center;">Utenti · DJ · Scuole · Locali · Organizzatori<br><strong style="color:#fff">Nessun abbonamento. Nessuna sorpresa.</strong></div>
+        </div>
+        <div class="content footer">
+          <div class="swipe-up"><span>e per chi vuole emergere?</span><span class="arrow">⬆️</span></div>
+        </div>
+       </div>`,
+    5: progressBar(5) + `<div class="bg-dark">
+        <div class="content">${logoBlock}</div>
+        <div class="content main">
+          <div class="emoji-hero" style="font-size: 200px;">🚀</div>
+          <div class="title" style="font-size: 130px;">Vuoi <span class="pink">emergere?</span><br>Attiva<br><span class="pink">BOOST.</span></div>
+          <div class="sub">Evento, DJ o scuola <strong style="color:#fff">in cima alla home</strong> con badge giallo brillante e notifiche push.</div>
+          <div class="price-row">
+            <div class="price-card"><div class="dur">7 GG</div><div class="pr">€4,99</div></div>
+            <div class="price-card top"><div class="dur">⭐ 1 MESE</div><div class="pr">€14,99</div></div>
+            <div class="price-card"><div class="dur">3 MESI</div><div class="pr">€34,99</div></div>
+          </div>
+        </div>
+        <div class="content footer">
+          <div class="swipe-up"><span>ultima storia</span><span class="arrow">⬆️</span></div>
+        </div>
+       </div>`,
+    6: progressBar(6) + `<div class="pulse-bg">
+        <div class="content">${logoBlock}</div>
+        <div class="content main" style="text-align: center; align-items: center;">
+          <div class="tagline" style="text-align:center;">SCARICA GRATIS</div>
+          <div class="title" style="font-size: 150px; text-align: center;">Inizia<br>a <span class="pink">ballare.</span></div>
+          <div class="emoji-hero" style="font-size: 200px; margin-top: 50px;">💃🕺</div>
+        </div>
+        <div class="content footer">
+          <div class="stores-row">
+            <div class="store-pill"><span class="em">🍎</span>App Store</div>
+            <div class="store-pill"><span class="em">🤖</span>Google Play</div>
+          </div>
+          <div class="swipe-up"><span style="color:#E11D48;font-weight:900;font-size:34px;">📲 LINK IN BIO</span></div>
+        </div>
+       </div>`,
+  };
+
+  const n = parseInt(new URLSearchParams(location.search).get('n') || '1', 10);
+  document.getElementById('root').innerHTML = stories[n] || stories[1];
+</script>
+</body>
+</html>
