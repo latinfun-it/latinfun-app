@@ -204,6 +204,21 @@ backend:
         agent: "testing"
         comment: "PASS funzionalità endpoint: ritorna lista di {venue, city, address, count} per i locali dell'utente, ordinata per count desc, max 10. GET unauthenticated -> 401 corretto. Test ha creato 3 eventi 'Habana Cafe Roma' + 1 'Tropicana Milano' come admin: 'Habana count=3' presente correttamente, ma 'Tropicana' non è apparso perché il 4° evento (Tropicana) ha colpito il rate-limit dovuto al BUG admin esenzione (vedi task anti-flood). Quando il bug `is_admin` sarà fixato, il test del 4° venue passerà automaticamente. L'endpoint stesso è corretto."
 
+  - task: "Sponsor detail endpoint + extended fields (description, socials, contacts, CTAs)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Esteso modello Sponsor/SponsorIn con 11 nuovi campi opzionali (description, instagram_url, facebook_url, tiktok_url, whatsapp, phone, email, address, tickets_url, signup_url, event_id) e aggiunto endpoint pubblico GET /api/sponsors/{sponsor_id} che ritorna 200 con sponsor attivo o 404 'Sponsor non trovato'. Da testare CRUD admin con i nuovi campi e regression su list."
+      - working: true
+        agent: "testing"
+        comment: "PASS (8/8) backend_test.py. (1) GET /api/sponsors/8d52d3cd-c576-4786-bcb5-e900dfb0565b (Capezio) ritorna 200 con tutti gli 11 nuovi campi presenti (null per quelli non popolati nel doc esistente, '' per tickets_url/signup_url/event_id). (2) GET /api/sponsors/00000000-0000-0000-0000-000000000000 -> 404 con detail='Sponsor non trovato'. (3) POST /api/admin/sponsors con payload completo (20 campi inclusi tutti i nuovi) ritorna 200 con tutti i field values esatti e GET pubblico /sponsors/{id} ritorna stessi dati persistiti. (4) PUT /api/admin/sponsors/{id} cambiando solo description (full payload re-inviato) aggiorna description e preserva tutti gli altri campi (title, image_url, instagram_url, facebook_url, tiktok_url, whatsapp, phone, email, address, tickets_url, signup_url, event_id, link_url, cta_label, position, priority, active). (5) Regression: GET /api/sponsors?position=home_top continua a ritornare lista (count=2) con i nuovi campi presenti negli item. (6) DELETE /api/admin/sponsors/{id} -> 200, GET successivo -> 404 (cleanup OK, nessun junk lasciato in DB). (7) Endpoint pubblico funziona senza Authorization header -> 200."
+
 frontend:
   - task: "Form Crea Evento (event/create.tsx) - rifatto"
     implemented: true
@@ -298,3 +313,30 @@ agent_communication:
       - app/dj/register.tsx: stesso pattern (dropzone + URL fallback). Aggiunto state imageUrl + pickingImage.
       - i18n/it.ts + es.ts: aggiornate chiavi events.fields.image* con dropzone hints, imageOr, imageUrlPlaceholder, imageUrlHint, imageUploaded.
       Nessuna modifica backend, nessun nuovo endpoint, schema DB invariato. Non richiede retest backend.
+
+  - agent: "main"
+    message: |
+      SPONSOR DETAIL PAGE (nuova funzionalità monetizzazione):
+      Backend changes (server.py):
+        - Esteso modello Sponsor con campi opzionali: description (max 2000), instagram_url, facebook_url, tiktok_url, whatsapp, phone, email, address, tickets_url, signup_url, event_id.
+        - Esteso modello SponsorIn con stessi campi.
+        - Aggiunto endpoint pubblico GET /api/sponsors/{sponsor_id} che restituisce singolo sponsor attivo (404 se non trovato/inattivo).
+      Frontend changes:
+        - Nuovo file app/sponsor/[id].tsx: pagina dettaglio sponsor con hero image, brand, titolo, sottotitolo, descrizione lunga, indirizzo (con pin), e fino a 11 CTA colorati (Tickets, Signup, Event, Site, Instagram, Facebook, TikTok, WhatsApp, Phone, Email, Maps), share button, disclaimer "contenuto promozionale".
+        - src/SponsorBanner.tsx: cambiato onClick — invece di aprire direttamente link_url con Linking.openURL, ora naviga a /sponsor/[id] (più info utente, possibilità di monetizzare con biglietti/iscrizioni).
+        - app/admin/sponsors.tsx: esteso form admin con tutti i nuovi campi (sezioni "Pagina dettaglio" e "Impostazioni"). Mantenuti i campi pre-esistenti.
+      Da testare backend: (1) GET /api/sponsors/{id} pubblico ritorna 200 con tutti i nuovi campi (anche null) per sponsor attivo, 404 per inattivo/non esistente; (2) POST/PUT /api/admin/sponsors accetta i nuovi campi; (3) Regression: GET /api/sponsors?position=home_top continua a funzionare e restituisce array.
+
+  - agent: "testing"
+    message: |
+      SPONSOR DETAIL PAGE - backend test PASS (8/8) via /app/backend_test.py.
+      ✅ Test 1: GET /api/sponsors/8d52d3cd-c576-4786-bcb5-e900dfb0565b (Capezio) -> 200 con tutti gli 11 nuovi campi serializzati (description/instagram_url/facebook_url/tiktok_url/whatsapp/phone/email/address=null nel doc esistente; tickets_url/signup_url/event_id="" come stringhe vuote nel doc già migrato; brand="Capezio").
+      ✅ Test 2: GET /api/sponsors/00000000-0000-0000-0000-000000000000 -> 404 detail="Sponsor non trovato".
+      ✅ Test 7: GET pubblico senza Authorization header -> 200 (endpoint pubblico OK).
+      ✅ Test 3a: POST /api/admin/sponsors con tutti i 20 campi del payload di esempio -> 200, tutti i field values combaciano nel response.
+      ✅ Test 3b: GET /api/sponsors/{created_id} dopo POST -> 200 con tutti i campi persistiti correttamente in Mongo.
+      ✅ Test 4: PUT /api/admin/sponsors/{id} re-inviando full payload con solo description cambiata -> 200; description aggiornata; tutti gli altri 18 campi (title, subtitle, brand, image_url, link_url, cta_label, position, priority, active, instagram_url, facebook_url, tiktok_url, whatsapp, phone, email, address, tickets_url, signup_url, event_id) preservati. NOTE: il PUT richiede full SponsorIn body (title+image_url required) — un client che inviasse solo {description:"..."} riceverebbe 422; il flow corretto è "carica e re-invia con solo description cambiata", che è quello che fa il form admin.
+      ✅ Test 5: GET /api/sponsors?position=home_top -> 200, lista (count=2) include sponsor di test + Capezio, i nuovi campi sono presenti negli item della list response.
+      ✅ Test 6: DELETE /api/admin/sponsors/{created_id} -> 200; GET successivo -> 404. Nessun junk lasciato in DB.
+      Tutto pronto, nessuna issue da fixare.
+

@@ -34,6 +34,17 @@ type Sponsor = {
   active: boolean;
   starts_at?: string | null;
   ends_at?: string | null;
+  description?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
+  tiktok_url?: string | null;
+  whatsapp?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  tickets_url?: string | null;
+  signup_url?: string | null;
+  event_id?: string | null;
   clicks: number;
   impressions: number;
 };
@@ -75,6 +86,17 @@ export default function AdminSponsors() {
     active: true,
     starts_at: null,
     ends_at: null,
+    description: "",
+    instagram_url: "",
+    facebook_url: "",
+    tiktok_url: "",
+    whatsapp: "",
+    phone: "",
+    email: "",
+    address: "",
+    tickets_url: "",
+    signup_url: "",
+    event_id: "",
     clicks: 0,
     impressions: 0,
   });
@@ -209,6 +231,17 @@ function SponsorEditor({
   const [position, setPosition] = useState(item.position);
   const [priority, setPriority] = useState(String(item.priority || 0));
   const [active, setActive] = useState(item.active);
+  const [description, setDescription] = useState(item.description || "");
+  const [instagramUrl, setInstagramUrl] = useState(item.instagram_url || "");
+  const [facebookUrl, setFacebookUrl] = useState(item.facebook_url || "");
+  const [tiktokUrl, setTiktokUrl] = useState(item.tiktok_url || "");
+  const [whatsapp, setWhatsapp] = useState(item.whatsapp || "");
+  const [phone, setPhone] = useState(item.phone || "");
+  const [email, setEmail] = useState(item.email || "");
+  const [address, setAddress] = useState(item.address || "");
+  const [ticketsUrl, setTicketsUrl] = useState(item.tickets_url || "");
+  const [signupUrl, setSignupUrl] = useState(item.signup_url || "");
+  const [eventId, setEventId] = useState(item.event_id || "");
   const [saving, setSaving] = useState(false);
 
   const pickImage = async () => {
@@ -249,6 +282,17 @@ function SponsorEditor({
         position,
         priority: parseInt(priority || "0", 10) || 0,
         active,
+        description: description.trim() || null,
+        instagram_url: instagramUrl.trim() || null,
+        facebook_url: facebookUrl.trim() || null,
+        tiktok_url: tiktokUrl.trim() || null,
+        whatsapp: whatsapp.trim() || null,
+        phone: phone.trim() || null,
+        email: email.trim() || null,
+        address: address.trim() || null,
+        tickets_url: ticketsUrl.trim() || null,
+        signup_url: signupUrl.trim() || null,
+        event_id: eventId.trim() || null,
       };
       if (item.id) {
         await api.put(`/admin/sponsors/${item.id}`, payload);
@@ -351,6 +395,135 @@ function SponsorEditor({
               placeholderTextColor={colors.textMuted}
               maxLength={30}
             />
+
+            {/* ===== Pagina Dettaglio Sponsor ===== */}
+            <View style={ss.sectionDivider}>
+              <Text style={ss.sectionTitle}>📄 PAGINA DETTAGLIO</Text>
+              <Text style={ss.sectionHint}>
+                Aggiungi info e link che apparirano quando l'utente clicca sul banner.
+              </Text>
+            </View>
+
+            <Text style={ss.label}>DESCRIZIONE</Text>
+            <TextInput
+              style={[ss.input, { minHeight: 80, textAlignVertical: "top" }]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Descrizione lunga (max 2000 caratteri)..."
+              placeholderTextColor={colors.textMuted}
+              maxLength={2000}
+              multiline
+            />
+
+            <Text style={ss.label}>🎟️ LINK ACQUISTO BIGLIETTI (monetizza)</Text>
+            <TextInput
+              style={ss.input}
+              value={ticketsUrl}
+              onChangeText={setTicketsUrl}
+              placeholder="https://ticketone.it/evento/..."
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={ss.label}>✍️ LINK ISCRIZIONE / PRENOTAZIONE (corsi)</Text>
+            <TextInput
+              style={ss.input}
+              value={signupUrl}
+              onChangeText={setSignupUrl}
+              placeholder="https://scuola.it/iscriviti"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={ss.label}>🎉 ID EVENTO COLLEGATO (opzionale)</Text>
+            <TextInput
+              style={ss.input}
+              value={eventId}
+              onChangeText={setEventId}
+              placeholder="UUID evento (dalla lista eventi)"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+            />
+
+            <Text style={ss.label}>📷 INSTAGRAM URL</Text>
+            <TextInput
+              style={ss.input}
+              value={instagramUrl}
+              onChangeText={setInstagramUrl}
+              placeholder="https://instagram.com/profilo"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={ss.label}>📘 FACEBOOK URL</Text>
+            <TextInput
+              style={ss.input}
+              value={facebookUrl}
+              onChangeText={setFacebookUrl}
+              placeholder="https://facebook.com/pagina"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={ss.label}>🎵 TIKTOK URL</Text>
+            <TextInput
+              style={ss.input}
+              value={tiktokUrl}
+              onChangeText={setTiktokUrl}
+              placeholder="https://tiktok.com/@profilo"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={ss.label}>💬 WHATSAPP (numero con prefisso)</Text>
+            <TextInput
+              style={ss.input}
+              value={whatsapp}
+              onChangeText={setWhatsapp}
+              placeholder="+39 333 1234567"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+
+            <Text style={ss.label}>📞 TELEFONO</Text>
+            <TextInput
+              style={ss.input}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+39 06 1234567"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+
+            <Text style={ss.label}>📧 EMAIL</Text>
+            <TextInput
+              style={ss.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="info@esempio.it"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <Text style={ss.label}>📍 INDIRIZZO (apre mappa)</Text>
+            <TextInput
+              style={ss.input}
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Via Roma 1, Rimini RN"
+              placeholderTextColor={colors.textMuted}
+              maxLength={200}
+            />
+
+            <View style={ss.sectionDivider}>
+              <Text style={ss.sectionTitle}>⚙️ IMPOSTAZIONI</Text>
+            </View>
 
             <Text style={ss.label}>POSIZIONE</Text>
             <View style={ss.chipsRow}>
@@ -465,6 +638,25 @@ const ss = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(239,68,68,0.5)",
   },
   label: { color: colors.brand, fontSize: 10, letterSpacing: 1.5, fontWeight: "800", marginTop: 16, marginBottom: 6 },
+  sectionDivider: {
+    marginTop: 28,
+    marginBottom: 4,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  sectionHint: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 4,
+    lineHeight: 16,
+  },
   input: {
     backgroundColor: colors.bgSecondary,
     borderWidth: 1, borderColor: colors.border,

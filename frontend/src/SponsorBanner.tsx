@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { api } from "./api";
 import { colors, radii, spacing } from "./theme";
 
@@ -28,12 +28,14 @@ type Sponsor = {
  * - Track impressions e clicks
  * - Multi-banner: VERTICAL stack (uno sotto l'altro, scroll col contenuto della pagina)
  * - Supporta numero ILLIMITATO di sponsor
+ * - Click → naviga alla pagina dettaglio sponsor con tutte le CTA
  */
 export default function SponsorBanner({
   position = "home_top",
 }: {
   position?: "home_top" | "home_middle" | "home_bottom";
 }) {
+  const router = useRouter();
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [tracked, setTracked] = useState<Set<string>>(new Set());
 
@@ -53,15 +55,9 @@ export default function SponsorBanner({
     });
   }, [sponsors]);
 
-  const onClick = async (s: Sponsor) => {
+  const onClick = (s: Sponsor) => {
     api.post(`/sponsors/${s.id}/click`).catch(() => {});
-    if (s.link_url) {
-      try {
-        await Linking.openURL(s.link_url);
-      } catch {
-        /* silent */
-      }
-    }
+    router.push(`/sponsor/${s.id}` as any);
   };
 
   if (sponsors.length === 0) return null;
@@ -87,12 +83,10 @@ export default function SponsorBanner({
             {s.subtitle ? (
               <Text style={styles.sub} numberOfLines={2}>{s.subtitle}</Text>
             ) : null}
-            {s.link_url ? (
-              <View style={styles.cta}>
-                <Text style={styles.ctaText}>{s.cta_label || "Scopri"}</Text>
-                <Ionicons name="arrow-forward" size={14} color="#fff" />
-              </View>
-            ) : null}
+            <View style={styles.cta}>
+              <Text style={styles.ctaText}>{s.cta_label || "Scopri"}</Text>
+              <Ionicons name="arrow-forward" size={14} color="#fff" />
+            </View>
           </View>
         </TouchableOpacity>
       ))}

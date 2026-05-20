@@ -2956,6 +2956,18 @@ class Sponsor(BaseModel):
     active: bool = True
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
+    # Rich detail page fields
+    description: Optional[str] = None
+    instagram_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    whatsapp: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    tickets_url: Optional[str] = None
+    signup_url: Optional[str] = None
+    event_id: Optional[str] = None
     clicks: int = 0
     impressions: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -2973,6 +2985,17 @@ class SponsorIn(BaseModel):
     active: bool = True
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
+    instagram_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    whatsapp: Optional[str] = Field(default=None, max_length=40)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    email: Optional[str] = Field(default=None, max_length=120)
+    address: Optional[str] = Field(default=None, max_length=200)
+    tickets_url: Optional[str] = None
+    signup_url: Optional[str] = None
+    event_id: Optional[str] = None
 
 
 @api.get("/sponsors", response_model=List[Sponsor])
@@ -2987,6 +3010,14 @@ async def list_sponsors_public(position: Optional[str] = None):
         q["position"] = position
     cursor = db.sponsors.find(q, {"_id": 0}).sort([("priority", -1), ("created_at", -1)])
     return await cursor.to_list(length=100)
+
+
+@api.get("/sponsors/{sponsor_id}", response_model=Sponsor)
+async def get_sponsor_public(sponsor_id: str):
+    doc = await db.sponsors.find_one({"id": sponsor_id, "active": True}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Sponsor non trovato")
+    return doc
 
 
 @api.get("/admin/sponsors", response_model=List[Sponsor])
