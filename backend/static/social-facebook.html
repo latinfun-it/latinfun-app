@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>LatinFun · Facebook Banner</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; overflow: hidden; }
+  body { width: 1200px; height: 630px; }
+  .root {
+    width: 1200px; height: 630px;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 900;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 30% 20%, #7a1230 0%, #0a0a0c 60%),
+                radial-gradient(ellipse at 80% 90%, #1f0a30 0%, transparent 60%),
+                #0a0a0c;
+  }
+  .root::after {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(225,29,72,0.16) 0, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(147,51,234,0.14) 0, transparent 40%);
+  }
+  .row {
+    position: relative; z-index: 2;
+    width: 100%; height: 100%;
+    display: flex; align-items: center;
+    padding: 50px 70px;
+    gap: 50px;
+  }
+  .left { flex: 1; }
+  .logo-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .logo-row img { width: 60px; height: 60px; border-radius: 12px; }
+  .logo-row .name { font-size: 26px; font-weight: 900; }
+  .pink { color: #E11D48; }
+  .tagline { color: #E11D48; font-size: 14px; letter-spacing: 4px; margin-bottom: 14px; }
+  .title { font-size: 72px; line-height: 0.95; letter-spacing: -2px; margin-bottom: 18px; }
+  .sub { font-size: 22px; font-weight: 400; line-height: 1.35; color: #d4d4d8; max-width: 95%; }
+  .stores { display: flex; gap: 14px; margin-top: 24px; }
+  .store-btn {
+    background: rgba(255,255,255,0.10); border: 2px solid rgba(255,255,255,0.20);
+    padding: 14px 24px; border-radius: 14px; font-size: 16px; font-weight: 800;
+    color: #fff; display: inline-flex; align-items: center; gap: 10px;
+  }
+  .store-btn .em { font-size: 22px; }
+
+  .right {
+    flex: 0 0 380px;
+    height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .badge {
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E11D48 0%, #9F1239 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(225,29,72,0.5);
+    text-align: center;
+    padding: 30px;
+  }
+  .badge .em { font-size: 80px; line-height: 1; margin-bottom: 14px; }
+  .badge .tit { font-size: 32px; font-weight: 900; line-height: 1.05; }
+  .badge .sub2 { font-size: 16px; opacity: 0.9; margin-top: 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="root">
+  <div class="row">
+    <div class="left">
+      <div class="logo-row">
+        <img src="/api/static/media/logo.png" alt="LatinFun">
+        <div class="name">LATIN<span class="pink">FUN</span></div>
+      </div>
+      <div class="tagline">DISPONIBILE ORA</div>
+      <div class="title" id="title">L'app n°1 del<br><span class="pink">mondo latino</span> in Italia.</div>
+      <div class="sub" id="sub">Eventi · DJ · Scuole · Playlist · <strong style="color:#fff">Match Partner di Ballo</strong>. Tutto gratis, in una sola app.</div>
+      <div class="stores">
+        <div class="store-btn"><span class="em">🍎</span> App Store</div>
+        <div class="store-btn"><span class="em">🤖</span> Google Play</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="badge" id="badge">
+        <div class="em">💃🕺</div>
+        <div class="tit">SCARICA<br>GRATIS</div>
+        <div class="sub2">100% gratuita per tutti</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // Variant via ?v=match / boost / events
+  const v = new URLSearchParams(location.search).get('v');
+  const t = document.getElementById('title');
+  const s = document.getElementById('sub');
+  const b = document.getElementById('badge');
+  if (v === 'match') {
+    t.innerHTML = 'Trova il tuo<br><span class="pink">partner di ballo.</span>';
+    s.innerHTML = 'Match per stile, livello e città. Chat integrata. <strong style="color:#fff">Organizzate insieme la prossima serata.</strong>';
+    b.innerHTML = '<div class="em">❤️</div><div class="tit">MATCH<br>BALLO</div><div class="sub2">Feature esclusiva</div>';
+  } else if (v === 'boost') {
+    t.innerHTML = 'Promuovi i tuoi<br><span class="pink">eventi.</span>';
+    s.innerHTML = 'BOOST il tuo evento, profilo DJ o scuola. <strong style="color:#fff">Da €4.99/settimana.</strong> Visibilità garantita su tutta la community.';
+    b.innerHTML = '<div class="em">🚀</div><div class="tit">BOOST</div><div class="sub2">da €4.99</div>';
+  } else if (v === 'events') {
+    t.innerHTML = 'Tutte le serate.<br>In <span class="pink">una sola app.</span>';
+    s.innerHTML = 'Mappa geolocalizzata, filtri per stile, salva i preferiti, recensisci. <strong style="color:#fff">Il mondo latino italiano sulla tua mano.</strong>';
+    b.innerHTML = '<div class="em">📍</div><div class="tit">EVENTI</div><div class="sub2">su mappa</div>';
+  }
+</script>
+</body>
+</html>
