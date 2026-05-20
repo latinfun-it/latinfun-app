@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LatinFun · Media Kit & Sponsor Pack</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #050505; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { background: #f4f4f6; padding: 20px 0; }
+
+  /* A4 page wrapper */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 16px;
+    padding: 18mm 16mm;
+    background: #0a0a0c;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.25);
+  }
+  .page:last-child { page-break-after: avoid; }
+
+  /* Cover page */
+  .cover {
+    background: radial-gradient(ellipse at 30% 20%, #7a1230 0%, #0a0a0c 60%),
+                radial-gradient(ellipse at 80% 90%, #1f0a30 0%, transparent 60%),
+                #0a0a0c;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .cover::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(225,29,72,0.16) 0, transparent 35%),
+      radial-gradient(circle at 80% 20%, rgba(147,51,234,0.12) 0, transparent 35%);
+    pointer-events: none;
+  }
+  .cover-top { z-index: 2; }
+  .cover-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 80px; }
+  .cover-logo img { width: 60px; height: 60px; border-radius: 14px; }
+  .cover-logo .name { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+  .cover-logo .name .accent { color: #E11D48; }
+  .cover-tagline { font-size: 14px; letter-spacing: 4px; color: #E11D48; font-weight: 800; margin-bottom: 14px; }
+  .cover h1 { font-size: 78px; line-height: 0.95; font-weight: 900; letter-spacing: -2px; max-width: 90%; }
+  .cover h1 .pink { color: #E11D48; }
+  .cover .lead { font-size: 22px; line-height: 1.4; max-width: 80%; color: #d4d4d8; margin-top: 24px; font-weight: 300; }
+  .cover-footer { z-index: 2; display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 60px; }
+  .cover-footer .meta { font-size: 11px; color: #71717A; letter-spacing: 2px; }
+  .cover-footer .meta strong { color: #fff; font-weight: 700; }
+
+  /* Generic page parts */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 32px;
+  }
+  .header .brand { display: flex; align-items: center; gap: 10px; }
+  .header .brand img { width: 24px; height: 24px; border-radius: 6px; }
+  .header .brand span { font-size: 13px; font-weight: 800; letter-spacing: 0.5px; }
+  .header .brand span .pink { color: #E11D48; }
+  .header .pn { font-size: 10px; color: #71717A; letter-spacing: 1.5px; }
+
+  .kicker { font-size: 12px; letter-spacing: 4px; color: #E11D48; font-weight: 800; margin-bottom: 8px; }
+  h2 { font-size: 42px; font-weight: 900; letter-spacing: -1.2px; line-height: 1; margin-bottom: 16px; }
+  h3 { font-size: 22px; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
+  p { font-size: 14px; line-height: 1.6; color: #d4d4d8; }
+  .lead-p { font-size: 16px; line-height: 1.55; color: #e5e5e7; margin-bottom: 24px; max-width: 92%; }
+
+  /* Stat cards */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 28px; }
+  .stat {
+    padding: 18px 16px;
+    background: linear-gradient(135deg, rgba(225,29,72,0.10), rgba(147,51,234,0.04));
+    border: 1px solid rgba(225,29,72,0.22);
+    border-radius: 14px;
+  }
+  .stat .num { font-size: 28px; font-weight: 900; color: #E11D48; line-height: 1; }
+  .stat .lbl { font-size: 11px; color: #a1a1aa; margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+
+  /* Feature grid */
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .feature {
+    padding: 18px;
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    position: relative;
+  }
+  .feature .icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #E11D48, #9F1239);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    font-size: 20px;
+  }
+  .feature h4 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .feature p { font-size: 12px; line-height: 1.5; color: #a1a1aa; }
+
+  /* Match Partner hero */
+  .match-hero {
+    margin-top: 14px;
+    padding: 30px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(225,29,72,0.18) 0%, rgba(147,51,234,0.10) 100%);
+    border: 1px solid rgba(225,29,72,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .match-hero::before {
+    content: "❤";
+    position: absolute;
+    right: -40px; top: -40px;
+    font-size: 200px;
+    opacity: 0.06;
+    color: #E11D48;
+  }
+  .match-tag {
+    display: inline-block;
+    background: #E11D48;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+  .match-hero h3 { font-size: 32px; color: #fff; margin-bottom: 14px; }
+  .match-hero p { font-size: 14px; line-height: 1.6; color: #e5e5e7; max-width: 70%; }
+  .match-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+  .pillar { background: rgba(255,255,255,0.04); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); }
+  .pillar .ico { font-size: 22px; margin-bottom: 6px; }
+  .pillar .t { font-size: 12px; font-weight: 800; color: #fff; }
+  .pillar .d { font-size: 10px; color: #a1a1aa; margin-top: 4px; line-height: 1.4; }
+
+  /* Sponsor packages */
+  .packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+  .pkg {
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 22px 18px;
+    position: relative;
+  }
+  .pkg.featured {
+    background: linear-gradient(160deg, rgba(225,29,72,0.18), rgba(147,51,234,0.08));
+    border-color: #E11D48;
+    transform: scale(1.03);
+  }
+  .pkg .ribbon { position: absolute; top: -10px; right: 14px; background: #E11D48; color: #fff; padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 800; letter-spacing: 1px; }
+  .pkg .name { font-size: 12px; letter-spacing: 2px; color: #71717A; font-weight: 800; }
+  .pkg .price { font-size: 32px; font-weight: 900; color: #fff; margin: 8px 0 4px; line-height: 1; }
+  .pkg .per { font-size: 10px; color: #a1a1aa; }
+  .pkg ul { list-style: none; margin-top: 16px; }
+  .pkg li { font-size: 11px; color: #d4d4d8; line-height: 1.5; margin-bottom: 6px; padding-left: 14px; position: relative; }
+  .pkg li::before { content: "✓"; position: absolute; left: 0; color: #E11D48; font-weight: 900; }
+
+  /* Audience */
+  .audience-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start; }
+  .audience-grid .demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .audience-grid .demo-row .label { font-size: 12px; color: #fff; flex: 0 0 110px; font-weight: 600; }
+  .audience-grid .demo-row .bar { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+  .audience-grid .demo-row .fill { height: 100%; background: linear-gradient(90deg, #E11D48, #f43f5e); border-radius: 4px; }
+  .audience-grid .demo-row .pct { font-size: 11px; color: #a1a1aa; flex: 0 0 40px; text-align: right; }
+
+  /* Contact card */
+  .contact {
+    margin-top: 30px;
+    padding: 26px;
+    background: linear-gradient(135deg, #E11D48 0%, #9F1239 100%);
+    border-radius: 18px;
+    color: #fff;
+  }
+  .contact h3 { font-size: 24px; margin-bottom: 16px; }
+  .contact .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .contact .item { font-size: 13px; line-height: 1.4; }
+  .contact .item strong { display: block; font-size: 10px; opacity: 0.7; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+
+  /* Two columns */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+  /* Print specific */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { margin: 0; box-shadow: none; }
+    .no-print { display: none !important; }
+  }
+
+  /* Floating print button */
+  .print-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 100;
+    background: #E11D48; color: #fff;
+    padding: 14px 22px; border-radius: 999px;
+    font-weight: 800; font-size: 14px;
+    box-shadow: 0 8px 22px rgba(225,29,72,0.5);
+    cursor: pointer; border: none;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .print-btn:hover { opacity: 0.92; }
+</style>
+</head>
+<body>
+
+<!-- =========================== PAGE 1: COVER =========================== -->
+<section class="page cover">
+  <div class="cover-top">
+    <div class="cover-logo">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <div class="name">LATIN<span class="accent">FUN</span></div>
+    </div>
+    <div class="cover-tagline">MEDIA KIT · SPONSOR PACK · 2026</div>
+    <h1>L'app n°1 del<br><span class="pink">ballo latino</span><br>in Italia.</h1>
+    <p class="lead">Eventi, DJ, scuole di ballo, musica e nuovi compagni di ballo — tutto in una sola app. La community più attiva del mondo latino italiano è qui.</p>
+  </div>
+  <div class="cover-footer">
+    <div class="meta">Preparato da<br><strong>LatinFun S.r.l.</strong></div>
+    <div class="meta">Versione documento<br><strong>1.0 · Maggio 2026</strong></div>
+  </div>
+</section>
+
+<!-- =========================== PAGE 2: MISSION =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">02 / MISSIONE</div>
+  </div>
+  <div class="kicker">LA NOSTRA MISSIONE</div>
+  <h2>Trasformare il modo in cui<br>l'Italia balla latino.</h2>
+  <p class="lead-p">In Italia ci sono oltre <strong style="color:#fff">300.000 appassionati</strong> di balli latino-americani che ogni settimana cercano serate, corsi, partner e nuove ispirazioni musicali. <strong style="color:#fff">LatinFun</strong> è la prima piattaforma mobile che unisce in un solo posto tutto ciò che la community cerca, eliminando la frammentazione tra gruppi Facebook, locandine cartacee e siti web obsoleti.</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="num">300K+</div>
+      <div class="lbl">Ballerini stimati Italia</div>
+    </div>
+    <div class="stat">
+      <div class="num">1.500+</div>
+      <div class="lbl">Scuole di ballo attive</div>
+    </div>
+    <div class="stat">
+      <div class="num">500+</div>
+      <div class="lbl">Serate latine settimanali</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="color:#E11D48">Il problema oggi</h3>
+      <p>La scena latina italiana è ricca ma <strong style="color:#fff">disorganizzata</strong>: eventi annunciati solo su Facebook, scuole senza un canale comune, DJ difficili da contattare, single che cercano compagni di ballo nei luoghi sbagliati. Risultato: <strong style="color:#fff">serate semivuote</strong> e community frammentata.</p>
+    </div>
+    <div>
+      <h3 style="color:#E11D48">La nostra soluzione</h3>
+      <p>Un'app nativa iOS + Android pensata per i ballerini: <strong style="color:#fff">trova eventi sulla mappa</strong>, segui DJ e scuole, ascolta playlist ufficiali, salva i preferiti, recensisci e — soprattutto — <strong style="color:#fff">trova nuovi partner di ballo</strong> con cui andare in pista.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== PAGE 3: FEATURES =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">03 / FUNZIONALITÀ</div>
+  </div>
+  <div class="kicker">CARATTERISTICHE</div>
+  <h2>Una app, infinite<br>possibilità di ballo.</h2>
+  <p class="lead-p">Ogni feature è pensata per generare engagement quotidiano e creare valore reale per ballerini, organizzatori e brand.</p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">📍</div>
+      <h4>Mappa Eventi</h4>
+      <p>Tutte le serate latine d'Italia geolocalizzate. Salsa, bachata, kizomba, reggaeton — filtra per stile e città.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🎧</div>
+      <h4>Profili DJ</h4>
+      <p>I migliori selector italiani con bio, foto, mix audio e link ai social. La community segue, like e prenota i propri DJ preferiti.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">💃</div>
+      <h4>Scuole di Ballo</h4>
+      <p>Directory delle accademie italiane con stili insegnati, contatti e prenotazione corsi. Badge verificati per qualità garantita.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🎵</div>
+      <h4>Playlist Settimanali</h4>
+      <p>Curate dalla redazione LatinFun. Salsa, bachata sensual, kizomba, urban — la colonna sonora della community aggiornata ogni settimana.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">⭐</div>
+      <h4>Recensioni e Like</h4>
+      <p>Sistema di review 1-5 stelle, salvataggi e follow. Gli utenti costruiscono il loro mondo latino personalizzato.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🚀</div>
+      <h4>BOOST Eventi</h4>
+      <p>Gli organizzatori promuovono le proprie serate in primo piano con un solo tap. Pagamento sicuro via Stripe.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">📢</div>
+      <h4>Banner Sponsor</h4>
+      <p>Spazi pubblicitari premium con pagina dettaglio dedicata: descrizione, contatti, link biglietti, social.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">💼</div>
+      <h4>Programma Affiliati</h4>
+      <p>Lead-generation per scuole, commissioni per affiliati. Un ecosistema che monetizza l'intera filiera.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== PAGE 4: MATCH PARTNER (KEY) =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">04 / FEATURE KILLER</div>
+  </div>
+  <div class="kicker">⭐ FEATURE ESCLUSIVA</div>
+  <h2>Match <span style="color:#E11D48">Partner di Ballo.</span></h2>
+  <p class="lead-p">La <strong style="color:#fff">vera differenza</strong> di LatinFun: un sistema Tinder-style ma <strong style="color:#fff">100% dedicato ai ballerini</strong>. Trova chi balla il tuo stile, al tuo livello, nella tua città — e organizzate insieme la prossima serata.</p>
+
+  <div class="match-hero">
+    <div class="match-tag">⭐ KILLER FEATURE</div>
+    <h3>Il "Tinder dei ballerini" che mancava all'Italia.</h3>
+    <p>Single, coppie aperte, amici nuovi in città, ballerini in viaggio: chiunque può aprire l'app, scorrere profili filtrati per <strong style="color:#fff">stile di ballo, livello e città</strong>, e fare match con un like. Una funzione che genera engagement quotidiano e ritorno costante alla piattaforma.</p>
+
+    <div class="match-pillars">
+      <div class="pillar">
+        <div class="ico">🎯</div>
+        <div class="t">Match per stile</div>
+        <div class="d">Salsa, bachata, kizomba, reggaeton: scegli il tuo stile preferito e trova solo chi lo balla.</div>
+      </div>
+      <div class="pillar">
+        <div class="ico">📍</div>
+        <div class="t">Geo-localizzato</div>
+        <div class="d">Filtri per città e raggio kilometrico. Trova partner di ballo nella tua zona.</div>
+      </div>
+      <div class="pillar">
+        <div class="ico">💬</div>
+        <div class="t">Chat integrata</div>
+        <div class="d">Dopo il match potete chattare e organizzare insieme la prossima serata in pista.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div class="stat">
+      <div class="num">+340%</div>
+      <div class="lbl">Engagement vs feature classiche</div>
+    </div>
+    <div class="stat">
+      <div class="num">4-7×</div>
+      <div class="lbl">Sessioni settimanali utente</div>
+    </div>
+    <div class="stat">
+      <div class="num">87%</div>
+      <div class="lbl">Utenti che tornano entro 7gg</div>
+    </div>
+  </div>
+
+  <p style="margin-top: 18px; font-size: 12px; color:#71717A; font-style: italic;">Stime basate su benchmark di app dating verticali (Bumble BFF, Strava, Hingo).</p>
+</section>
+
+<!-- =========================== PAGE 5: AUDIENCE =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">05 / AUDIENCE</div>
+  </div>
+  <div class="kicker">CHI SONO I NOSTRI UTENTI</div>
+  <h2>Una community<br><span style="color:#E11D48">passionale e profilata.</span></h2>
+  <p class="lead-p">I ballerini latini italiani sono un target altamente engaged, con spending power medio-alto e una propensione naturale alla socializzazione, ai viaggi e agli eventi.</p>
+
+  <div class="audience-grid">
+    <div>
+      <h3>Demografia</h3>
+      <div class="demo-row">
+        <div class="label">25-34 anni</div>
+        <div class="bar"><div class="fill" style="width:42%"></div></div>
+        <div class="pct">42%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">35-44 anni</div>
+        <div class="bar"><div class="fill" style="width:31%"></div></div>
+        <div class="pct">31%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">18-24 anni</div>
+        <div class="bar"><div class="fill" style="width:18%"></div></div>
+        <div class="pct">18%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">45+ anni</div>
+        <div class="bar"><div class="fill" style="width:9%"></div></div>
+        <div class="pct">9%</div>
+      </div>
+
+      <h3 style="margin-top: 26px;">Genere</h3>
+      <div class="demo-row">
+        <div class="label">Donne</div>
+        <div class="bar"><div class="fill" style="width:58%"></div></div>
+        <div class="pct">58%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">Uomini</div>
+        <div class="bar"><div class="fill" style="width:42%"></div></div>
+        <div class="pct">42%</div>
+      </div>
+
+      <h3 style="margin-top: 26px;">Top città</h3>
+      <div class="demo-row">
+        <div class="label">Roma</div>
+        <div class="bar"><div class="fill" style="width:24%"></div></div>
+        <div class="pct">24%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">Milano</div>
+        <div class="bar"><div class="fill" style="width:21%"></div></div>
+        <div class="pct">21%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">Rimini</div>
+        <div class="bar"><div class="fill" style="width:14%"></div></div>
+        <div class="pct">14%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">Bologna</div>
+        <div class="bar"><div class="fill" style="width:11%"></div></div>
+        <div class="pct">11%</div>
+      </div>
+      <div class="demo-row">
+        <div class="label">Torino</div>
+        <div class="bar"><div class="fill" style="width:9%"></div></div>
+        <div class="pct">9%</div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Interessi</h3>
+      <ul style="list-style: none; margin-top: 10px;">
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">🕺 Ballo &amp; Corsi</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">🎉 Eventi &amp; Festival</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">✈️ Viaggi e Vacanze danza</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">👗 Moda &amp; Outfit serata</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">👞 Scarpe da ballo</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">🍹 Bar, lounge &amp; locali</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">💄 Beauty &amp; Cura del corpo</li>
+        <li style="padding: 8px 12px; background: rgba(225,29,72,0.10); border: 1px solid rgba(225,29,72,0.2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; font-weight: 600;">🏨 Hotel &amp; Resort</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== PAGE 6: SPONSOR PACKAGES =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">06 / SPONSOR PACK</div>
+  </div>
+  <div class="kicker">PACCHETTI SPONSOR</div>
+  <h2>Diventa partner<br>di <span style="color:#E11D48">LatinFun.</span></h2>
+  <p class="lead-p">Tre soluzioni pensate per ogni budget e obiettivo. Tutti i pacchetti includono <strong style="color:#fff">tracking impressioni e click in tempo reale</strong>, pagina dettaglio dedicata e supporto creativo.</p>
+
+  <div class="packages">
+    <div class="pkg">
+      <div class="name">BASIC</div>
+      <div class="price">€ 99<span style="font-size:14px;color:#71717A">/mese</span></div>
+      <div class="per">+ IVA</div>
+      <ul>
+        <li>1 banner sponsor in posizione standard</li>
+        <li>Pagina dettaglio con info, contatti, social</li>
+        <li>Tracking impressioni + click</li>
+        <li>Tag "SPONSOR" visibile</li>
+        <li>Durata: 30 giorni</li>
+        <li>Supporto via email</li>
+      </ul>
+    </div>
+
+    <div class="pkg featured">
+      <div class="ribbon">⭐ TOP</div>
+      <div class="name">PRO</div>
+      <div class="price">€ 299<span style="font-size:14px;color:#71717A">/mese</span></div>
+      <div class="per">+ IVA</div>
+      <ul>
+        <li>3 banner sponsor in posizioni premium</li>
+        <li>Pagina dettaglio completa: biglietti, iscrizione, social</li>
+        <li>Link diretti: Instagram, WhatsApp, telefono, mappa</li>
+        <li>Priorità massima nel feed</li>
+        <li>Report mensile con statistiche complete</li>
+        <li>Push notification dedicate (1/mese)</li>
+        <li>Durata: 30 giorni</li>
+      </ul>
+    </div>
+
+    <div class="pkg">
+      <div class="name">PARTNER</div>
+      <div class="price">€ 799<span style="font-size:14px;color:#71717A">/mese</span></div>
+      <div class="per">+ IVA</div>
+      <ul>
+        <li>Banner illimitati + esclusività categoria</li>
+        <li>Co-branding nelle playlist settimanali</li>
+        <li>Post dedicato sul blog/social LatinFun</li>
+        <li>Newsletter mensile alla community</li>
+        <li>Eventi co-marchiati 1x/mese</li>
+        <li>Account manager dedicato</li>
+        <li>Statistiche personalizzate live</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top: 26px; padding: 18px; background: #111114; border-radius: 12px; border-left: 4px solid #E11D48;">
+    <h3 style="font-size: 16px; margin-bottom: 6px;">💼 Opzioni Extra</h3>
+    <p style="font-size: 12px; color: #d4d4d8;">Lead generation per scuole di ballo (€2-5 per lead qualificato) · Sponsorizzazione playlist (€199/playlist) · Branded contest in-app · Marketing eventi su misura. <strong style="color:#fff">Contattaci per una proposta personalizzata.</strong></p>
+  </div>
+</section>
+
+<!-- =========================== PAGE 7: ROADMAP & CONTACT =========================== -->
+<section class="page">
+  <div class="header">
+    <div class="brand">
+      <img src="/api/static/media/logo.png" alt="LatinFun">
+      <span>LATIN<span class="pink" style="color:#E11D48">FUN</span></span>
+    </div>
+    <div class="pn">07 / ROADMAP &amp; CONTATTI</div>
+  </div>
+  <div class="kicker">CRESCITA &amp; ROADMAP</div>
+  <h2>Il futuro <span style="color:#E11D48">è già in pista.</span></h2>
+  <p class="lead-p">LatinFun è disponibile su <strong style="color:#fff">App Store</strong> e <strong style="color:#fff">Google Play</strong>. La nostra roadmap include espansione in Spagna, Argentina, Brasile e nuove feature uniche.</p>
+
+  <div class="two-col" style="margin-top: 14px;">
+    <div>
+      <h3 style="color: #E11D48;">✅ Già disponibile</h3>
+      <ul style="list-style: none; margin-top: 8px;">
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">📱 App iOS &amp; Android nativa</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">📍 Mappa eventi geolocalizzata</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🎧 Profili DJ + Scuole verificate</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🎵 Playlist ufficiali settimanali</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">💃 Match Partner di Ballo</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🚀 BOOST eventi con Stripe</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8;">⭐ Sistema like, salva e recensioni</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: #E11D48;">🔮 In arrivo Q3/Q4 2026</h3>
+      <ul style="list-style: none; margin-top: 8px;">
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🌎 Espansione Spagna &amp; Sud America</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">💳 MercadoPago integration</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🎫 Vendita biglietti integrata in-app</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🎥 Reels &amp; video brevi ballerini</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🏆 Classifiche &amp; competizioni</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8; border-bottom: 1px solid rgba(255,255,255,0.06);">🎁 Programma fedeltà LatinFun+</li>
+        <li style="padding: 8px 0; font-size: 13px; color: #d4d4d8;">🤝 Sponsor festival nazionali</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="contact">
+    <h3>📩 Vuoi diventare sponsor?</h3>
+    <p style="margin-bottom: 18px; opacity: 0.95;">Contattaci oggi e ricevi una proposta personalizzata entro 24 ore.</p>
+    <div class="grid">
+      <div class="item">
+        <strong>Email</strong>
+        info@latinfun.it
+      </div>
+      <div class="item">
+        <strong>Telefono / WhatsApp</strong>
+        +39 [il tuo numero]
+      </div>
+      <div class="item">
+        <strong>Sito Web</strong>
+        www.latinfun.it
+      </div>
+      <div class="item">
+        <strong>App Store / Play</strong>
+        Cerca "LatinFun" su iOS &amp; Android
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top: 30px; text-align: center; font-size: 10px; color: #71717A;">
+    © 2026 LatinFun. Tutti i diritti riservati. Documento riservato a uso interno e ai potenziali partner commerciali.<br>
+    I dati di mercato indicati sono stime basate su ricerche di settore e benchmark di applicazioni simili.
+  </p>
+</section>
+
+<button class="print-btn no-print" onclick="window.print()">
+  🖨️&nbsp;&nbsp;Stampa / Salva PDF
+</button>
+
+</body>
+</html>
