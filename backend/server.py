@@ -39,6 +39,15 @@ db = client[os.environ["DB_NAME"]]
 app = FastAPI(title="LatinFun API")
 api = APIRouter(prefix="/api")
 
+# ----------------------------- Fatture in Cloud (FIC) ----------------
+# Italian fiscal invoice integration via Fatture in Cloud OAuth 2.0.
+# Triggered by Stripe webhook on successful payment to issue automatic
+# corrispettivo (B2C) or fattura (B2B) and transmit to SdI.
+# Credentials managed via Emergent secrets (Custom keys).
+FIC_CLIENT_ID = os.getenv("FIC_CLIENT_ID", "")
+FIC_CLIENT_SECRET = os.getenv("FIC_CLIENT_SECRET", "")
+FIC_COMPANY_ID = os.getenv("FIC_COMPANY_ID", "")
+
 # ----------------------------- Auth ----------------------------------
 JWT_ALGO = "HS256"
 security = HTTPBearer(auto_error=False)
