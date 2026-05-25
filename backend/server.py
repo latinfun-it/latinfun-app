@@ -1681,7 +1681,86 @@ async def stripe_webhook(http_request: Request):
             )
             await _mark_entity_boosted(tx, boosted_until)
             logger.info("Webhook: BOOST attivato per session %s", event_session_id)
+
+            # --- Fatturazione automatica Fatture in Cloud ---
+            try:
+                await _emit_fic_document_for_payment(tx)
+            except Exception as e:
+                logger.warning("FIC document emission failed: %s", e)
     return {"ok": True}
+
+
+async def _emit_fic_document_for_payment(tx: dict):
+    """Issue a fattura/corrispettivo on Fatture in Cloud for a paid transaction.
+
+    Mix automatico:
+    - If user has vat_number (P.IVA) on profile → fattura elettronica
+    - Otherwise → ricevuta/corrispettivo
+
+    Result is logged into db.fic_emitted regardless of success/failure
+    so admin can retry or audit.
+    """
+    # Skip if FIC not connected (e.g. local/dev)
+    try:
+        connected = await fic.is_connected(db)
+    except Exception:
+        connected = False
+    if not connected:
+        logger.info("FIC not connected → skip emission for tx %s", tx.get("session_id"))
+        return
+
+    user_id = tx.get("user_id")
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0}) if user_id else None
+    customer_name = (user_doc or {}).get("name") or (user_doc or {}).get("email") or "Cliente App"
+    customer_email = (user_doc or {}).get("email") or tx.get("customer_email") or ""
+    customer_vat = (user_doc or {}).get("vat_number") or tx.get("vat_number")
+    customer_tax_code = (user_doc or {}).get("tax_code")
+    customer_address = (user_doc or {}).get("address")
+
+    amount_eur = float(tx.get("amount") or tx.get("amount_total", 0) or 0)
+    if amount_eur > 1000:  # Stripe amount might be in cents
+        amount_eur = amount_eur / 100.0
+    if amount_eur <= 0:
+        amount_eur = float(tx.get("amount_eur") or 4.99)
+
+    description = (
+        tx.get("description")
+        or f"BOOST {tx.get('entity_type', 'evento')} - {tx.get('plan', 'standard')}"
+        or "Servizio digitale LatinFun"
+    )
+
+    result = await fic.create_document_from_payment(
+        db,
+        amount_eur=amount_eur,
+        description=description,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_vat=customer_vat,
+        customer_tax_code=customer_tax_code,
+        customer_address=customer_address,
+        stripe_payment_id=tx.get("session_id"),
+    )
+
+    # Log emission
+    await db.fic_emitted.insert_one({
+        "stripe_payment_id": tx.get("session_id"),
+        "user_id": user_id,
+        "customer_email": customer_email,
+        "amount_gross": amount_eur,
+        "document_type": result.get("type"),
+        "document_id": result.get("document_id"),
+        "document_number": result.get("number"),
+        "ok": result.get("ok", False),
+        "error": result.get("error"),
+        "created_at": datetime.utcnow(),
+    })
+
+    if result.get("ok"):
+        logger.info("FIC document issued: %s #%s for tx %s",
+                    result.get("type"), result.get("number"), tx.get("session_id"))
+    else:
+        logger.warning("FIC emission failed for tx %s: %s",
+                       tx.get("session_id"), result.get("error"))
 
 
 @api.get("/cities", response_model=List[str])
@@ -3221,6 +3300,126 @@ async def admin_delete_contact(
 @api.get("/")
 async def root():
     return {"app": "LatinFun", "status": "ok"}
+
+
+# ----------------------------- Fatture in Cloud Integration --------------
+import fic_integration as fic
+import secrets as _secrets
+from fastapi.responses import RedirectResponse, HTMLResponse
+
+
+def _public_base_url(request: Request) -> str:
+    """Returns the public base URL of this backend for OAuth callbacks."""
+    # Prefer the explicit env if set, else derive from request headers.
+    explicit = os.getenv("PUBLIC_BACKEND_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    # Honor X-Forwarded-Proto / Host if behind proxy
+    fwd_proto = request.headers.get("x-forwarded-proto")
+    fwd_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    scheme = fwd_proto or request.url.scheme
+    host = fwd_host or request.url.netloc
+    return f"{scheme}://{host}"
+
+
+@api.get("/integrations/fic/status")
+async def fic_status(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    return await fic.get_status(db)
+
+
+@api.get("/integrations/fic/authorize")
+async def fic_authorize(request: Request, current_user: dict = Depends(get_current_user)):
+    """Admin-only: returns the authorize URL to begin OAuth flow."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    if not fic.is_configured():
+        raise HTTPException(status_code=400, detail="FIC_CLIENT_ID/SECRET non configurati")
+    state = _secrets.token_urlsafe(24)
+    # Persist state for CSRF protection (5-minute expiry)
+    await db.fic_oauth_states.insert_one({
+        "state": state,
+        "user_id": current_user.get("id"),
+        "created_at": datetime.utcnow(),
+    })
+    base = _public_base_url(request)
+    url = fic.build_authorize_url(base, state=state)
+    return {"authorize_url": url, "state": state}
+
+
+@api.get("/integrations/fic/callback")
+async def fic_callback(request: Request, code: Optional[str] = None,
+                        state: Optional[str] = None, error: Optional[str] = None):
+    """Public callback from Fatture in Cloud OAuth."""
+    if error:
+        return HTMLResponse(f"<h1>Errore autorizzazione</h1><p>{error}</p>", status_code=400)
+    if not code or not state:
+        return HTMLResponse("<h1>Parametri mancanti</h1>", status_code=400)
+    # Validate state (CSRF)
+    st = await db.fic_oauth_states.find_one({"state": state})
+    if not st:
+        return HTMLResponse("<h1>State non valido o scaduto</h1>", status_code=400)
+    # Cleanup state
+    await db.fic_oauth_states.delete_one({"state": state})
+
+    base = _public_base_url(request)
+    try:
+        result = await fic.exchange_code(db, code, base)
+    except Exception as e:
+        logger.exception("FIC exchange failed")
+        return HTMLResponse(f"<h1>Errore exchange token</h1><pre>{str(e)[:300]}</pre>", status_code=500)
+
+    return HTMLResponse(f"""
+    <!DOCTYPE html>
+    <html lang="it"><head><meta charset="utf-8"><title>FIC connesso</title>
+    <style>body{{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#0a0a0c;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;text-align:center}}
+    .card{{background:#111114;border:1px solid #E11D48;border-radius:18px;padding:40px;max-width:480px}}
+    h1{{color:#E11D48;font-size:26px;margin:0 0 12px}} p{{color:#d4d4d8;font-size:15px;line-height:1.5;margin:0 0 6px}}
+    .ok{{font-size:60px;margin-bottom:18px}} code{{background:#1f1f23;padding:3px 8px;border-radius:6px;color:#E11D48}}</style>
+    </head><body><div class="card">
+    <div class="ok">✅</div>
+    <h1>Fatture in Cloud connesso!</h1>
+    <p>Azienda ID: <code>{result.get('company_id') or 'N/A'}</code></p>
+    <p>Tutti i pagamenti Stripe verranno ora fatturati automaticamente.</p>
+    <p style="margin-top:20px;font-size:13px;color:#71717A">Puoi chiudere questa pagina e tornare all'app.</p>
+    </div></body></html>""")
+
+
+@api.post("/integrations/fic/disconnect")
+async def fic_disconnect(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    await db.fic_tokens.delete_many({})
+    return {"ok": True}
+
+
+@api.get("/admin/fic/documents")
+async def fic_list_documents(doc_type: Optional[str] = None,
+                              limit: int = 50,
+                              current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    return await fic.list_documents(db, doc_type=doc_type, limit=limit)
+
+
+@api.get("/admin/fic/emitted")
+async def fic_list_emitted_local(current_user: dict = Depends(get_current_user)):
+    """List documents emitted FROM our backend (joined with payments)."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    cursor = db.fic_emitted.find({}).sort("created_at", -1).limit(100)
+    return [{
+        "stripe_payment_id": d.get("stripe_payment_id"),
+        "document_type": d.get("document_type"),
+        "document_id": d.get("document_id"),
+        "document_number": d.get("document_number"),
+        "amount_gross": d.get("amount_gross"),
+        "customer_email": d.get("customer_email"),
+        "created_at": d.get("created_at").isoformat() if d.get("created_at") else None,
+        "ok": d.get("ok", True),
+        "error": d.get("error"),
+    } async for d in cursor]
 
 
 app.include_router(api)
