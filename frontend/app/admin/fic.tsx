@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -71,11 +72,18 @@ export default function FicAdminScreen() {
     try {
       const r = await api.get<{ authorize_url: string }>("/integrations/fic/authorize");
       if (r.data?.authorize_url) {
-        await Linking.openURL(r.data.authorize_url);
-        Alert.alert(
-          "Autorizzazione aperta",
-          "Completa l'autorizzazione su Fatture in Cloud, poi torna qui e premi 'Aggiorna'.",
-        );
+        // Su WEB: redirect nella stessa tab (più affidabile, no popup blocker)
+        // Su MOBILE: apre il browser di sistema
+        if (Platform.OS === "web") {
+          // @ts-ignore - window.location esiste solo su web
+          if (typeof window !== "undefined") window.location.href = r.data.authorize_url;
+        } else {
+          await Linking.openURL(r.data.authorize_url);
+          Alert.alert(
+            "Autorizzazione aperta",
+            "Completa l'autorizzazione su Fatture in Cloud, poi torna qui e premi 'Aggiorna'.",
+          );
+        }
       }
     } catch (e: any) {
       Alert.alert("Errore", e?.response?.data?.detail || "Impossibile avviare l'autorizzazione");
