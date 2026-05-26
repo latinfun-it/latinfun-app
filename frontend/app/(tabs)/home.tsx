@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  matchCtaKicker: { color: "rgba(255,255,255,0.85)", fontSize: 10, letterSpacing: 1.5, fontWeight: "800" },
+  matchCtaKicker: { color: "#fff", fontSize: 20, letterSpacing: 2, fontWeight: "900", marginBottom: 2 },
   matchCtaTitle: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 2 },
   matchCtaSub: { color: "rgba(255,255,255,0.92)", fontSize: 12, marginTop: 2 },
 

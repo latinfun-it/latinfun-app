@@ -58,7 +58,7 @@ export default {
   home: {
     tagline: "El punto de referencia de la escena Latina",
     chips: "EVENTOS · DJ · ESCUELAS · MÚSICA",
-    novelty: "NOVEDAD",
+    novelty: "MATCH",
     findPartner: "Encuentra Partner de Baile",
     findPartnerHint: "Descubre bailarines cerca de ti y haz match",
     featuredEvents: "Eventos destacados",
