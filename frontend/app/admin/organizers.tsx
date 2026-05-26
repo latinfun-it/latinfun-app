@@ -191,6 +191,15 @@ export default function AdminOrganizers() {
           headerStyle: { backgroundColor: colors.bg },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "800" },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+              testID="admin-organizers-back"
+            >
+              <Ionicons name="chevron-back" size={26} color="#fff" />
+            </TouchableOpacity>
+          ),
         }}
       />
       <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
