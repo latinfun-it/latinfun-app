@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -48,14 +48,6 @@ export default function DjsScreen() {
     await load();
     setRefreshing(false);
   };
-
-  // Top 3 DJ ranking by followers (raw, ignoring boost sort)
-  const topRank = useMemo(() => {
-    const sorted = [...djs].sort((a, b) => (b.followers || 0) - (a.followers || 0));
-    const m = new Map<string, number>();
-    sorted.slice(0, 3).forEach((d, i) => m.set(d.id, i + 1));
-    return m;
-  }, [djs]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="djs-screen">
@@ -122,9 +114,6 @@ export default function DjsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
           }
           renderItem={({ item }) => {
-            const rank = topRank.get(item.id);
-            const rankColor =
-              rank === 1 ? "#FFD700" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : null;
             return (
               <TouchableOpacity
                 testID={`dj-card-${item.id}`}
@@ -137,15 +126,6 @@ export default function DjsScreen() {
                   colors={["transparent", "rgba(5,5,5,0.9)"]}
                   style={styles.grad}
                 />
-                {rank ? (
-                  <View
-                    style={[styles.rankBadge, { backgroundColor: rankColor || colors.gold }]}
-                    testID={`dj-rank-${item.id}`}
-                  >
-                    <Ionicons name="trophy" size={11} color="#050505" />
-                    <Text style={styles.rankText}>TOP {rank}</Text>
-                  </View>
-                ) : null}
                 {item.boosted ? (
                   <View style={styles.boostedCorner}>
                     <Ionicons name="flame" size={11} color="#050505" />
