@@ -141,6 +141,12 @@ export default function ProfileScreen() {
                 hint="Commissioni 10% da pagare ai referrer"
                 onPress={() => router.push("/admin/referrals" as any)}
               />
+              <MenuItem
+                icon="receipt-outline"
+                label="Fatture in Cloud (admin)"
+                hint="Connessione OAuth + ricevute automatiche BOOST"
+                onPress={() => router.push("/admin/fic" as any)}
+              />
             </>
           ) : null}
 
