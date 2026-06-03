@@ -136,31 +136,6 @@ export default function Login() {
                   </TouchableOpacity>
                 </Link>
               </View>
-
-              <TouchableOpacity
-                testID="login-demo-tap"
-                onPress={async () => {
-                  setError(null);
-                  setEmail("admin@latinfun.it");
-                  setPassword("admin123");
-                  setLoading(true);
-                  try {
-                    await login("admin@latinfun.it", "admin123");
-                    router.replace("/(tabs)/home");
-                  } catch (e: any) {
-                    setError(e.message);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                style={styles.demoBtn}
-              >
-                <Text style={styles.demoBtnText}>{t("auth.demoLoginButton")}</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.demoHint}>
-                admin@latinfun.it / admin123
-              </Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

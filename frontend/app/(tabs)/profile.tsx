@@ -294,6 +294,12 @@ export default function ProfileScreen() {
             onPress={() => router.push("/settings/language" as any)}
           />
           <MenuItem
+            icon="lock-closed-outline"
+            label={lang === "es" ? "Cambiar contraseña" : "Cambia password"}
+            hint={lang === "es" ? "Actualiza tu contraseña" : "Aggiorna la tua password"}
+            onPress={() => router.push("/account/change-password" as any)}
+          />
+          <MenuItem
             icon="flag-outline"
             label={lang === "es" ? "País" : "Paese"}
             hint={lang === "es" ? "Muestra eventos de tu país" : "Mostra eventi del tuo paese"}

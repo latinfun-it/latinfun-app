@@ -418,6 +418,32 @@ async def logout(current_user: dict = Depends(get_current_user)):
     return {"ok": True}
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@api.post("/auth/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Change the authenticated user's own password."""
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 8 caratteri")
+    user = await db.users.find_one({"id": current_user["id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if not verify_password(body.current_password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Password attuale errata")
+    new_hash = hash_password(body.new_password)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"password_hash": new_hash, "password_changed_at": datetime.utcnow()}},
+    )
+    return {"ok": True, "message": "Password aggiornata con successo"}
+
+
 @api.delete("/auth/me")
 async def delete_my_account(current_user: dict = Depends(get_current_user)):
     """

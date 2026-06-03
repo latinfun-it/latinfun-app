@@ -38,7 +38,6 @@ export default {
     haveAccount: "¿Ya tienes cuenta?",
     invalidCredentials: "Email o contraseña incorrectos",
     fillAllFields: "Introduce email y contraseña",
-    demoLoginButton: "Pulsa aquí para Login Demo Admin",
     referralCode: "Código de referido",
     referralHint: "¿Tienes un código de un amigo? Introdúcelo para beneficiaros ambos.",
     logout: "Cerrar sesión",
