@@ -15,7 +15,7 @@ import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../src/api";
-import { colors, spacing, radius } from "../../src/theme";
+import { colors, spacing, radii } from "../../src/theme";
 
 export default function ChangePassword() {
   const router = useRouter();
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#1a1a1a",
-    borderRadius: radius.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: "#2a2a2a",
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     backgroundColor: "#1a1a1a",
-    borderRadius: radius.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: "#2a2a2a",
   },
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   btn: {
     backgroundColor: colors.brand,
     paddingVertical: 14,
-    borderRadius: radius.md,
+    borderRadius: radii.md,
     alignItems: "center",
     marginTop: spacing.lg,
   },
