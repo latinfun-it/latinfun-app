@@ -63,6 +63,7 @@ export default {
     findPartner: "Encuentra Partner de Baile",
     findPartnerHint: "Descubre bailarines cerca de ti y haz match",
     featuredEvents: "Eventos destacados",
+    featuredLocali: "Locales destacados",
     danceSchools: "Escuelas de baile",
     topDjs: "DJs destacados",
     sponsoredBy: "En colaboración con",

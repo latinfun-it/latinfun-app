@@ -16,7 +16,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
-import type { EventItem, DJ, Playlist, School } from "../../src/types";
+import type { EventItem, DJ, Playlist, School, Locale } from "../../src/types";
 import SponsorBanner from "../../src/SponsorBanner";
 import FavoriteHeart from "../../src/FavoriteHeart";
 import { useI18n } from "../../src/i18n";
@@ -41,22 +41,25 @@ export default function HomeScreen() {
   const [djs, setDjs] = useState<DJ[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [locali, setLocali] = useState<Locale[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const country = lang === "es" ? "ES" : "IT";
-      const [e, d, s, p] = await Promise.all([
+      const [e, d, s, p, l] = await Promise.all([
         api.get<EventItem[]>("/events", { params: { featured: true, country } }),
         api.get<DJ[]>("/djs", { params: { country } }),
         api.get<School[]>("/schools", { params: { country } }),
         api.get<Playlist[]>("/playlists"),
+        api.get<Locale[]>("/locali", { params: { country } }),
       ]);
       setEvents(e.data);
       setDjs(d.data);
       setSchools(s.data);
       setPlaylists(p.data);
+      setLocali(l.data);
     } catch (err) {
       // swallow for demo
     } finally {
@@ -177,6 +180,49 @@ export default function HomeScreen() {
         ) : (
           <EmptyState text={lang === "es" ? "Sin eventos destacados" : "Nessun evento in evidenza"} />
         )}
+
+        {/* 4 BIS - LOCALI IN EVIDENZA */}
+        {locali.length > 0 ? (
+          <>
+            <SectionHeader title={t("home.featuredLocali")} onSeeAll={() => router.push("/(tabs)/locali")} seeAllLabel={t("common.seeAll")} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: 14 }}
+            >
+              {locali.slice(0, 10).map((l) => (
+                <TouchableOpacity
+                  key={l.id}
+                  testID={`home-locale-${l.id}`}
+                  style={styles.schoolCard}
+                  activeOpacity={0.9}
+                  onPress={() => router.push(`/locale/${l.id}` as any)}
+                >
+                  <Image source={{ uri: l.image_url }} style={styles.schoolImg} />
+                  <LinearGradient
+                    colors={["transparent", "rgba(5,5,5,0.9)"]}
+                    style={styles.schoolOverlay}
+                  />
+                  {l.boosted ? (
+                    <View style={styles.boostBadge}>
+                      <Ionicons name="rocket" size={12} color="#fff" />
+                      <Text style={styles.boostBadgeText}>BOOST</Text>
+                    </View>
+                  ) : null}
+                  <View style={styles.heartCorner}>
+                    <FavoriteHeart kind={"locale" as any} entityId={l.id} size={18} />
+                  </View>
+                  <View style={styles.schoolBody}>
+                    <Text style={styles.schoolName} numberOfLines={1}>{l.name}</Text>
+                    <Text style={styles.schoolCity} numberOfLines={1}>
+                      {l.city} · {(l.cuisine || "").toUpperCase()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
 
         {/* 4 - SCUOLE DI BALLO */}
         <SectionHeader title={t("home.danceSchools")} onSeeAll={() => router.push("/(tabs)/schools")} seeAllLabel={t("common.seeAll")} />
