@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
@@ -127,7 +127,7 @@ export default function HomeScreen() {
         >
           <View style={styles.matchCtaInner}>
             <View style={styles.matchIconBox}>
-              <Ionicons name="heart" size={26} color="#fff" />
+              <MaterialCommunityIcons name="fire" size={32} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.matchCtaKicker}>{t("home.novelty")}</Text>
@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  matchCtaKicker: { color: "#fff", fontSize: 20, letterSpacing: 2, fontWeight: "900", marginBottom: 2 },
-  matchCtaTitle: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 2 },
+  matchCtaKicker: { color: "#fff", fontSize: 32, letterSpacing: 4, fontWeight: "900", marginBottom: 2 },
+  matchCtaTitle: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 4 },
   matchCtaSub: { color: "rgba(255,255,255,0.92)", fontSize: 12, marginTop: 2 },
 
   // SECTION HEADER
