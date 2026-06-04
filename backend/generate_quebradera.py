@@ -8,30 +8,31 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 load_dotenv("/app/backend/.env")
 api_key = os.getenv("EMERGENT_LLM_KEY")
 
-PROMPT = """Create a vibrant, joyful Brazilian-style music album cover featuring the word "QUEBRADERA" 
-as the centerpiece typography. The design should evoke a party, samba, carnival, and tropical beach vibe.
+PROMPT = """Create a clean LOGO of the single word "QUEBRADERA" written in ONE SINGLE HORIZONTAL LINE.
 
-Style requirements:
-- Bold, hand-painted/graffiti-style large lettering with the word "QUEBRADERA" prominently displayed
-- Brazilian flag color palette: vivid green, sunny yellow, ocean blue, plus accents of hot pink, orange, and white
-- Tropical elements scattered around: palm leaves, hibiscus flowers, musical notes, percussion instruments (tamborim, surdo, agogô), confetti, tropical fruits (pineapple, mango)
-- Energetic, festive composition with rhythmic visual movement
-- Square 1:1 aspect ratio (CD album cover format)
-- Background: sunset/beach gradient or carnival street vibe
-- The typography "QUEBRADERA" must be perfectly spelled, large, bold, eye-catching, with vibrant gradient colors (yellow-to-pink-to-blue)
-- Joyful, party atmosphere - feels like a Rio de Janeiro carnival/baile funk celebration
-- Professional album cover quality, high resolution
-- The text "QUEBRADERA" must be the absolute focal point, readable from far away
+CRITICAL RULES:
+- ONLY the word "QUEBRADERA" - nothing else, no other text, no symbols, no objects
+- TRANSPARENT or pure WHITE background (clean, empty, NO scenery, NO instruments, NO flowers, NO people, NO landscape)
+- The word MUST be on ONE SINGLE LINE horizontally (NOT stacked, NOT broken across two lines)
+- All 10 letters Q-U-E-B-R-A-D-E-R-A in a single horizontal row, left to right
+- The word fills the width edge to edge, centered vertically
+- Aspect ratio: wide horizontal banner (3:1 or 4:1), suitable as a logo
 
-Aesthetic: Brazilian funk meets samba, graphic design influenced by 1970s tropicalia album covers, modern vibrant illustration style, photorealistic textures mixed with painted elements.
+TYPOGRAPHY STYLE:
+- Bold, hand-painted graffiti / brush-script style lettering
+- Vibrant gradient colors typical of Brazilian flag and tropical vibe: sunny YELLOW transitioning into hot PINK transitioning into vibrant BLUE/turquoise, with GREEN accents
+- Thick black or dark outline around each letter for maximum readability
+- Each letter has subtle internal decorative pattern (dots, small stars) but stays clean and readable
+- Joyful, energetic, samba/carnival feeling - but ELEGANT and CLEAN (no clutter)
+- Slight 3D/depth shadow under the letters for pop
 
-DO NOT include any other words/text besides "QUEBRADERA". Make it ONE single bold visual statement."""
+The output must be just the word "QUEBRADERA" floating cleanly on a transparent or pure white background. Perfect spelling: Q-U-E-B-R-A-D-E-R-A. Logo-quality, ready to be placed on any product (CD cover, merchandising, social media)."""
 
 
 async def main():
     chat = LlmChat(
         api_key=api_key,
-        session_id="quebradera-cover-001",
+        session_id="quebradera-logo-clean-001",
         system_message="You are a professional graphic designer specialized in music album covers and Brazilian tropical aesthetics.",
     )
     chat.with_model("gemini", "gemini-3.1-flash-image-preview").with_params(modalities=["image", "text"])
@@ -44,7 +45,7 @@ async def main():
         return
     print(f"Generated {len(images)} image(s)")
     for i, img in enumerate(images):
-        out_path = f"/app/backend/static/quebradera_cover_{i}.png"
+        out_path = f"/app/backend/static/quebradera_logo_{i}.png"
         image_bytes = base64.b64decode(img["data"])
         with open(out_path, "wb") as f:
             f.write(image_bytes)
