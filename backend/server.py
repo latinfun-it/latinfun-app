@@ -2978,6 +2978,22 @@ async def my_referrals(current_user: dict = Depends(get_current_user)):
     )
     code = me.get("referral_code") if me else None
 
+    # Auto-generate referral_code if missing (e.g. for users seeded before
+    # the referral feature was introduced like the admin user).
+    if me and not code:
+        import secrets, string
+        alphabet = string.ascii_uppercase + string.digits
+        for _ in range(10):
+            new_code = "".join(secrets.choice(alphabet) for _ in range(8))
+            # Ensure uniqueness
+            if not await db.users.find_one({"referral_code": new_code}):
+                await db.users.update_one(
+                    {"id": current_user["id"]},
+                    {"$set": {"referral_code": new_code}},
+                )
+                code = new_code
+                break
+
     # Lista invitati
     invited = await db.users.find(
         {"referred_by": current_user["id"]},
@@ -3918,14 +3934,11 @@ async def seed_admin():
             )
             logger.info("Seeded admin user %s", email)
         else:
-            # Always re-sync the password to admin123 so login is guaranteed
-            if not verify_password(pw, existing["password_hash"]):
-                await db.users.update_one(
-                    {"email": email},
-                    {"$set": {"password_hash": hash_password(pw), "role": "admin"}},
-                )
-                logger.info("Reset admin password for %s", email)
-            elif existing.get("role") != "admin":
+            # SECURITY: do NOT reset the password on every startup.
+            # The admin can change their password via /api/auth/change-password
+            # and that change must persist across restarts.
+            # Only ensure the role is 'admin' (in case it was demoted by mistake).
+            if existing.get("role") != "admin":
                 await db.users.update_one(
                     {"email": email}, {"$set": {"role": "admin"}}
                 )
