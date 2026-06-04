@@ -22,7 +22,7 @@
     },
     "android": {
       "package": "it.latinfun.app",
-      "versionCode": 17,
+      "versionCode": 20,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050505"
