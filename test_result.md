@@ -329,6 +329,25 @@ agent_communication:
 
   - agent: "testing"
     message: |
+      LOCALI ENDPOINTS TEST - 40/41 PASS (1 critical env issue, NON locali-specific).
+      Tested via /app/backend_test.py against https://dj-italia-hub.preview.emergentagent.com/api with admin@latinfun.it/admin123.
+      ✅ Login admin 200.
+      ✅ (1) GET /api/locali public (no auth) -> 200 [] (initial empty).
+      ✅ (2) POST /api/locali (admin) con payload Milano/El Sabor Cubano -> 200, slug auto-generato 'el-sabor-cubano-test-milano', cuisine FREE TEXT 'Mix Cubana + Italiana' persistito, price_range='€€', phone, hours tutti persistiti.
+      ✅ (3) GET /api/locali/{id} -> 200 con id corretto.
+      ✅ (4) PATCH /api/locali/{id} (full LocaleCreate body con bio modificata) -> 200, bio aggiornata correttamente.
+      ✅ (5) POST /api/locali/{id}/save -> 200 {ok:true, saves:1}.
+      ✅ (6) GET /api/my/saved-locali -> 200, contiene il locale_id.
+      ✅ (7) DELETE /api/locali/{id}/save -> 200; GET /my/saved-locali successivo NON contiene piu' il locale.
+      ❌ (8) POST /api/locali/{id}/boost -> 500 Internal Server Error. ROOT CAUSE (NON locali-specifico): Stripe API key SCADUTA in backend/.env. Log backend: 'AuthenticationError: Expired API Key provided: sk_live_*********BquYEJ' da `emergentintegrations.payments.stripe.checkout.CheckoutError`. La handler boost_locale() è implementata correttamente (stesso pattern di boost_event/boost_dj/boost_school) e invoca _create_boost_checkout con kind='locale'. Il 500 viene da Stripe, non dal codice locali. IMPATTO: TUTTI gli endpoint /boost (events/djs/schools/locali) attualmente falliscono per scadenza chiave. AZIONE: rinnovare STRIPE_API_KEY nelle env vars. Una volta rinnovata, l'endpoint dovrebbe ritornare 200 con checkout_url come gli altri /boost.
+      ✅ (9) GET /api/locali?category=ristorante&city=Milano -> 200, contiene il locale creato; tutti gli item rispettano i filtri.
+      ✅ (10) POST /api/reviews target_type='locale' -> 200; VALID_TARGETS aggiornato correttamente ({event, dj, school, locale}); il _recompute_rating ha aggiornato avg_rating=5.0 e reviews_count=1 sul documento locale. Cleanup review 200.
+      ✅ (11) DELETE /api/locali/{id} (admin) -> 200; GET successivo -> 404 (cleanup OK, nessun junk in DB).
+      ✅ REGRESSION: GET /api/events (len=8), /api/djs (len=4), /api/schools (len=3) tutti 200 con liste corrette. /auth/me 200 (admin). 401 senza token su /my/saved-locali corretto.
+      RIEPILOGO: tutta la nuova area Locali funziona perfettamente sul lato logico/DB/API. L'unico fallimento (boost) è dovuto a Stripe key scaduta nelle environment vars del preview env, non al codice. Main agent deve solo aggiornare la chiave Stripe; il codice locali è production-ready.
+
+  - agent: "testing"
+    message: |
       SPONSOR DETAIL PAGE - backend test PASS (8/8) via /app/backend_test.py.
       ✅ Test 1: GET /api/sponsors/8d52d3cd-c576-4786-bcb5-e900dfb0565b (Capezio) -> 200 con tutti gli 11 nuovi campi serializzati (description/instagram_url/facebook_url/tiktok_url/whatsapp/phone/email/address=null nel doc esistente; tickets_url/signup_url/event_id="" come stringhe vuote nel doc già migrato; brand="Capezio").
       ✅ Test 2: GET /api/sponsors/00000000-0000-0000-0000-000000000000 -> 404 detail="Sponsor non trovato".

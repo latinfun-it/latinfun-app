@@ -52,29 +52,21 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="schools"
+          name="locali"
           options={{
-            title: t("tabs.schools"),
+            title: t("tabs.locali"),
+            tabBarIcon: ({ color }) => <Ionicons name="restaurant" size={22} color={color} />,
+            tabBarButtonTestID: "tab-locali",
+          }}
+        />
+        <Tabs.Screen
+          name="match"
+          options={{
+            title: t("tabs.match"),
             tabBarIcon: ({ color }) => (
-              <MaterialCommunityIcons name="dance-ballroom" size={24} color={color} />
+              <MaterialCommunityIcons name="fire" size={24} color={color} />
             ),
-            tabBarButtonTestID: "tab-schools",
-          }}
-        />
-        <Tabs.Screen
-          name="djs"
-          options={{
-            title: t("tabs.djs"),
-            tabBarIcon: ({ color }) => <TabIcon name="disc" color={color} />,
-            tabBarButtonTestID: "tab-djs",
-          }}
-        />
-        <Tabs.Screen
-          name="music"
-          options={{
-            title: t("tabs.music"),
-            tabBarIcon: ({ color }) => <TabIcon name="musical-notes" color={color} />,
-            tabBarButtonTestID: "tab-music",
+            tabBarButtonTestID: "tab-match",
           }}
         />
         <Tabs.Screen
@@ -83,6 +75,33 @@ export default function TabsLayout() {
             title: t("tabs.profile"),
             tabBarIcon: ({ color }) => <TabIcon name="person" color={color} />,
             tabBarButtonTestID: "tab-profile",
+          }}
+        />
+        {/* Hidden tabs (still routable but not shown in tab bar) */}
+        <Tabs.Screen
+          name="schools"
+          options={{
+            href: null,
+            title: t("tabs.schools"),
+            tabBarIcon: ({ color }) => (
+              <MaterialCommunityIcons name="dance-ballroom" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="djs"
+          options={{
+            href: null,
+            title: t("tabs.djs"),
+            tabBarIcon: ({ color }) => <TabIcon name="disc" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="music"
+          options={{
+            href: null,
+            title: t("tabs.music"),
+            tabBarIcon: ({ color }) => <TabIcon name="musical-notes" color={color} />,
           }}
         />
       </Tabs>

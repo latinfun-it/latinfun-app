@@ -2,7 +2,7 @@
   "expo": {
     "name": "LatinFun",
     "slug": "latinfun",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "latinfun",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.latinfun.app",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Trova eventi latini vicino a te",
         "NSPhotoLibraryUsageDescription": "Carica la foto di copertina della tua scuola",
@@ -22,7 +22,7 @@
     },
     "android": {
       "package": "it.latinfun.app",
-      "versionCode": 15,
+      "versionCode": 16,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050505"

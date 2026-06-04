@@ -159,7 +159,7 @@ export default function HomeScreen() {
                 <Image source={{ uri: e.image_url }} style={styles.evtImg} />
                 {e.boosted ? (
                   <View style={styles.boostBadge}>
-                    <Ionicons name="flame" size={12} color="#fff" />
+                    <Ionicons name="rocket" size={12} color="#fff" />
                     <Text style={styles.boostBadgeText}>BOOST</Text>
                   </View>
                 ) : null}
@@ -201,7 +201,7 @@ export default function HomeScreen() {
                 />
                 {s.boosted ? (
                   <View style={styles.boostBadge}>
-                    <Ionicons name="flame" size={12} color="#fff" />
+                    <Ionicons name="rocket" size={12} color="#fff" />
                     <Text style={styles.boostBadgeText}>BOOST</Text>
                   </View>
                 ) : null}

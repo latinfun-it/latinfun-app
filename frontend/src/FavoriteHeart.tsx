@@ -6,25 +6,28 @@ import { api } from "./api";
 import { useAuth } from "./auth";
 import { colors } from "./theme";
 
-type Kind = "dj" | "event" | "school" | "playlist";
+type Kind = "dj" | "event" | "school" | "playlist" | "locale";
 
 const ENDPOINT: Record<Kind, string> = {
   dj: "djs",
   event: "events",
   school: "schools",
   playlist: "playlists",
+  locale: "locali",
 };
 const ACTION: Record<Kind, string> = {
   dj: "follow",
   event: "like",
   school: "save",
   playlist: "save",
+  locale: "save",
 };
 const LIST_URL: Record<Kind, string> = {
   dj: "/my/follows",
   event: "/my/likes",
   school: "/my/saved-schools",
   playlist: "/my/saved-playlists",
+  locale: "/my/saved-locali",
 };
 
 /**

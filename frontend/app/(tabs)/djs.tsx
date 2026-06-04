@@ -128,7 +128,7 @@ export default function DjsScreen() {
                 />
                 {item.boosted ? (
                   <View style={styles.boostedCorner}>
-                    <Ionicons name="flame" size={11} color="#050505" />
+                    <Ionicons name="rocket" size={11} color="#050505" />
                     <Text style={styles.boostedText}>BOOST</Text>
                   </View>
                 ) : null}

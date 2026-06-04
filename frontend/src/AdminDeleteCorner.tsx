@@ -12,19 +12,21 @@ import { api } from "./api";
 import { useAuth } from "./auth";
 import { colors } from "./theme";
 
-type Kind = "dj" | "event" | "school" | "playlist";
+type Kind = "dj" | "event" | "school" | "playlist" | "locale";
 
 const ENDPOINT: Record<Kind, string> = {
   dj: "djs",
   event: "events",
   school: "schools",
   playlist: "playlists",
+  locale: "locali",
 };
 const LABEL: Record<Kind, string> = {
   dj: "DJ",
   event: "evento",
   school: "scuola",
   playlist: "playlist",
+  locale: "locale",
 };
 
 /**

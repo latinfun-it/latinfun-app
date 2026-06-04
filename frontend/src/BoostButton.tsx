@@ -14,19 +14,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "./api";
 import { colors, radii, spacing } from "./theme";
 
-type Kind = "event" | "dj" | "school";
+type Kind = "event" | "dj" | "school" | "locale";
 type Pkg = { key: string; days: number; price: number; label: string };
 
 const ENTITY_PATH: Record<Kind, string> = {
   event: "events",
   dj: "djs",
   school: "schools",
+  locale: "locali",
 };
 
 const ENTITY_LABEL: Record<Kind, string> = {
   event: "evento",
   dj: "profilo DJ",
   school: "scuola",
+  locale: "locale",
 };
 
 export default function BoostButton({
@@ -79,7 +81,7 @@ export default function BoostButton({
   if (boosted) {
     return (
       <View style={styles.boostedBadge} testID={`${kind}-boosted-badge`}>
-        <Ionicons name="flame" size={14} color={colors.gold} />
+        <Ionicons name="rocket" size={14} color={colors.gold} />
         <Text style={styles.boostedText}>
           {kind === "event" ? "EVENTO" : kind === "dj" ? "DJ" : "SCUOLA"} GIA PROMOSSO
         </Text>
@@ -110,7 +112,7 @@ export default function BoostButton({
             <ActivityIndicator color="#050505" />
           ) : (
             <>
-              <Ionicons name="flame" size={16} color="#050505" />
+              <Ionicons name="rocket" size={16} color="#050505" />
               <Text style={styles.inlineText}>Promuovi</Text>
             </>
           )}

@@ -196,7 +196,7 @@ export default function EventDetail() {
                   <ActivityIndicator color="#050505" />
                 ) : (
                   <>
-                    <Ionicons name="flame" size={16} color="#050505" />
+                    <Ionicons name="rocket" size={16} color="#050505" />
                     <Text style={styles.boostInlineText}>Promuovi</Text>
                   </>
                 )}
@@ -206,7 +206,7 @@ export default function EventDetail() {
 
           {ev.boosted ? (
             <View style={styles.boostedBadge} testID="boosted-badge">
-              <Ionicons name="flame" size={14} color={colors.gold} />
+              <Ionicons name="rocket" size={14} color={colors.gold} />
               <Text style={styles.boostedText}>EVENTO GIA PROMOSSO</Text>
             </View>
           ) : null}

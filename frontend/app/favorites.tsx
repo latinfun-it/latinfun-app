@@ -200,7 +200,7 @@ export default function Favorites() {
                       </View>
                       {e.boosted ? (
                         <View style={styles.boostPill}>
-                          <Ionicons name="flame" size={10} color="#050505" />
+                          <Ionicons name="rocket" size={10} color="#050505" />
                           <Text style={styles.boostText}>BOOST</Text>
                         </View>
                       ) : null}

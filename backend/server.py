@@ -357,6 +357,60 @@ class SchoolCreate(BaseModel):
     country: str = "IT"
 
 
+# ----------------------------- Locali (Restaurants/Bars Latin) -------
+class Locale(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    slug: str
+    category: str  # ristorante | bar | lounge | discoteca_cena | altro
+    cuisine: str  # CAMPO LIBERO (es: "Cubana", "Mix Caribe + Italiana", ...)
+    city: str
+    address: str
+    bio: str
+    image_url: str  # logo o foto principale
+    cover_url: Optional[str] = None
+    gallery: List[str] = []  # urls foto galleria
+    price_range: Optional[str] = None  # "€", "€€", "€€€", "€€€€"
+    hours: Optional[str] = None  # formato libero "Lun-Ven 18-02, Sab-Dom 19-04"
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+    owner_id: Optional[str] = None
+    verified_by_mauro: bool = False
+    boosted: bool = False
+    boosted_until: Optional[datetime] = None
+    saves: int = 0
+    avg_rating: float = 0.0
+    reviews_count: int = 0
+    country: str = "IT"
+
+
+class LocaleCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    category: str = Field(min_length=2, max_length=40)
+    cuisine: str = Field(min_length=1, max_length=120)  # campo libero
+    city: str = Field(min_length=2, max_length=60)
+    address: str = Field(min_length=3, max_length=200)
+    bio: str = Field(min_length=10, max_length=1500)
+    image_url: str
+    cover_url: Optional[str] = None
+    gallery: List[str] = []
+    price_range: Optional[str] = None
+    hours: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+    country: str = "IT"
+
+
 # ----------------------------- Auth routes ---------------------------
 @api.post("/auth/register", response_model=AuthResponse)
 async def register(payload: UserRegister):
@@ -493,12 +547,14 @@ async def delete_my_account(current_user: dict = Depends(get_current_user)):
     await _safe_delete_many("events", {"owner_id": user_id}, "events")
     await _safe_delete_many("djs", {"owner_id": user_id}, "djs")
     await _safe_delete_many("schools", {"owner_id": user_id}, "schools")
+    await _safe_delete_many("locali", {"owner_id": user_id}, "events")
 
     # 2) User-generated personal data
     await _safe_delete_many("user_follows", {"user_id": user_id}, "follows")
     await _safe_delete_many("user_likes", {"user_id": user_id}, "likes")
     await _safe_delete_many("user_saved_schools", {"user_id": user_id}, "saved_schools")
     await _safe_delete_many("user_saved_playlists", {"user_id": user_id}, "saved_playlists")
+    await _safe_delete_many("user_saved_locali", {"user_id": user_id}, "saved_schools")
     await _safe_delete_many("reviews", {"user_id": user_id}, "reviews")
     await _safe_delete_many("organizer_profiles", {"user_id": user_id}, "organizer_profile")
     await _safe_delete_many("contact_messages", {"user_id": user_id}, "contact_messages")
@@ -1524,7 +1580,7 @@ async def payment_status(session_id: str, http_request: Request):
     )
 
 
-_ENTITY_COLLECTIONS = {"event": "events", "dj": "djs", "school": "schools"}
+_ENTITY_COLLECTIONS = {"event": "events", "dj": "djs", "school": "schools", "locale": "locali"}
 
 
 async def _mark_entity_boosted(tx: dict, boosted_until):
@@ -2314,6 +2370,161 @@ async def delete_school(school_id: str, current_user: dict = Depends(get_current
     return {"ok": True}
 
 
+# ----------------------------- Locali (Restaurants/Bars) endpoints ----
+@api.get("/locali", response_model=List[Locale])
+async def list_locali(
+    request: Request,
+    city: Optional[str] = None,
+    category: Optional[str] = None,
+    country: Optional[str] = None,
+):
+    q: dict = {}
+    if city:
+        q["city"] = city
+    if category and category != "all":
+        q["category"] = category
+    effective_country = (country or "").upper() if country else _country_filter_from_request(request)
+    if effective_country and effective_country != "INT":
+        if effective_country == "IT":
+            q["$or"] = [{"country": "IT"}, {"country": {"$exists": False}}, {"country": None}]
+        else:
+            q["country"] = effective_country
+    docs = await db.locali.find(q, {"_id": 0}).sort([("boosted", -1), ("avg_rating", -1), ("saves", -1)]).to_list(500)
+    return [Locale(**d) for d in docs]
+
+
+@api.get("/locali/{locale_id}", response_model=Locale)
+async def get_locale(locale_id: str):
+    doc = await db.locali.find_one({"id": locale_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Locale not found")
+    return Locale(**doc)
+
+
+@api.post("/locali", response_model=Locale)
+async def create_locale(
+    payload: LocaleCreate,
+    current_user: dict = Depends(get_current_user),
+    force: bool = False,
+):
+    # Per ora chiunque sia loggato puo creare. In futuro restringere a admin/organizer business.
+    if current_user.get("role") != "admin":
+        await require_organizer(current_user)
+    # Anti-duplication
+    if not force or current_user.get("role") != "admin":
+        existing = await db.locali.find_one(
+            {
+                "name": {"$regex": f"^{_re_escape(payload.name.strip())}$", "$options": "i"},
+                "city": {"$regex": f"^{_re_escape(payload.city.strip())}$", "$options": "i"},
+            },
+            {"_id": 0, "id": 1, "name": 1, "city": 1, "owner_id": 1},
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "duplicate",
+                    "message": f"Esiste gia un locale chiamato '{existing.get('name')}' a {existing.get('city')}.",
+                    "existing_id": existing.get("id"),
+                    "is_owner": existing.get("owner_id") == current_user.get("id"),
+                },
+            )
+    slug = _slugify(f"{payload.name}-{payload.city}")
+    if await db.locali.find_one({"slug": slug}):
+        slug = f"{slug}-{uuid.uuid4().hex[:6]}"
+    locale = Locale(
+        **payload.model_dump(),
+        slug=slug,
+        owner_id=current_user["id"],
+    )
+    await db.locali.insert_one(locale.model_dump())
+    return locale
+
+
+@api.patch("/locali/{locale_id}", response_model=Locale)
+async def update_locale(
+    locale_id: str,
+    payload: LocaleCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    await _check_owner_or_admin("locali", locale_id, current_user)
+    allowed = set(LocaleCreate.model_fields.keys())
+    update_fields = _clean_update_payload(payload.model_dump(exclude_unset=True), allowed)
+    if update_fields:
+        await db.locali.update_one({"id": locale_id}, {"$set": update_fields})
+    fresh = await db.locali.find_one({"id": locale_id}, {"_id": 0})
+    return Locale(**fresh)
+
+
+@api.delete("/locali/{locale_id}")
+async def delete_locale(locale_id: str, current_user: dict = Depends(get_current_user)):
+    lc = await db.locali.find_one({"id": locale_id}, {"_id": 0})
+    await _assert_owner_or_admin(lc, current_user, "Locale")
+    await db.locali.delete_one({"id": locale_id})
+    await db.user_saved_locali.delete_many({"locale_id": locale_id})
+    return {"ok": True}
+
+
+@api.post("/locali/{locale_id}/boost")
+async def boost_locale(
+    locale_id: str,
+    payload: BoostRequest,
+    http_request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    lc = await db.locali.find_one({"id": locale_id}, {"_id": 0})
+    if not lc:
+        raise HTTPException(status_code=404, detail="Locale not found")
+    if lc.get("owner_id") and lc["owner_id"] != current_user["id"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo il titolare del locale o l'admin puo promuovere")
+    return await _create_boost_checkout(
+        kind="locale", entity_id=locale_id, back_path=f"/locale/{locale_id}",
+        payload=payload, http_request=http_request, current_user=current_user,
+    )
+
+
+@api.post("/locali/{locale_id}/save")
+async def save_locale(locale_id: str, current_user: dict = Depends(get_current_user)):
+    locale = await db.locali.find_one({"id": locale_id})
+    if not locale:
+        raise HTTPException(status_code=404, detail="Locale not found")
+    existing = await db.user_saved_locali.find_one(
+        {"user_id": current_user["id"], "locale_id": locale_id}
+    )
+    if existing:
+        return {"ok": True, "saves": locale.get("saves", 0)}
+    new_count = (locale.get("saves") or 0) + 1
+    await db.user_saved_locali.insert_one(
+        {"user_id": current_user["id"], "locale_id": locale_id, "created_at": datetime.now(timezone.utc)}
+    )
+    await db.locali.update_one({"id": locale_id}, {"$set": {"saves": new_count}})
+    return {"ok": True, "saves": new_count}
+
+
+@api.delete("/locali/{locale_id}/save")
+async def unsave_locale(locale_id: str, current_user: dict = Depends(get_current_user)):
+    res = await db.user_saved_locali.delete_one(
+        {"user_id": current_user["id"], "locale_id": locale_id}
+    )
+    if res.deleted_count:
+        await db.locali.update_one({"id": locale_id}, {"$inc": {"saves": -1}})
+    return {"ok": True}
+
+
+@api.get("/my/saved-locali", response_model=List[str])
+async def my_saved_locali(current_user: dict = Depends(get_current_user)):
+    cursor = db.user_saved_locali.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "locale_id": 1}
+    )
+    return [d["locale_id"] async for d in cursor]
+
+
+@api.get("/my/locale", response_model=Optional[Locale])
+async def my_locale(current_user: dict = Depends(get_current_user)):
+    doc = await db.locali.find_one({"owner_id": current_user["id"]}, {"_id": 0})
+    return Locale(**doc) if doc else None
+
+
 # ----------------------------- Reviews -------------------------------
 class ReviewIn(BaseModel):
     target_type: str  # "event" | "dj" | "school"
@@ -2333,7 +2544,7 @@ class Review(BaseModel):
     created_at: datetime
 
 
-VALID_TARGETS = {"event": "events", "dj": "djs", "school": "schools"}
+VALID_TARGETS = {"event": "events", "dj": "djs", "school": "schools", "locale": "locali"}
 
 
 async def _recompute_rating(target_type: str, target_id: str):

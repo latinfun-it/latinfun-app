@@ -128,6 +128,12 @@ export default function ProfileScreen() {
                 onPress={() => router.push("/admin/sponsors" as any)}
               />
               <MenuItem
+                icon="restaurant-outline"
+                label="Gestione Locali (admin)"
+                hint="Aggiungi, modifica, rimuovi locali Latin"
+                onPress={() => router.push("/admin/locali" as any)}
+              />
+              <MenuItem
                 icon="mail-outline"
                 label="Messaggi ricevuti (admin)"
                 hint="Casella contatti dagli utenti"
@@ -218,7 +224,7 @@ export default function ProfileScreen() {
                   onPress={() => router.push(`/event/${e.id}`)}
                 >
                   <Ionicons
-                    name={e.boosted ? "flame" : "calendar-outline"}
+                    name={e.boosted ? "rocket" : "calendar-outline"}
                     size={16}
                     color={e.boosted ? colors.gold : colors.textSecondary}
                   />
