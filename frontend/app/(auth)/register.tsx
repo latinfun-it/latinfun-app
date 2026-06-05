@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,20 +13,44 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/auth";
+import { api } from "../../src/api";
 import { colors, radii, spacing } from "../../src/theme";
 
 export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
+  const params = useLocalSearchParams<{ ref?: string }>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [refInviter, setRefInviter] = useState<string | null>(null);
+  const [refBonusPct, setRefBonusPct] = useState<number | null>(null);
+  const [refLaunchActive, setRefLaunchActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill referral code from URL/deep link (?ref=CODE)
+  useEffect(() => {
+    const incoming = (params.ref || "").toString().trim().toUpperCase();
+    if (incoming && incoming.length >= 4) {
+      setReferralCode(incoming);
+      // Fetch inviter info
+      (async () => {
+        try {
+          const r = await api.get(`/affiliate/info/${incoming}`);
+          setRefInviter(r.data.referrer_name || null);
+          setRefBonusPct(r.data.bonus_pct || null);
+          setRefLaunchActive(!!r.data.launch_boost_active);
+        } catch {
+          /* codice non valido — lascia comunque compilato */
+        }
+      })();
+    }
+  }, [params.ref]);
 
   const onSubmit = async () => {
     setError(null);
@@ -108,6 +132,23 @@ export default function Register() {
                   onChangeText={setPassword}
                 />
               </View>
+
+              {refInviter ? (
+                <View style={styles.inviteBanner} testID="register-invite-banner">
+                  <Ionicons name="gift" size={20} color="#facc15" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inviteBannerTitle}>
+                      🎉 Ti ha invitato {refInviter}
+                    </Text>
+                    {refBonusPct ? (
+                      <Text style={styles.inviteBannerSub}>
+                        {refLaunchActive ? "🚀 Launch Boost: " : ""}
+                        Bonus {Math.round(refBonusPct * 100)}% sul primo BOOST
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              ) : null}
 
               <View style={styles.inputRow}>
                 <Ionicons name="gift-outline" size={18} color={colors.textSecondary} />
@@ -210,4 +251,17 @@ const styles = StyleSheet.create({
   footerText: { color: colors.textSecondary },
   linkText: { color: colors.brand, fontWeight: "700" },
   error: { color: colors.error, marginBottom: spacing.sm, fontSize: 13 },
+  inviteBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(250,204,21,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(250,204,21,0.45)",
+    borderRadius: radii.md,
+    padding: 12,
+    marginBottom: 12,
+  },
+  inviteBannerTitle: { color: "#fff", fontSize: 14, fontWeight: "800" },
+  inviteBannerSub: { color: "#facc15", fontSize: 12, marginTop: 2, fontWeight: "700" },
 });

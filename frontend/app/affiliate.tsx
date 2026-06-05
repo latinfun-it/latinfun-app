@@ -17,13 +17,36 @@ import * as Clipboard from "expo-clipboard";
 import { api } from "../src/api";
 import { colors, radii, spacing } from "../src/theme";
 
+type Tier = {
+  key: "bronze" | "silver" | "gold";
+  label: string;
+  first_pct: number;
+  recurring_pct: number;
+};
+
 type ReferralData = {
   referral_code: string | null;
+  share_url?: string;
+  deep_link?: string;
+  tier?: Tier;
+  next_tier?: {
+    key: string;
+    label: string;
+    first_pct: number;
+    referrals_needed: number;
+    min_active_referrals: number;
+  } | null;
+  launch_boost?: {
+    active: boolean;
+    percent: number;
+    until: string | null;
+  };
   stats: {
     invited: number;
     paying: number;
     earned_pending: number;
     earned_paid: number;
+    earned_total?: number;
   };
   invited: Array<{ id: string; name: string; email: string; created_at: string }>;
   commissions: Array<{
@@ -33,9 +56,19 @@ type ReferralData = {
     source_kind: string;
     source_amount: number;
     commission_amount: number;
+    applied_percent?: number;
+    tier_at_credit?: string;
+    is_first_payment?: boolean;
+    launch_boost_active?: boolean;
     status: "pending" | "paid_out";
     created_at: string;
   }>;
+};
+
+const TIER_VISUAL: Record<string, { color: string; emoji: string; gradient: [string, string] }> = {
+  bronze: { color: "#cd7f32", emoji: "🥉", gradient: ["#7c3a0e", "#cd7f32"] },
+  silver: { color: "#c0c0c0", emoji: "🥈", gradient: ["#525252", "#c0c0c0"] },
+  gold:   { color: "#facc15", emoji: "🥇", gradient: ["#b45309", "#facc15"] },
 };
 
 function fmtDate(iso: string) {
@@ -71,11 +104,18 @@ export default function AffiliateScreen() {
   };
 
   const code = data?.referral_code || "";
-  const inviteLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/register?ref=${code}`
-      : `https://latinfun.it/register?ref=${code}`;
-  const shareText = `Ciao! Iscriviti su LatinFun, la community della scena Latin in Italia. Usa il mio codice: ${code}\n${inviteLink}`;
+  const inviteLink = data?.share_url || `https://latinfun.it/r/${code}`;
+  const tier = data?.tier;
+  const nextTier = data?.next_tier;
+  const launchBoost = data?.launch_boost;
+  const activeReferrals = data?.stats.paying || 0;
+  const minNext = nextTier?.min_active_referrals || 0;
+  const progressPct = nextTier ? Math.min(100, (activeReferrals / minNext) * 100) : 100;
+  const effectiveFirstPct = launchBoost?.active
+    ? Math.max(launchBoost.percent, tier?.first_pct || 0)
+    : (tier?.first_pct || 0.10);
+  const tierVis = tier ? TIER_VISUAL[tier.key] : TIER_VISUAL.bronze;
+  const shareText = `🔥 Ti regalo l'accesso pro a LatinFun! Usa il mio codice ${code} per ${Math.round(effectiveFirstPct*100)}% di bonus al primo BOOST.\n\n${inviteLink}`;
 
   const copyCode = async () => {
     try {
@@ -150,11 +190,63 @@ export default function AffiliateScreen() {
           <View style={s.heroIcon}>
             <Ionicons name="gift" size={32} color="#fff" />
           </View>
-          <Text style={s.heroTitle}>Guadagna il 10%</Text>
+          <Text style={s.heroTitle}>Guadagna fino al {Math.round(effectiveFirstPct*100)}%</Text>
           <Text style={s.heroSub}>
-            Per ogni nuovo iscritto che porti, ricevi il 10% del suo primo pagamento (boost, sblocco lead, etc.)
+            Per ogni nuovo iscritto che porti, ricevi una commissione sul suo primo pagamento, più il 5% ricorrente sui BOOST successivi.
           </Text>
         </View>
+
+        {/* LAUNCH BOOST BANNER */}
+        {launchBoost?.active ? (
+          <View style={s.launchBanner} testID="launch-boost-banner">
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="rocket" size={20} color="#fff" />
+              <Text style={s.launchTitle}>🚀 LAUNCH BOOST ATTIVO</Text>
+            </View>
+            <Text style={s.launchSub}>
+              Fino al {launchBoost.until ? new Date(launchBoost.until).toLocaleDateString("it-IT", { day: "2-digit", month: "long" }) : "—"}
+              {" "}ottieni il <Text style={{ fontWeight: "900", color: "#facc15" }}>{Math.round(launchBoost.percent*100)}%</Text> sul primo pagamento di ogni invitato (anziché il tuo tier base)
+            </Text>
+          </View>
+        ) : null}
+
+        {/* TIER CARD */}
+        {tier ? (
+          <View style={[s.tierCard, { borderColor: tierVis.color }]} testID="tier-card">
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <View>
+                <Text style={s.tierLabel}>IL TUO LIVELLO</Text>
+                <Text style={[s.tierName, { color: tierVis.color }]}>
+                  {tierVis.emoji} {tier.label.toUpperCase()}
+                </Text>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={s.tierPct}>{Math.round(tier.first_pct*100)}%</Text>
+                <Text style={s.tierPctLbl}>primo pagamento</Text>
+              </View>
+            </View>
+
+            {nextTier ? (
+              <View style={{ marginTop: 14 }}>
+                <Text style={s.tierProgressText}>
+                  {nextTier.referrals_needed} {nextTier.referrals_needed === 1 ? "invitato pagante" : "invitati paganti"} al prossimo livello: <Text style={{ fontWeight: "900", color: "#fff" }}>{nextTier.label} ({Math.round(nextTier.first_pct*100)}%)</Text>
+                </Text>
+                <View style={s.progressTrack}>
+                  <View
+                    style={[s.progressFill, { width: `${progressPct}%`, backgroundColor: tierVis.color }]}
+                  />
+                </View>
+                <Text style={s.tierProgressMeta}>
+                  {activeReferrals} / {nextTier.min_active_referrals}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[s.tierProgressText, { marginTop: 12 }]}>
+                🏆 Hai raggiunto il livello massimo! Continui a ricevere il {Math.round(tier.first_pct*100)}% primo pagamento + {Math.round(tier.recurring_pct*100)}% sui BOOST ricorrenti.
+              </Text>
+            )}
+          </View>
+        ) : null}
 
         {/* Code Box */}
         <View style={s.codeBox}>
@@ -193,10 +285,12 @@ export default function AffiliateScreen() {
         {/* Come funziona */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Come funziona</Text>
-          <Step n="1" title="Condividi il tuo codice" desc="Mandalo agli amici via WhatsApp, Instagram o email." />
-          <Step n="2" title="L'amico si registra" desc="Inserisce il tuo codice durante la registrazione." />
-          <Step n="3" title="Riceve il primo pagamento" desc="Quando paga il primo boost o sblocco, tu guadagni il 10%." />
-          <Step n="4" title="Riscuoti i guadagni" desc="L'admin LatinFun salda mensilmente i crediti accumulati." />
+          <Step n="1" title="Condividi il tuo link" desc="Mandalo agli organizzatori, DJ, scuole o ai locali via WhatsApp, Instagram o email." />
+          <Step n="2" title="L'invitato si registra" desc="Cliccando sul tuo link, il codice viene compilato automaticamente." />
+          <Step n="3" title="Primo BOOST = jackpot" desc={`Al primo pagamento dell'invitato guadagni il ${Math.round(effectiveFirstPct*100)}%${launchBoost?.active ? " (Launch Boost attivo!)" : ""}.`} />
+          <Step n="4" title="Commissione ricorrente 5%" desc="Su tutti i BOOST successivi continui a guadagnare il 5% per sempre." />
+          <Step n="5" title="Sali di livello" desc="Bronze → Argento → Oro. Più referral attivi porti, più alta la tua %." />
+          <Step n="6" title="Riscuoti" desc="L'admin LatinFun salda mensilmente i guadagni accumulati." />
         </View>
 
         {/* Commissioni */}
@@ -209,7 +303,23 @@ export default function AffiliateScreen() {
                   <Text style={s.rowName}>{c.referee_name || "Utente"}</Text>
                   <Text style={s.rowMeta}>
                     {c.source_kind} · {fmtDate(c.created_at)}
+                    {c.applied_percent ? ` · ${Math.round(c.applied_percent*100)}%` : ""}
                   </Text>
+                  <View style={{ flexDirection: "row", gap: 6, marginTop: 4 }}>
+                    {c.launch_boost_active ? (
+                      <View style={[s.miniTag, { backgroundColor: "rgba(225,29,72,0.18)", borderColor: "#e11d48" }]}>
+                        <Text style={[s.miniTagText, { color: "#fecaca" }]}>🚀 LANCIO</Text>
+                      </View>
+                    ) : c.is_first_payment ? (
+                      <View style={[s.miniTag, { backgroundColor: "rgba(250,204,21,0.15)", borderColor: "#facc15" }]}>
+                        <Text style={[s.miniTagText, { color: "#facc15" }]}>1° PAGAMENTO</Text>
+                      </View>
+                    ) : (
+                      <View style={[s.miniTag, { backgroundColor: "rgba(34,197,94,0.18)", borderColor: "#22c55e" }]}>
+                        <Text style={[s.miniTagText, { color: "#86efac" }]}>↻ RICORRENTE</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
                   <Text style={s.amount}>+€{c.commission_amount.toFixed(2)}</Text>
@@ -339,6 +449,49 @@ const s = StyleSheet.create({
     textAlign: "center",
     lineHeight: 19,
   },
+
+  // Launch Boost banner
+  launchBanner: {
+    backgroundColor: "#1f0a12",
+    borderRadius: radii.lg,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#e11d48",
+    marginBottom: spacing.lg,
+  },
+  launchTitle: { color: "#fff", fontWeight: "900", fontSize: 14, letterSpacing: 1 },
+  launchSub: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 8, lineHeight: 17 },
+
+  // Tier card
+  tierCard: {
+    backgroundColor: colors.bgSecondary,
+    borderRadius: radii.lg,
+    padding: 16,
+    marginBottom: spacing.lg,
+    borderWidth: 2,
+  },
+  tierLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "800", letterSpacing: 1.5 },
+  tierName: { fontSize: 22, fontWeight: "900", marginTop: 4 },
+  tierPct: { color: "#fff", fontSize: 28, fontWeight: "900" },
+  tierPctLbl: { color: colors.textMuted, fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
+  tierProgressText: { color: colors.textSecondary, fontSize: 12, marginBottom: 8 },
+  tierProgressMeta: { color: colors.textMuted, fontSize: 10, marginTop: 4, textAlign: "right" },
+  progressTrack: {
+    height: 8,
+    backgroundColor: colors.bgTertiary,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: { height: "100%", borderRadius: 4 },
+
+  // Mini tags on commissions
+  miniTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  miniTagText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
 
   codeBox: {
     backgroundColor: colors.bgSecondary,

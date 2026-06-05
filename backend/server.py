@@ -1611,13 +1611,52 @@ async def _mark_entity_boosted(tx: dict, boosted_until):
         logger.warning("Affiliate commission fail: %s", e)
 
 
-AFFILIATE_PERCENT = 0.10  # 10% del primo pagamento
+AFFILIATE_PERCENT = 0.10  # legacy fallback (10% del primo pagamento)
+
+# ============= NEW AFFILIATE SYSTEM (TIER + LAUNCH BOOST + RECURRING) ====
+# Launch boost: durante questa finestra TUTTI ricevono % extra sul primo pagamento
+AFFILIATE_LAUNCH_BOOST_PERCENT = 0.20  # 20% durante il lancio
+AFFILIATE_LAUNCH_BOOST_UNTIL = datetime(2026, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+
+# Tier system in base ai referral attivi (= invitati che hanno pagato almeno una volta)
+AFFILIATE_TIERS = [
+    {"key": "bronze",  "label": "Bronze",  "min_active_referrals": 0,  "first_pct": 0.10, "recurring_pct": 0.05},
+    {"key": "silver",  "label": "Argento", "min_active_referrals": 4,  "first_pct": 0.12, "recurring_pct": 0.05},
+    {"key": "gold",    "label": "Oro",     "min_active_referrals": 10, "first_pct": 0.15, "recurring_pct": 0.05},
+]
+
+
+def _is_launch_boost_active() -> bool:
+    return datetime.now(timezone.utc) <= AFFILIATE_LAUNCH_BOOST_UNTIL
+
+
+async def _count_active_referrals(referrer_id: str) -> int:
+    """Conta gli invitati che hanno almeno una commissione (= hanno pagato)."""
+    return len(
+        await db.referral_commissions.distinct("referee_id", {"referrer_id": referrer_id})
+    )
+
+
+def _tier_for_active_count(active: int) -> dict:
+    chosen = AFFILIATE_TIERS[0]
+    for t in AFFILIATE_TIERS:
+        if active >= t["min_active_referrals"]:
+            chosen = t
+    return chosen
+
+
+def _next_tier(active: int) -> Optional[dict]:
+    for t in AFFILIATE_TIERS:
+        if t["min_active_referrals"] > active:
+            return t
+    return None
 
 
 async def _credit_referral_commission(tx: dict):
     """
-    Se il pagatore ha un referrer e questo è il PRIMO pagamento andato a buon fine,
-    accredita il 10% al referrer.
+    Sistema affiliati TIER + LAUNCH BOOST + RECURRING.
+    - Primo pagamento di un referee: rate = max(launch_boost, tier.first_pct)
+    - Pagamenti successivi: rate = tier.recurring_pct (5%)
     """
     user_id = tx.get("user_id")
     if not user_id:
@@ -1627,28 +1666,48 @@ async def _credit_referral_commission(tx: dict):
     )
     if not user or not user.get("referred_by"):
         return
-    # Conta quante tx 'paid' aveva questo utente PRIMA di questa
+
+    # Conta tx 'paid' precedenti di questo referee
     other_paid = await db.payment_transactions.count_documents({
         "user_id": user_id,
         "payment_status": "paid",
         "session_id": {"$ne": tx.get("session_id")},
     })
-    if other_paid > 0:
-        # Non è il primo pagamento, niente commissione
-        return
+    is_first_payment = other_paid == 0
+
     amount = float(tx.get("amount") or 0)
     if amount <= 0:
         return
-    # Evita doppia commissione se già esistente
+
+    # Evita doppia commissione se già esistente per questa session
     existing = await db.referral_commissions.find_one(
         {"source_session_id": tx.get("session_id")}
     )
     if existing:
         return
-    commission = round(amount * AFFILIATE_PERCENT, 2)
+
+    # Calcola tier del referrer
+    referrer_id = user["referred_by"]
+    active_referrals = await _count_active_referrals(referrer_id)
+    tier = _tier_for_active_count(active_referrals)
+
+    # Determina la percentuale da applicare
+    if is_first_payment:
+        # Launch boost se attivo, altrimenti tier first_pct
+        applied_pct = max(
+            AFFILIATE_LAUNCH_BOOST_PERCENT if _is_launch_boost_active() else 0,
+            tier["first_pct"],
+        )
+    else:
+        applied_pct = tier["recurring_pct"]
+
+    commission = round(amount * applied_pct, 2)
+    if commission <= 0:
+        return
+
     doc = {
         "id": str(uuid.uuid4()),
-        "referrer_id": user["referred_by"],
+        "referrer_id": referrer_id,
         "referee_id": user["id"],
         "referee_name": user.get("name"),
         "referee_email": user.get("email"),
@@ -1656,28 +1715,42 @@ async def _credit_referral_commission(tx: dict):
         "source_kind": tx.get("kind"),
         "source_amount": amount,
         "commission_amount": commission,
+        "applied_percent": applied_pct,
+        "tier_at_credit": tier["key"],
+        "is_first_payment": is_first_payment,
+        "launch_boost_active": _is_launch_boost_active() and is_first_payment,
         "status": "pending",  # pending | paid_out
         "created_at": datetime.now(timezone.utc),
         "paid_at": None,
     }
     await db.referral_commissions.insert_one(doc)
     logger.info(
-        "Affiliate commission %.2f EUR for referrer %s (referee %s, source %s)",
-        commission, user["referred_by"], user["id"], tx.get("kind"),
+        "Affiliate commission %.2f EUR (%.0f%%) for referrer %s (referee %s, tier=%s, first=%s, launch=%s)",
+        commission, applied_pct * 100, referrer_id, user["id"],
+        tier["key"], is_first_payment, doc["launch_boost_active"],
     )
 
     # Push notifica al referrer
     try:
         ref_user = await db.users.find_one(
-            {"id": user["referred_by"]},
+            {"id": referrer_id},
             {"_id": 0, "push_token": 1, "notifications_enabled": 1},
         )
         if ref_user and ref_user.get("push_token") and ref_user.get("notifications_enabled", True):
+            title = "🎉 Hai guadagnato!" if is_first_payment else "💰 Nuova commissione!"
+            who = user.get("name") or "un tuo invitato"
+            body = (
+                f"+{commission:.2f}€ dal primo pagamento di {who}"
+                if is_first_payment
+                else f"+{commission:.2f}€ ricorrente da {who}"
+            )
+            if doc["launch_boost_active"]:
+                body = f"🚀 LAUNCH BOOST {int(applied_pct*100)}% · " + body
             asyncio.create_task(
                 _send_expo_push(
                     [ref_user["push_token"]],
-                    "🎉 Hai guadagnato!",
-                    f"+{commission:.2f}€ dal primo pagamento di {user.get('name') or 'un tuo invitato'}",
+                    title,
+                    body,
                     {"type": "affiliate_commission"},
                 )
             )
@@ -3180,6 +3253,30 @@ async def mark_lead_contacted(
 
 
 # ----------------------------- Affiliate Program --------------------
+@api.get("/affiliate/info/{code}")
+async def affiliate_invite_info(code: str):
+    """Info pubblica su un codice referral (per landing/preview)."""
+    clean = code.strip().upper()
+    user = await db.users.find_one(
+        {"referral_code": clean},
+        {"_id": 0, "id": 1, "name": 1},
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Codice non valido")
+    launch_active = _is_launch_boost_active()
+    bonus_pct = AFFILIATE_LAUNCH_BOOST_PERCENT if launch_active else AFFILIATE_TIERS[0]["first_pct"]
+    return {
+        "referral_code": clean,
+        "referrer_name": user.get("name"),
+        "launch_boost_active": launch_active,
+        "bonus_pct": bonus_pct,
+        "message": (
+            f"Ti ha invitato {user.get('name') or 'un amico'} su LatinFun! "
+            f"Iscriviti ora{' e attiverai un BOOST speciale di lancio' if launch_active else ''}."
+        ),
+    }
+
+
 @api.get("/my/referrals")
 async def my_referrals(current_user: dict = Depends(get_current_user)):
     """Statistiche e lista referral dell'utente corrente."""
@@ -3222,14 +3319,43 @@ async def my_referrals(current_user: dict = Depends(get_current_user)):
 
     # Quanti invitati hanno effettivamente pagato
     paid_referees = {c["referee_id"] for c in commissions}
+    active_referrals_count = len(paid_referees)
+
+    # Tier corrente e prossimo
+    current_tier = _tier_for_active_count(active_referrals_count)
+    next_tier = _next_tier(active_referrals_count)
+    launch_active = _is_launch_boost_active()
 
     return {
         "referral_code": code,
+        "share_url": f"https://latinfun.it/r/{code}" if code else None,
+        "deep_link": f"latinfun://register?ref={code}" if code else None,
+        "tier": {
+            "key": current_tier["key"],
+            "label": current_tier["label"],
+            "first_pct": current_tier["first_pct"],
+            "recurring_pct": current_tier["recurring_pct"],
+        },
+        "next_tier": (
+            {
+                "key": next_tier["key"],
+                "label": next_tier["label"],
+                "first_pct": next_tier["first_pct"],
+                "referrals_needed": next_tier["min_active_referrals"] - active_referrals_count,
+                "min_active_referrals": next_tier["min_active_referrals"],
+            } if next_tier else None
+        ),
+        "launch_boost": {
+            "active": launch_active,
+            "percent": AFFILIATE_LAUNCH_BOOST_PERCENT,
+            "until": AFFILIATE_LAUNCH_BOOST_UNTIL.isoformat() if launch_active else None,
+        },
         "stats": {
             "invited": len(invited),
-            "paying": len(paid_referees),
+            "paying": active_referrals_count,
             "earned_pending": round(total_pending, 2),
             "earned_paid": round(total_paid, 2),
+            "earned_total": round(total_pending + total_paid, 2),
         },
         "invited": invited,
         "commissions": commissions,
@@ -3676,6 +3802,80 @@ async def fic_list_emitted_local(current_user: dict = Depends(get_current_user))
 
 
 app.include_router(api)
+
+
+# ============= Affiliate Public Deep-Link Route ==========================
+@app.get("/r/{code}")
+async def affiliate_redirect(code: str, request: Request):
+    """
+    Public referral URL: https://[domain]/r/CODE
+    - If opened on mobile and app is installed → opens app via universal link / deep link
+    - Otherwise serves a landing page that invites to download the app
+    """
+    from fastapi.responses import HTMLResponse
+    clean = code.strip().upper()
+    user = await db.users.find_one(
+        {"referral_code": clean}, {"_id": 0, "name": 1}
+    )
+    if not user:
+        return HTMLResponse(
+            "<html><body style='font-family:system-ui;text-align:center;padding:40px'>"
+            "<h1>❌ Codice non valido</h1>"
+            "<p>Il codice referral non esiste o è scaduto.</p>"
+            "<a href='https://apps.apple.com/it/app/latinfun/id6764812867'>Scarica LatinFun</a>"
+            "</body></html>",
+            status_code=404,
+        )
+    name = user.get("name") or "un amico"
+    launch_active = _is_launch_boost_active()
+    boost_html = (
+        f"<p style='color:#e11d48;font-weight:700;font-size:18px'>🚀 LAUNCH BOOST {int(AFFILIATE_LAUNCH_BOOST_PERCENT*100)}% ATTIVO!</p>"
+        if launch_active else ""
+    )
+    deep_link = f"latinfun://register?ref={clean}"
+    app_store = "https://apps.apple.com/it/app/latinfun/id6764812867"
+    play_store = "https://play.google.com/store/apps/details?id=it.latinfun.app"
+    html = f"""<!DOCTYPE html>
+<html lang="it"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ti ha invitato {name} su LatinFun</title>
+<style>
+body {{ margin:0; font-family:-apple-system,system-ui,sans-serif; background:#0a0a0a; color:#fff;
+       display:flex; align-items:center; justify-content:center; min-height:100vh; }}
+.card {{ max-width:420px; width:90%; background:#161616; padding:32px 24px; border-radius:20px;
+       text-align:center; border:1px solid #2a2a2a; }}
+.h1 {{ color:#e11d48; font-size:34px; margin:0 0 8px; font-weight:900; }}
+.invite {{ color:#999; font-size:14px; margin-bottom:18px; }}
+.name {{ color:#fff; font-weight:900; font-size:22px; margin-bottom:24px; }}
+.btn {{ display:block; background:#e11d48; color:#fff; padding:16px; border-radius:12px;
+       text-decoration:none; font-weight:800; font-size:15px; margin-bottom:10px; }}
+.btn.ghost {{ background:#1f1f1f; border:1px solid #333; }}
+.code {{ background:#0a0a0a; padding:14px; border-radius:10px; font-family:monospace;
+       font-size:20px; letter-spacing:3px; color:#facc15; margin-bottom:18px; border:1px dashed #333; }}
+</style>
+<script>
+// Try opening the app via deep link
+setTimeout(function() {{
+  window.location.href = "{deep_link}";
+}}, 100);
+</script>
+</head>
+<body>
+<div class="card">
+  <div class="h1">LatinFun 🔥</div>
+  <p class="invite">Sei stato invitato da</p>
+  <p class="name">{name}</p>
+  {boost_html}
+  <p class="invite">Il tuo codice referral:</p>
+  <div class="code">{clean}</div>
+  <a class="btn" href="{app_store}">📱 Apri/Scarica per iOS</a>
+  <a class="btn ghost" href="{play_store}">🤖 Apri/Scarica per Android</a>
+</div>
+</body></html>"""
+    return HTMLResponse(content=html, status_code=200)
+
+
 
 # Static files mount for store assets (icon, feature graphic, legal pages)
 from fastapi.staticfiles import StaticFiles
