@@ -3036,6 +3036,157 @@ async def chat_unread_count(current_user: dict = Depends(get_current_user)):
     return {"unread": n}
 
 
+# ----------------------------- Admin: Match Health Dashboard ----------
+@api.get("/admin/match-health")
+async def admin_match_health(current_user: dict = Depends(get_current_user)):
+    """Dashboard admin con metriche complete sul sistema MATCH."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+
+    now = datetime.now(timezone.utc)
+    last_24h = now - timedelta(hours=24)
+    last_7d = now - timedelta(days=7)
+    last_30d = now - timedelta(days=30)
+
+    # Profili totali
+    profiles_total = await db.dancer_profiles.count_documents({})
+    profiles_active = await db.dancer_profiles.count_documents({"is_active": True})
+    profiles_new_7d = await db.dancer_profiles.count_documents({"created_at": {"$gte": last_7d}})
+
+    # Per città/stili
+    cities_agg = await db.dancer_profiles.aggregate([
+        {"$match": {"is_active": True}},
+        {"$group": {"_id": "$city", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10},
+    ]).to_list(20)
+    styles_agg = await db.dancer_profiles.aggregate([
+        {"$match": {"is_active": True}},
+        {"$unwind": "$styles"},
+        {"$group": {"_id": "$styles", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]).to_list(20)
+
+    # Swipes
+    swipes_total = await db.dancer_swipes.count_documents({})
+    swipes_24h = await db.dancer_swipes.count_documents({"created_at": {"$gte": last_24h}})
+    likes_total = await db.dancer_swipes.count_documents({"direction": "like"})
+    passes_total = await db.dancer_swipes.count_documents({"direction": "pass"})
+    like_ratio = (likes_total / swipes_total * 100) if swipes_total else 0
+
+    # Matches
+    matches_total = await db.dancer_matches.count_documents({})
+    matches_24h = await db.dancer_matches.count_documents({"created_at": {"$gte": last_24h}})
+    matches_7d = await db.dancer_matches.count_documents({"created_at": {"$gte": last_7d}})
+
+    # Conversion rate (match per swipe)
+    match_rate = (matches_total * 2 / swipes_total * 100) if swipes_total else 0
+
+    # Chat
+    msgs_total = await db.chat_messages.count_documents({})
+    msgs_24h = await db.chat_messages.count_documents({"sent_at": {"$gte": last_24h}})
+
+    # Match con chat attiva (% di match che effettivamente chattano)
+    matches_with_chat = len(await db.chat_messages.distinct("pair_id"))
+    chat_engagement = (matches_with_chat / matches_total * 100) if matches_total else 0
+
+    # Recent matches (ultimi 10)
+    recent_matches_raw = await db.dancer_matches.find({}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
+    recent_matches = []
+    for m in recent_matches_raw:
+        users = m.get("user_ids", [])
+        if len(users) == 2:
+            u1 = await db.users.find_one({"id": users[0]}, {"_id": 0, "name": 1})
+            u2 = await db.users.find_one({"id": users[1]}, {"_id": 0, "name": 1})
+            recent_matches.append({
+                "pair_id": m.get("pair_id"),
+                "user_1": (u1 or {}).get("name", "?"),
+                "user_2": (u2 or {}).get("name", "?"),
+                "created_at": m.get("created_at"),
+            })
+
+    # Profili senza foto / bio (segnali di setup incompleto)
+    no_photo = await db.dancer_profiles.count_documents({"photo_url": {"$in": [None, ""]}})
+    short_bio = await db.dancer_profiles.count_documents({"bio": {"$regex": "^.{0,20}$"}})
+
+    return {
+        "profiles": {
+            "total": profiles_total,
+            "active": profiles_active,
+            "new_last_7d": profiles_new_7d,
+            "incomplete_no_photo": no_photo,
+            "incomplete_short_bio": short_bio,
+        },
+        "by_city": [{"city": c["_id"], "count": c["count"]} for c in cities_agg],
+        "by_style": [{"style": s["_id"], "count": s["count"]} for s in styles_agg],
+        "swipes": {
+            "total": swipes_total,
+            "last_24h": swipes_24h,
+            "likes": likes_total,
+            "passes": passes_total,
+            "like_ratio_pct": round(like_ratio, 1),
+        },
+        "matches": {
+            "total": matches_total,
+            "last_24h": matches_24h,
+            "last_7d": matches_7d,
+            "match_rate_pct": round(match_rate, 2),
+        },
+        "chat": {
+            "messages_total": msgs_total,
+            "messages_last_24h": msgs_24h,
+            "matches_with_chat": matches_with_chat,
+            "chat_engagement_pct": round(chat_engagement, 1),
+        },
+        "recent_matches": recent_matches,
+        "alerts": _compute_match_alerts(
+            profiles_active, matches_24h, swipes_24h, no_photo, profiles_total,
+        ),
+    }
+
+
+def _compute_match_alerts(active_profiles: int, matches_24h: int, swipes_24h: int,
+                          no_photo: int, total_profiles: int) -> List[dict]:
+    """Genera alert intelligenti per l'admin."""
+    alerts = []
+    if active_profiles < 10:
+        alerts.append({
+            "level": "warning",
+            "icon": "people-outline",
+            "title": "Pochi profili attivi",
+            "message": f"Solo {active_profiles} profili. Serve incentivare la registrazione.",
+        })
+    if total_profiles and no_photo / total_profiles > 0.2:
+        alerts.append({
+            "level": "warning",
+            "icon": "image-outline",
+            "title": "Molti profili senza foto",
+            "message": f"{no_photo} profili senza foto. Considera notifica push per completarli.",
+        })
+    if swipes_24h == 0 and active_profiles > 5:
+        alerts.append({
+            "level": "error",
+            "icon": "alert-circle-outline",
+            "title": "Nessuno swipe nelle ultime 24h",
+            "message": "Il sistema discover potrebbe non funzionare o ci sono troppi pochi profili in zona.",
+        })
+    if active_profiles > 10 and matches_24h == 0 and swipes_24h > 20:
+        alerts.append({
+            "level": "warning",
+            "icon": "heart-dislike-outline",
+            "title": "Tanti swipe ma zero match",
+            "message": "Verifica che il sistema di match (like reciproci) funzioni.",
+        })
+    if not alerts:
+        alerts.append({
+            "level": "success",
+            "icon": "checkmark-circle-outline",
+            "title": "Sistema MATCH in salute",
+            "message": "Tutti gli indicatori sono nella norma.",
+        })
+    return alerts
+
+
 # ----------------------------- School Leads (paid) ------------------
 LEAD_UNLOCK_PRICE_EUR = 2.00
 

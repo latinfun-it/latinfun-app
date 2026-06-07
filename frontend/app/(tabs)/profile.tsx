@@ -134,6 +134,12 @@ export default function ProfileScreen() {
                 onPress={() => router.push("/admin/locali" as any)}
               />
               <MenuItem
+                icon="pulse-outline"
+                label="Match Health (admin)"
+                hint="Monitora stato sistema Match Partner"
+                onPress={() => router.push("/admin/match-health" as any)}
+              />
+              <MenuItem
                 icon="mail-outline"
                 label="Messaggi ricevuti (admin)"
                 hint="Casella contatti dagli utenti"
